@@ -14,6 +14,8 @@ IGNORED_NETNAMES = ["GND", "P3V3", "P2V5","P1V5", "P1V2", "P1V8",
                     "MTG_AVC_A", "MTG_AVC_B", "VREF_DDR3",
                     "FMC1_VREFAM2C", "FMC2_VREFAM2C"]
 
+IOSTANDARD = "LVCMOS33"
+
 
 filename = raw_input("Enter the input netlist filename (Must be Calay format!): ")
 if filename != "":
@@ -31,7 +33,7 @@ if filename != "":
     UCF_FILENAME = filename
 
 try:
-    ucf = open(UCF_FILENAME,"w")
+    ucf = open(UCF_FILENAME+".raw","w")
     print "%s .ucf opened." % UCF_FILENAME
 except:
     print "ERROR %s file doesn't exist!" % UCF_FILENAME
@@ -64,6 +66,26 @@ if pin_cnt == 1:
     print " => %d pin found in %s" % (pin_cnt, PART_DESIGNATOR)
 else:
     print " => %d pins found in %s" % (pin_cnt, PART_DESIGNATOR)
+
+
+yesno = ""
+while (yesno.lower() != 'y') and (yesno.lower() != 'n'):
+    yesno = raw_input("Do you want to generate default IOSTANDARD [y/n]: ")
+
+if yesno == 'y':
+    net = open(NETLIST_FILENAME,"r")
+    ucf.write("\n\n\n\n")
+    # Iterate over lines in netlist file
+    for line in net:
+        # Remove non-alphanumerical char
+        line = re.sub(r'[^\w]', ' ', line)
+        # Split line into strings
+        ln = line.split()
+        for s in ln:
+            # Look for lines containing the given part designator
+            if (ln[0] != s) and (PART_DESIGNATOR in s) and not(ln[0] in IGNORED_NETNAMES) and not(re.match("Net", ln[0])):
+                # print "%s %s %s" % (s, ln[0], ln[ln.index(s)+1])
+                ucf.write("NET \""+ln[0].lower()+"\" IOSTANDARD = \""+ IOSTANDARD +"\";\n")
 
 net.close()
 ucf.close()
