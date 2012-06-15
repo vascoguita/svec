@@ -157,6 +157,13 @@ NET "pcbrev_i[0]" LOC = AD20;
 #----------------------------------------
 # SFP slot
 #----------------------------------------
+NET "sfprx_123_n_i" LOC = C22;
+NET "sfprx_123_p_i" LOC = D22;
+NET "sfptx_123_n_o" LOC = A23;
+NET "sfptx_123_p_o" LOC = B23;
+NET "gtp_ck1_p_i" LOC = B19;
+NET "gtp_ck1_n_i" LOC = A19;
+
 NET "wr_los_i" LOC = W25;
 NET "wr_moddef0_i" LOC = Y26;
 NET "wr_moddef1_o" LOC = Y27;
@@ -164,6 +171,30 @@ NET "wr_moddef2_b" LOC = AA24;
 NET "wr_rateselect_o" LOC = W24;
 NET "wr_txdisable_o" LOC = AA25;
 NET "wr_txfault_i" LOC = AA27;
+
+#----------------------------------------
+# SATA connectors
+#----------------------------------------
+NET "sata1_tx_p_o" LOC = AJ9;
+NET "sata1_tx_n_o" LOC = AK9;
+NET "sata1_rx_p_i" LOC = AG10;
+NET "sata1_rx_n_i" LOC = AH10;
+NET "sata0_tx_p_o" LOC = AJ11;
+NET "sata0_tx_n_o" LOC = AK11;
+NET "sata0_rx_p_i" LOC = AG12;
+NET "sata0_rx_n_i" LOC = AH12;
+NET "gtp_ck0_p_i" LOC = AJ13;
+NET "gtp_ck0_n_i" LOC = AK13;
+
+#----------------------------------------
+# PCIe interface (optional)
+#----------------------------------------
+NET "pcie_tx1_p_o" LOC = B11;
+NET "pcie_tx1_n_o" LOC = A11;
+NET "pcie_rx1_p_i" LOC = D12;
+NET "pcie_rx1_n_i" LOC = C12;
+NET "pcie_master_clk_p_i" LOC = D14;
+NET "pcie_master_clk_n_i" LOC = C14;
 
 #----------------------------------------
 # Clock controls
@@ -357,6 +388,13 @@ NET "ddr_2_a_o[0]" LOC = D28;
 #----------------------------------------
 # FMC slot 1
 #----------------------------------------
+NET "fmc1_gbtclk0m2c_p_i" LOC = B13;
+NET "fmc1_gbtclk0m2c_n_i" LOC = A13;
+NET "fmc1_dp0m2c_p_i" LOC = D10;
+NET "fmc1_dp0m2c_n_i" LOC = C10;
+NET "fmc1_dp0c2m_p_o" LOC = B9;
+NET "fmc1_dp0c2m_n_o" LOC = A9;
+
 NET "fmc1_pg_c2m_o" LOC = N29;
 NET "fmc1_prsntm2c_n_i" LOC = N30;
 NET "fmc1_scl_o" LOC = P28;
@@ -441,6 +479,13 @@ NET "fmc1_la_n_b[0]" LOC = A16;
 #----------------------------------------
 # FMC slot 2
 #----------------------------------------
+NET "fmc2_gbtclk0m2c_p_i" LOC = AG18;
+NET "fmc2_gbtclk0m2c_n_i" LOC = AH18;
+NET "fmc2_dp0m2c_p_i" LOC = AG20;
+NET "fmc2_dp0m2c_n_i" LOC = AH20;
+NET "fmc2_dp0c2m_p_o" LOC = AJ21;
+NET "fmc2_dp0c2m_n_o" LOC = AK21;
+
 NET "fmc2_pg_c2m_o" LOC = AD30;
 NET "fmc2_prsntm2c_n_i" LOC = AE29;
 NET "fmc2_scl_o" LOC = W29;

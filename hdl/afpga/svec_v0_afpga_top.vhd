@@ -114,6 +114,13 @@ entity svec_v0_afpga_top is
       ------------------------------------------
       -- SFP slot
       ------------------------------------------
+      sfprx_123_n_i : in  std_logic;
+      sfprx_123_p_i : in  std_logic;
+      sfptx_123_n_o : out std_logic;
+      sfptx_123_p_o : out std_logic;
+      gtp_ck1_p_i   : in  std_logic;
+      gtp_ck1_n_i   : in  std_logic;
+
       wr_los_i        : in    std_logic;
       wr_moddef0_i    : in    std_logic;
       wr_moddef1_o    : out   std_logic;
@@ -121,6 +128,30 @@ entity svec_v0_afpga_top is
       wr_rateselect_o : out   std_logic;
       wr_txdisable_o  : out   std_logic;
       wr_txfault_i    : in    std_logic;
+
+      ------------------------------------------
+      -- SATA connectors
+      ------------------------------------------
+      sata1_tx_p_o : out std_logic;
+      sata1_tx_n_o : out std_logic;
+      sata1_rx_p_i : in  std_logic;
+      sata1_rx_n_i : in  std_logic;
+      sata0_tx_p_o : out std_logic;
+      sata0_tx_n_o : out std_logic;
+      sata0_rx_p_i : in  std_logic;
+      sata0_rx_n_i : in  std_logic;
+      gtp_ck0_p_i  : in  std_logic;
+      gtp_ck0_n_i  : in  std_logic;
+
+      ------------------------------------------
+      -- PCIe interface (optional)
+      ------------------------------------------
+      pcie_tx1_p_o        : out std_logic;
+      pcie_tx1_n_o        : out std_logic;
+      pcie_rx1_p_i        : in  std_logic;
+      pcie_rx1_n_i        : in  std_logic;
+      pcie_master_clk_p_i : in  std_logic;
+      pcie_master_clk_n_i : in  std_logic;
 
       ------------------------------------------
       -- Clock controls
@@ -207,6 +238,13 @@ entity svec_v0_afpga_top is
       ------------------------------------------
       -- FMC slot 1
       ------------------------------------------
+      fmc1_gbtclk0m2c_p_i : in  std_logic;
+      fmc1_gbtclk0m2c_n_i : in  std_logic;
+      fmc1_dp0m2c_p_i     : in  std_logic;
+      fmc1_dp0m2c_n_i     : in  std_logic;
+      fmc1_dp0c2m_p_o     : out std_logic;
+      fmc1_dp0c2m_n_o     : out std_logic;
+
       fmc1_pg_c2m_o     : out   std_logic;
       fmc1_prsntm2c_n_i : in    std_logic;
       fmc1_scl_o        : out   std_logic;
@@ -225,6 +263,13 @@ entity svec_v0_afpga_top is
       ------------------------------------------
       -- FMC slot 2
       ------------------------------------------
+      fmc2_gbtclk0m2c_p_i : in  std_logic;
+      fmc2_gbtclk0m2c_n_i : in  std_logic;
+      fmc2_dp0m2c_p_i     : in  std_logic;
+      fmc2_dp0m2c_n_i     : in  std_logic;
+      fmc2_dp0c2m_p_o     : out std_logic;
+      fmc2_dp0c2m_n_o     : out std_logic;
+
       fmc2_pg_c2m_o     : out   std_logic;
       fmc2_prsntm2c_n_i : in    std_logic;
       fmc2_scl_o        : out   std_logic;
