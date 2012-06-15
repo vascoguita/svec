@@ -62,7 +62,7 @@ entity svec_v0_afpga_top is
       vme_lword_n_b    : inout std_logic;
       vme_iackout_n_o  : out   std_logic;
       vme_iackin_n_i   : in    std_logic;
-      vme_iack_n_o     : out   std_logic;
+      vme_iack_n_1     : in    std_logic;
       vme_gap_i        : in    std_logic;
       vme_dtack_oe_o   : out   std_logic;
       vme_dtack_n_o    : out   std_logic;
