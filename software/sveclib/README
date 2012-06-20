@@ -1,0 +1,24 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!                 WARNING                  !!!!!!!!
+!!!!!!!!           DEVELOPER USE ONLY             !!!!!!!!
+!!!!!!!! DO NOT DEPLOY IN PRODUCTION ENVIRONMENTS !!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+sveclib - a tiny userspace library (and a set of tools) allowing developers to play with the svec.
+
+The library provides:
+- raw I/O to a spec in particular slot (uses geographical addressing). Currently, there's 
+  a fixed A32/D32/SINGLE mapping available and the memory can be accesed by calling 
+  svec_writel()/svec_readl()
+- application FPGA firmware loader (svec-fwloader)
+- LM32 CPU firmware loader (svec-cl)
+- WR Core virtual UART console (svec-vuart)
+
+All these tools require the slot location to be specified with -b command line switch.
+
+Requirements: Requires vmebus driver to be installed (tested on MEN A20). 
+
+Compilation: just run make.
+
+
+	
