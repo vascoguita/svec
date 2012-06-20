@@ -5,7 +5,6 @@ use IEEE.NUMERIC_STD.all;
 
 use work.gencores_pkg.all;
 use work.wishbone_pkg.all;
-use work.svl_wbgen2_pkg.all;
 
 library UNISIM;
 use UNISIM.vcomponents.all;

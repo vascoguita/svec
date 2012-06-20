@@ -1,7 +1,7 @@
 *~
 *#
 fifo_generator_v6_1
-testbench/svec_sfpga_top/sample_bitstream/
+testbench/sfpga_bootloader/sample_bitstream/
 *.*\#
 \#*
 .\#*

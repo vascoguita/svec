@@ -9,4 +9,4 @@ syn_package = "ftg256"
 syn_top = "svec_sfpga_top"
 syn_project = "svec_sfpga.xise"
 
-modules = { "local" : [ "../../top/svec_sfpga", "../../platform" ] }
+modules = { "local" : [ "../../top/sfpga_bootloader", "../../platform" ] }
