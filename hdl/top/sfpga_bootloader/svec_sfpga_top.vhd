@@ -97,7 +97,8 @@ architecture rtl of svec_sfpga_top is
   component xwb_xilinx_fpga_loader
     generic (
       g_interface_mode      : t_wishbone_interface_mode;
-      g_address_granularity : t_wishbone_address_granularity);
+      g_address_granularity : t_wishbone_address_granularity;
+      g_idr_value           : std_logic_vector(31 downto 0));
     port (
       clk_sys_i       : in  std_logic;
       rst_n_i         : in  std_logic;
@@ -125,7 +126,7 @@ architecture rtl of svec_sfpga_top is
   signal wb_vme_in  : t_wishbone_master_out;
   signal wb_vme_out : t_wishbone_master_in;
 
-  signal passive : std_logic := '0';
+  signal passive : std_logic := '1';
   signal gpio    : std_logic_vector(7 downto 0);
 
 
@@ -156,10 +157,10 @@ architecture rtl of svec_sfpga_top is
   signal TRIG2   : std_logic_vector(31 downto 0);
   signal TRIG3   : std_logic_vector(31 downto 0);
 
-  signal boot_config_int : std_logic;
-  signal erase_afpga_n, erase_afpga_n_d0     : std_logic;
-  
-  signal pllout_clk_fb_sys, pllout_clk_sys,clk_sys : std_logic;
+  signal boot_config_int                 : std_logic;
+  signal erase_afpga_n, erase_afpga_n_d0 : std_logic;
+
+  signal pllout_clk_fb_sys, pllout_clk_sys, clk_sys : std_logic;
   
 begin
 
@@ -231,7 +232,7 @@ begin
   trig2(23)          <= rst_n_i;
   trig2(24)          <= '1';
   trig2(25)          <= VME_RST_n_i;
-  trig2(26) <= passive;
+  trig2(26)          <= passive;
 
 
   U_MiniVME : xmini_vme
@@ -262,7 +263,8 @@ begin
   U_Xilinx_Loader : xwb_xilinx_fpga_loader
     generic map (
       g_interface_mode      => PIPELINED,
-      g_address_granularity => BYTE)
+      g_address_granularity => BYTE,
+      g_idr_value           => x"53564543")
     port map (
       clk_sys_i       => clk_sys,
       rst_n_i         => rst_n_i,
@@ -290,13 +292,13 @@ begin
       extended_o => erase_afpga_n);
 
   boot_config_o <= boot_config_int and (not erase_afpga_n);
-  
+
   p_enable_disable_bootloader : process(clk_sys)
   begin
     if rising_edge(clk_sys) then
 
       erase_afpga_n_d0 <= erase_afpga_n;
-      
+
       if(erase_afpga_n = '0' and erase_afpga_n_d0 = '1') then
         boot_en <= '1';
       elsif(boot_exit_p1 = '1') then
@@ -307,7 +309,7 @@ begin
 
   passive <= not boot_en;
 
-  
+
   VME_ADDR_b <= (others => 'Z');
 
   VME_DTACK_n_o   <= VME_DTACK_n_int   when passive = '0'                                                          else 'Z';
