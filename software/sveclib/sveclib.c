@@ -32,37 +32,35 @@ struct svec_private {
 
 void *svec_open(int slot)
 {
-	struct svec_private *card = malloc(sizeof(struct svec_private));
+    struct svec_private *card = malloc(sizeof(struct svec_private));
 
-	if(!card)
-		return NULL;
+    if(!card)
+	return NULL;
 
     struct vme_mapping *mapping = &card->mapping;
 
-	card->slot = slot;
+    card->slot = slot;
 	
-	mapping->am                     =  0x9;  
-        mapping->data_width             =  VME_D32;
-        mapping->vme_addru              =  0;                                                                                                                                
-        mapping->vme_addrl              =  (slot*2) * 0x80000;
-        mapping->sizeu                  =  0;
-        mapping->sizel                  =  0x80000;                                                                                                                           
-        mapping->read_prefetch_enabled  =  0;                                                                                                                                
-        mapping->bcast_select           =  0;                                                                                                                                
-        mapping->window_num             =  0;
+    mapping->am                     =  0x9;  
+    mapping->data_width             =  VME_D32;
+    mapping->vme_addru              =  0;                                                                                                                                
+    mapping->vme_addrl              =  (slot*2) * 0x80000;
+    mapping->sizeu                  =  0;
+    mapping->sizel                  =  0x80000;                                                                                                                           
+    mapping->read_prefetch_enabled  =  0;                                                                                                                                
+    mapping->bcast_select           =  0;                                                                                                                                
+    mapping->window_num             =  0;
 
-
-        card->base = vme_map(mapping, 0);
+    card->base = vme_map(mapping, 0);
 	
+    if(!card->base)
+    {
+        fprintf(stderr, "mapping base I/O space failed\n");
+ //		free(card);
+ //		return NULL;
+    }   
 	
-	if(!card->base)
-	{
-	    fprintf(stderr, "mapping base I/O space failed\n");
-	 //		free(card);
-	 //		return NULL;
-	}   
-	
-	return card;
+    return card;
 }
 
 void svec_close(void *card)
@@ -195,6 +193,8 @@ int svec_load_bitstream(void *card, const char *filename)
     struct svec_private *p = (struct svec_private *) card;
     int i = 0;
     const uint32_t boot_seq[8] = {0xde, 0xad, 0xbe, 0xef, 0xca, 0xfe, 0xba, 0xbe};
+    const char svec_idr[4] = "SVEC";
+    char idr[5];
     uint32_t *buf;
     size_t size;
     void *csr;
@@ -205,23 +205,46 @@ int svec_load_bitstream(void *card, const char *filename)
     if(!buf)
 	return -1;
 
-	mapping.am                     =  0x2f;   /* CS/CSR space */
-        mapping.data_width             =  VME_D32;
-        mapping.vme_addru              =  0;                                                                                                                                
-        mapping.vme_addrl              =  p->slot * 0x80000;
-        mapping.sizeu                  =  0;
-        mapping.sizel                  =  0x80000;                                                                                                                           
-        mapping.read_prefetch_enabled  =  0;                                                                                                                                
-        mapping.bcast_select           =  0;                                                                                                                                
-        mapping.window_num             =  0;
+    mapping.am                     =  0x2f;   /* CS/CSR space */
+    mapping.data_width             =  VME_D32;
+    mapping.vme_addru              =  0;                                                                                                                                
+    mapping.vme_addrl              =  p->slot * 0x80000;
+    mapping.sizeu                  =  0;
+    mapping.sizel                  =  0x80000;                                                                                                                           
+    mapping.read_prefetch_enabled  =  0;                                                                                                                                
+    mapping.bcast_select           =  0;                                                                                                                                
+    mapping.window_num             =  0;
 
+    csr = vme_map(&mapping, 0);
 
-        csr = vme_map(&mapping, 0);
-
-                    
+    if(!csr)
+    {
+	fprintf(stderr,"Mapping CSR space failed.\n");
+	return -1;
+	free(buf);
+    }             
+           
 /* magic sequence: unlock bootloader mode, disable application FPGA */  
     for(i=0;i<8;i++)
 	csr_writel(csr, boot_seq[i], BASE_LOADER + XLDR_REG_BTRIGR);
+
+/* check if we are really talking to a SVEC */
+    uint32_t idc = csr_readl(csr, BASE_LOADER + XLDR_REG_IDR);
+    
+    idr[0] = (idc >> 24) & 0xff;
+    idr[1] = (idc >> 16) & 0xff;
+    idr[2] = (idc >> 8) & 0xff;
+    idr[3] = (idc >> 0) & 0xff;
+    idr[4] = 0;
+    
+    printf("IDCode: '%s'\n", idr);
+
+    if(strncmp(idr, svec_idr, 4))
+    {
+	fprintf(stderr,"Invalid IDCode value. \n");
+	free(buf);
+	return -1;
+    }
 	
     csr_writel(csr, XLDR_CSR_SWRST, BASE_LOADER + XLDR_REG_CSR);
     csr_writel(csr, XLDR_CSR_START | XLDR_CSR_MSBF, BASE_LOADER + XLDR_REG_CSR);
@@ -230,29 +253,25 @@ int svec_load_bitstream(void *card, const char *filename)
 	if(! (csr_readl(csr, BASE_LOADER + XLDR_REG_FIFO_CSR) & XLDR_FIFO_CSR_FULL)) {
 	    int n = (size-i>4?4:size-i);
 	    csr_writel(csr, (n - 1) | ((n<4) ? XLDR_FIFO_R0_XLAST : 0), BASE_LOADER + XLDR_REG_FIFO_R0);
-            csr_writel(csr, htonl(buf[i>>2]), BASE_LOADER + XLDR_REG_FIFO_R1);
-	
+	    csr_writel(csr, htonl(buf[i>>2]), BASE_LOADER + XLDR_REG_FIFO_R1);
 	    i+=n;
 	}
-	
-	
     }
 	
     free(buf);
 
     while(1) 
     {
-			uint32_t rval = csr_readl(csr, BASE_LOADER + XLDR_REG_CSR);
-      if(rval & XLDR_CSR_DONE) {
-        printf("Bitstream loaded, status: %s\n", (rval & XLDR_CSR_ERROR ? "ERROR" : "OK"));
-    /* give the VME bus control to App FPGA */
-        csr_writel(csr, XLDR_CSR_EXIT, BASE_LOADER + XLDR_REG_CSR);
-    		vme_unmap(&mapping, 0);
-        return rval & XLDR_CSR_ERROR ? -1 : 0;
-		}
-  }
+	uint32_t rval = csr_readl(csr, BASE_LOADER + XLDR_REG_CSR);
+	if(rval & XLDR_CSR_DONE) {
+    	    printf("Bitstream loaded, status: %s\n", (rval & XLDR_CSR_ERROR ? "ERROR" : "OK"));
+/* give the VME bus control to App FPGA */
+            csr_writel(csr, XLDR_CSR_EXIT, BASE_LOADER + XLDR_REG_CSR);
+	    vme_unmap(&mapping, 0);
+            return rval & XLDR_CSR_ERROR ? -1 : 0;
+	}
+    }
     
-
     return -1;
 };
 
