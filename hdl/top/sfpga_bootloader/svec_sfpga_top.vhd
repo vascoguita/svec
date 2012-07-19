@@ -30,7 +30,6 @@ entity svec_sfpga_top is
       VME_AM_i      : in    std_logic_vector(5 downto 0);
       VME_DS_n_i    : in    std_logic_vector(1 downto 0);
       VME_GA_i      : in    std_logic_vector(5 downto 0);
-      VME_BERR_o    : inout std_logic := 'Z';
       VME_DTACK_n_o : inout std_logic;
       VME_LWORD_n_b : inout std_logic;
       VME_ADDR_b    : inout std_logic_vector(31 downto 1);
@@ -44,14 +43,8 @@ entity svec_sfpga_top is
 
       VME_ADDR_DIR_o  : inout std_logic                    := 'Z';
       VME_ADDR_OE_N_o : inout std_logic                    := 'Z';
-      VME_RETRY_n_o   : out   std_logic                    := 'Z';
-      VME_RETRY_OE_o  : out   std_logic                    := 'Z';
       VME_BBSY_n_i    : in    std_logic;
-      VME_IRQ_n_o     : out   std_logic_vector(6 downto 0) := "ZZZZZZZ";
-      VME_IACK_n_i    : in    std_logic;
-      VME_IACKIN_n_i  : in    std_logic;
-      VME_IACKOUT_n_o : out   std_logic                    := 'Z';
-
+  
       -------------------------------------------------------------------------
       -- AFPGA boot signals
       -------------------------------------------------------------------------
@@ -319,7 +312,6 @@ begin
   VME_DATA_b      <= VME_DATA_o_int    when (passive = '0' and VME_DATA_OE_N_int = '0' and vme_data_dir_int = '1') else (others => 'Z');
   VME_ADDR_OE_N_o <= '0'               when passive = '0'                                                          else 'Z';
   VME_ADDR_DIR_o  <= '0'               when passive = '0'                                                          else 'Z';
-  VME_BERR_o      <= 'Z';
   VME_LWORD_n_b   <= 'Z';
 
   debugled_o(1) <= gpio(0);
