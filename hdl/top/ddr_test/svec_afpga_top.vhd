@@ -464,12 +464,14 @@ architecture rtl of svec_afpga_top is
   ------------------------------------------------------------------------------
   -- Constants declaration
   ------------------------------------------------------------------------------
-  constant c_WB_SLAVES_NB : integer := 4;
+  constant c_WB_SLAVES_NB : integer := 6;
 
-  constant c_WB_CSR       : integer := 0;
-  constant c_ONEWIRE      : integer := 1;
-  constant c_WB_DDR_BANK4 : integer := 2;
-  constant c_WB_DDR_BANK5 : integer := 3;
+  constant c_WB_CSR            : integer := 0;
+  constant c_ONEWIRE           : integer := 1;
+  constant c_WB_DDR_BANK4_ADDR : integer := 2;
+  constant c_WB_DDR_BANK4_DATA : integer := 3;
+  constant c_WB_DDR_BANK5_ADDR : integer := 4;
+  constant c_WB_DDR_BANK5_DATA : integer := 5;
 
   constant c_ONEWIRE_NB : integer := 1;
 
@@ -558,18 +560,8 @@ architecture rtl of svec_afpga_top is
   signal fp_led_n      : std_logic_vector(7 downto 0);
 
   -- DDR access FIFOs
-  signal ddr_bank4_start_addr    : std_logic_vector(31 downto 0);
-  signal ddr_bank4_addr_cnt      : std_logic_vector(31 downto 0);
-  signal ddr_bank4_start_addr_wr : std_logic;
-  signal ddr_bank4_data_o        : std_logic_vector(31 downto 0);
-  signal ddr_bank4_data_i        : std_logic_vector(31 downto 0);
-  signal ddr_bank4_data_load     : std_logic;
-  signal ddr_bank5_start_addr    : std_logic_vector(31 downto 0);
-  signal ddr_bank5_addr_cnt      : std_logic_vector(31 downto 0);
-  signal ddr_bank5_start_addr_wr : std_logic;
-  signal ddr_bank5_data_o        : std_logic_vector(31 downto 0);
-  signal ddr_bank5_data_i        : std_logic_vector(31 downto 0);
-  signal ddr_bank5_data_load     : std_logic;
+  signal ddr_bank4_addr_cnt : unsigned(31 downto 0);
+  signal ddr_bank5_addr_cnt : unsigned(31 downto 0);
 
   -- FOR TEST
   --signal ram_we : std_logic;
@@ -745,9 +737,13 @@ begin
   ------------------------------------------------------------------------------
   -- Wishbone address decoder
   --     0x000 -> CSR
-  --     0x400 -> 1-wire master
-  --     0x800 -> DDR3 bank 4
-  --     0xC00 -> DDR3 bank 5
+  --     0x200 -> 1-wire master
+  --     0x400 -> DDR3 bank 4 address register
+  --     0x600 -> DDR3 bank 4 data register
+  --     0x800 -> DDR3 bank 5 address register
+  --     0xA00 -> DDR3 bank 5 data register
+  --     0xC00 -> Unused
+  --     0xE00 -> Unused
   ------------------------------------------------------------------------------
   cmp_csr_wb_addr_decoder : wb_addr_decoder
     generic map (
@@ -898,6 +894,46 @@ begin
   --    q_o     => wb_dat_i(c_WB_DDR_BANK4 * 32 + 31 downto c_WB_DDR_BANK4 * 32)
   --    );
 
+  -- DDR bank4 FIFO access
+  --
+  -- Offset -> Description
+  -- 0x0    -> Start address
+  -- 0x1    -> Data
+
+  -- address counter
+  p_ddr_bank4_addr_cnt : process (sys_clk)
+  begin
+    if rising_edge(sys_clk) then
+      if (sys_rst_n = '0') then
+        ddr_bank4_addr_cnt <= (others => '0');
+      elsif (wb_we = '1' and wb_stb = '1' and wb_cyc(c_WB_DDR_BANK4_ADDR) = '1') then
+        ddr_bank4_addr_cnt <= unsigned(wb_dat_o);
+      elsif (wb_stb = '1' and wb_cyc(c_WB_DDR_BANK4_DATA) = '1') then
+        ddr_bank4_addr_cnt <= ddr_bank4_addr_cnt + 1;
+      end if;
+    end if;
+  end process p_ddr_bank4_addr_cnt;
+
+  -- WB ack generation
+  p_ddr_bank4_addr_ack : process (sys_clk)
+  begin
+    if rising_edge(sys_clk) then
+      if (sys_rst_n = '0') then
+        wb_ack(c_WB_DDR_BANK4_ADDR) <= '0';
+      elsif (wb_cyc(c_WB_DDR_BANK4_ADDR) = '1' and wb_stb = '1') then
+        wb_ack(c_WB_DDR_BANK4_ADDR) <= '1';
+      else
+        wb_ack(c_WB_DDR_BANK4_ADDR) <= '0';
+      end if;
+    end if;
+  end process p_ddr_bank4_addr_ack;
+
+  -- address counter read back
+  wb_dat_i(c_WB_DDR_BANK4_ADDR * 32 + 31 downto c_WB_DDR_BANK4_ADDR * 32) <= std_logic_vector(ddr_bank4_addr_cnt);
+
+  -- Unused stall line
+  wb_stall(c_WB_DDR_BANK4_ADDR) <= '0';
+
 
   cmp_ddr_ctrl_bank4 : ddr3_ctrl
     generic map(
@@ -939,14 +975,14 @@ begin
 
       wb0_clk_i   => sys_clk,
       wb0_sel_i   => wb_sel,
-      wb0_cyc_i   => wb_cyc(c_WB_DDR_BANK4),
+      wb0_cyc_i   => wb_cyc(c_WB_DDR_BANK4_DATA),
       wb0_stb_i   => wb_stb,
       wb0_we_i    => wb_we,
-      wb0_addr_i  => wb_adr,
+      wb0_addr_i  => std_logic_vector(ddr_bank4_addr_cnt),
       wb0_data_i  => wb_dat_o,
-      wb0_data_o  => wb_dat_i(c_WB_DDR_BANK4 * 32 + 31 downto c_WB_DDR_BANK4 * 32),
-      wb0_ack_o   => wb_ack(c_WB_DDR_BANK4),
-      wb0_stall_o => wb_stall(c_WB_DDR_BANK4),
+      wb0_data_o  => wb_dat_i(c_WB_DDR_BANK4_DATA * 32 + 31 downto c_WB_DDR_BANK4_DATA * 32),
+      wb0_ack_o   => wb_ack(c_WB_DDR_BANK4_DATA),
+      wb0_stall_o => wb_stall(c_WB_DDR_BANK4_DATA),
 
       p0_cmd_empty_o   => open,
       p0_cmd_full_o    => open,
@@ -990,6 +1026,41 @@ begin
   ------------------------------------------------------------------------------
   -- DDR3 controller bank5
   ------------------------------------------------------------------------------
+
+  -- address counter
+  p_ddr_bank5_addr_cnt : process (sys_clk)
+  begin
+    if rising_edge(sys_clk) then
+      if (sys_rst_n = '0') then
+        ddr_bank5_addr_cnt <= (others => '0');
+      elsif (wb_we = '1' and wb_stb = '1' and wb_cyc(c_WB_DDR_BANK5_ADDR) = '1') then
+        ddr_bank5_addr_cnt <= unsigned(wb_dat_o);
+      elsif (wb_stb = '1' and wb_cyc(c_WB_DDR_BANK5_DATA) = '1') then
+        ddr_bank5_addr_cnt <= ddr_bank5_addr_cnt + 1;
+      end if;
+    end if;
+  end process p_ddr_bank5_addr_cnt;
+
+  -- WB ack generation
+  p_ddr_bank5_addr_ack : process (sys_clk)
+  begin
+    if rising_edge(sys_clk) then
+      if (sys_rst_n = '0') then
+        wb_ack(c_WB_DDR_BANK5_ADDR) <= '0';
+      elsif (wb_cyc(c_WB_DDR_BANK5_ADDR) = '1' and wb_stb = '1') then
+        wb_ack(c_WB_DDR_BANK5_ADDR) <= '1';
+      else
+        wb_ack(c_WB_DDR_BANK5_ADDR) <= '0';
+      end if;
+    end if;
+  end process p_ddr_bank5_addr_ack;
+
+  -- address counter read back
+  wb_dat_i(c_WB_DDR_BANK5_ADDR * 32 + 31 downto c_WB_DDR_BANK5_ADDR * 32) <= std_logic_vector(ddr_bank5_addr_cnt);
+
+  -- Unused stall line
+  wb_stall(c_WB_DDR_BANK5_ADDR) <= '0';
+
   cmp_ddr_ctrl_bank5 : ddr3_ctrl
     generic map(
       g_BANK_PORT_SELECT   => "SVEC_BANK5_32B_32B",
@@ -1030,14 +1101,14 @@ begin
 
       wb0_clk_i   => sys_clk,
       wb0_sel_i   => wb_sel,
-      wb0_cyc_i   => wb_cyc(c_WB_DDR_BANK5),
+      wb0_cyc_i   => wb_cyc(c_WB_DDR_BANK5_DATA),
       wb0_stb_i   => wb_stb,
       wb0_we_i    => wb_we,
-      wb0_addr_i  => wb_adr,
+      wb0_addr_i  => std_logic_vector(ddr_bank5_addr_cnt),
       wb0_data_i  => wb_dat_o,
-      wb0_data_o  => wb_dat_i(c_WB_DDR_BANK5 * 32 + 31 downto c_WB_DDR_BANK5 * 32),
-      wb0_ack_o   => wb_ack(c_WB_DDR_BANK5),
-      wb0_stall_o => wb_stall(c_WB_DDR_BANK5),
+      wb0_data_o  => wb_dat_i(c_WB_DDR_BANK5_DATA * 32 + 31 downto c_WB_DDR_BANK5_DATA * 32),
+      wb0_ack_o   => wb_ack(c_WB_DDR_BANK5_DATA),
+      wb0_stall_o => wb_stall(c_WB_DDR_BANK5_DATA),
 
       p0_cmd_empty_o   => open,
       p0_cmd_full_o    => open,

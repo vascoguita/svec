@@ -34,7 +34,30 @@ add wave -noupdate -radix hexadecimal /vme64x_ddr_tb/uut/wb_dat_i
 add wave -noupdate /vme64x_ddr_tb/uut/wb_cyc
 add wave -noupdate -radix hexadecimal /vme64x_ddr_tb/uut/wb_adr
 add wave -noupdate /vme64x_ddr_tb/uut/wb_ack
-add wave -noupdate -divider DDR
+add wave -noupdate -divider {DDR bank4}
+add wave -noupdate /vme64x_ddr_tb/uut/sys_clk
+add wave -noupdate -radix hexadecimal /vme64x_ddr_tb/uut/ddr_bank4_addr_cnt
+add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/wb_we_i
+add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/wb_we_f_edge
+add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/wb_we_d
+add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/wb_stb_i
+add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/wb_stb_f_edge
+add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/wb_stb_d
+add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/wb_cyc_r_edge
+add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/wb_cyc_i
+add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/wb_cyc_f_edge
+add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/wb_cyc_d
+add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/ddr_wr_en
+add wave -noupdate -radix hexadecimal /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/ddr_wr_data
+add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/ddr_rd_en
+add wave -noupdate -radix hexadecimal /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/ddr_rd_data_i
+add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/ddr_cmd_instr
+add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/ddr_cmd_en
+add wave -noupdate -radix hexadecimal /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/ddr_cmd_byte_addr
+add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/ddr_cmd_bl
+add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank4/cmp_ddr3_ctrl_wb_0/ddr_burst_cnt
+add wave -noupdate -divider {DDR bank5}
+add wave -noupdate /vme64x_ddr_tb/uut/ddr_bank5_addr_cnt
 add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank5/cmp_ddr3_ctrl_wb_0/wb_we_i
 add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank5/cmp_ddr3_ctrl_wb_0/wb_we_f_edge
 add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank5/cmp_ddr3_ctrl_wb_0/wb_we_d
@@ -56,8 +79,8 @@ add wave -noupdate -radix hexadecimal /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank5/cmp_
 add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank5/cmp_ddr3_ctrl_wb_0/ddr_cmd_bl
 add wave -noupdate /vme64x_ddr_tb/uut/cmp_ddr_ctrl_bank5/cmp_ddr3_ctrl_wb_0/ddr_burst_cnt
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {17089000 ps} 0}
-configure wave -namecolwidth 520
+WaveRestoreCursors {{Cursor 1} {17413525 ps} 0}
+configure wave -namecolwidth 505
 configure wave -valuecolwidth 203
 configure wave -justifyvalue left
 configure wave -signalnamewidth 0
@@ -71,4 +94,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ps
 update
-WaveRestoreZoom {16585011 ps} {17481412 ps}
+WaveRestoreZoom {17207022 ps} {17844969 ps}

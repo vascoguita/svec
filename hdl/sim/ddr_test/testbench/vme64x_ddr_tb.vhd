@@ -663,65 +663,66 @@ begin
     ------------------------------------------------------------------------------
     report "START WRITE AND READ WB REG/MEMORY";
 
-    -- Write RAM address 0x0
+    -- Write DDR bank4 address
     s_dataTransferType <= D32;
     s_AddressingType <= A32;
-    s_dataToSend <= x"AAAA1234";
-    s_address    <= x"0000000000002000";
+    s_dataToSend <= x"00000001";
+    s_address    <= x"0000000000001000";
     S_Write(v_address        => s_address , s_dataToSend => s_dataToSend, s_dataTransferType => s_dataTransferType,
             s_AddressingType => s_AddressingType, VME64xBus_In => VME64xBus_In,
             VME64xBus_Out    => VME64xBus_Out);
     wait for 100 ns;
 
-    -- Write DDR bank5 address 0x0
+    -- Read DDR bank4 address
+    s_dataTransferType <= D32;
+    s_AddressingType   <= A32;
+    s_address          <= x"0000000000001000";
+    s_dataToReceive    <= x"00000001";
+    S_Read(v_address        => s_address, s_dataToReceive => s_dataToReceive, s_dataTransferType => s_dataTransferType,
+           s_AddressingType => s_AddressingType, VME64xBus_In => VME64xBus_In,
+           VME64xBus_Out    => VME64xBus_Out);
+    wait for 100 ns;
+
+    -- Write DDR bank4 data
     s_dataTransferType <= D32;
     s_AddressingType <= A32;
-    s_dataToSend <= x"55559876";
-    s_address    <= x"0000000000003000";
+    s_dataToSend <= x"44444444";
+    s_address    <= x"0000000000001800";
     S_Write(v_address        => s_address , s_dataToSend => s_dataToSend, s_dataTransferType => s_dataTransferType,
             s_AddressingType => s_AddressingType, VME64xBus_In => VME64xBus_In,
             VME64xBus_Out    => VME64xBus_Out);
     wait for 100 ns;
 
-    -- Read RAM address 0x0
+    -- Write DDR bank4 address
+    s_dataTransferType <= D32;
+    s_AddressingType <= A32;
+    s_dataToSend <= x"00000001";
+    s_address    <= x"0000000000001000";
+    S_Write(v_address        => s_address , s_dataToSend => s_dataToSend, s_dataTransferType => s_dataTransferType,
+            s_AddressingType => s_AddressingType, VME64xBus_In => VME64xBus_In,
+            VME64xBus_Out    => VME64xBus_Out);
+    wait for 100 ns;
+
+    -- Read DDR bank4 address
     s_dataTransferType <= D32;
     s_AddressingType   <= A32;
-    s_address          <= x"0000000000002000";
-    s_dataToReceive    <= x"AAAA1234";
+    s_address          <= x"0000000000001000";
+    s_dataToReceive    <= x"00000001";
     S_Read(v_address        => s_address, s_dataToReceive => s_dataToReceive, s_dataTransferType => s_dataTransferType,
            s_AddressingType => s_AddressingType, VME64xBus_In => VME64xBus_In,
            VME64xBus_Out    => VME64xBus_Out);
     wait for 100 ns;
 
-    -- Read DDR bank5 address 0x0
+    -- Read DDR bank4 data
     s_dataTransferType <= D32;
     s_AddressingType   <= A32;
-    s_address          <= x"0000000000003000";
-    s_dataToReceive    <= x"55559876";
+    s_address          <= x"0000000000001800";
+    s_dataToReceive    <= x"44444444";
     S_Read(v_address        => s_address, s_dataToReceive => s_dataToReceive, s_dataTransferType => s_dataTransferType,
            s_AddressingType => s_AddressingType, VME64xBus_In => VME64xBus_In,
            VME64xBus_Out    => VME64xBus_Out);
     wait for 100 ns;
 
-    -- Read DDR bank5 address 0x0
-    s_dataTransferType <= D32;
-    s_AddressingType   <= A32;
-    s_address          <= x"0000000000003000";
-    s_dataToReceive    <= x"55559876";
-    S_Read(v_address        => s_address, s_dataToReceive => s_dataToReceive, s_dataTransferType => s_dataTransferType,
-           s_AddressingType => s_AddressingType, VME64xBus_In => VME64xBus_In,
-           VME64xBus_Out    => VME64xBus_Out);
-    wait for 100 ns;
-
-    -- Read DDR bank5 address 0x0
-    s_dataTransferType <= D32;
-    s_AddressingType   <= A32;
-    s_address          <= x"0000000000003000";
-    s_dataToReceive    <= x"55559876";
-    S_Read(v_address        => s_address, s_dataToReceive => s_dataToReceive, s_dataTransferType => s_dataTransferType,
-           s_AddressingType => s_AddressingType, VME64xBus_In => VME64xBus_In,
-           VME64xBus_Out    => VME64xBus_Out);
-    wait for 100 ns;
     assert false report "Got here!" severity failure;
 
     wait;
