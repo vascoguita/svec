@@ -55,7 +55,10 @@ entity svec_sfpga_top is
       boot_dout_o   : out std_logic;
       boot_status_i : in  std_logic;
 
-      debugled_o : out std_logic_vector(2 downto 1)
+      debugled_o : out std_logic_vector(2 downto 1);
+
+      pll_ce_o: out std_logic
+      
       );
 end svec_sfpga_top;
 
@@ -317,6 +320,7 @@ begin
   debugled_o(1) <= gpio(0);
   debugled_o(2) <= boot_en;
 
+  pll_ce_o <= '1';
   
 end rtl;
 
