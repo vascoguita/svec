@@ -515,7 +515,24 @@ csr_stat_reserved_i[22:0]
 
 </td>
 <td  class="td_pblock_right">
-csr_ctrl_fp_leds_o[7:0]
+csr_ctrl_fp_leds_auto_o
+</td>
+<td  class="td_arrow_right">
+&rarr;
+</td>
+</tr>
+<tr>
+<td  class="td_arrow_left">
+
+</td>
+<td  class="td_pblock_left">
+
+</td>
+<td  class="td_sym_center">
+
+</td>
+<td  class="td_pblock_right">
+csr_ctrl_fp_leds_o[15:0]
 </td>
 <td  class="td_arrow_right">
 &rArr;
@@ -532,24 +549,7 @@ csr_ctrl_fp_leds_o[7:0]
 
 </td>
 <td  class="td_pblock_right">
-csr_ctrl_dbg_leds_o[3:0]
-</td>
-<td  class="td_arrow_right">
-&rArr;
-</td>
-</tr>
-<tr>
-<td  class="td_arrow_left">
-
-</td>
-<td  class="td_pblock_left">
-
-</td>
-<td  class="td_sym_center">
-
-</td>
-<td  class="td_pblock_right">
-csr_ctrl_gpio_term_o[3:0]
+csr_ctrl_fp_led_int_o[6:0]
 </td>
 <td  class="td_arrow_right">
 &rArr;
@@ -618,23 +618,6 @@ csr_ctrl_gpio_34_dir_o
 </td>
 <td  class="td_pblock_right">
 csr_ctrl_gpio_out_o[3:0]
-</td>
-<td  class="td_arrow_right">
-&rArr;
-</td>
-</tr>
-<tr>
-<td  class="td_arrow_left">
-
-</td>
-<td  class="td_pblock_left">
-
-</td>
-<td  class="td_sym_center">
-
-</td>
-<td  class="td_pblock_right">
-csr_ctrl_reserved_o[8:0]
 </td>
 <td  class="td_arrow_right">
 &rArr;
@@ -1771,20 +1754,20 @@ CTRL
 </td>
 </tr>
 <tr>
-<td style="border: solid 1px black;" colspan=8  class="td_field">
-RESERVED[8:1]
+<td  class="td_unused">
+-
 </td>
-<td >
-
+<td style="border: solid 1px black;" colspan=4  class="td_field">
+GPIO_OUT[3:0]
 </td>
-<td >
-
+<td style="border: solid 1px black;" colspan=1  class="td_field">
+GPIO_34_DIR
 </td>
-<td >
-
+<td style="border: solid 1px black;" colspan=1  class="td_field">
+GPIO_2_DIR
 </td>
-<td >
-
+<td style="border: solid 1px black;" colspan=1  class="td_field">
+GPIO_1_DIR
 </td>
 <td >
 
@@ -1825,20 +1808,20 @@ RESERVED[8:1]
 </td>
 </tr>
 <tr>
-<td style="border: solid 1px black;" colspan=1  class="td_field">
-RESERVED[0:0]
-</td>
-<td style="border: solid 1px black;" colspan=4  class="td_field">
-GPIO_OUT[3:0]
+<td style="border: solid 1px black;" colspan=7  class="td_field">
+FP_LED_INT[6:0]
 </td>
 <td style="border: solid 1px black;" colspan=1  class="td_field">
-GPIO_34_DIR
+FP_LEDS[15:15]
 </td>
-<td style="border: solid 1px black;" colspan=1  class="td_field">
-GPIO_2_DIR
+<td >
+
 </td>
-<td style="border: solid 1px black;" colspan=1  class="td_field">
-GPIO_1_DIR
+<td >
+
+</td>
+<td >
+
 </td>
 <td >
 
@@ -1879,11 +1862,11 @@ GPIO_1_DIR
 </td>
 </tr>
 <tr>
-<td style="border: solid 1px black;" colspan=4  class="td_field">
-GPIO_TERM[3:0]
+<td style="border: solid 1px black;" colspan=8  class="td_field">
+FP_LEDS[14:7]
 </td>
-<td style="border: solid 1px black;" colspan=4  class="td_field">
-DBG_LEDS[3:0]
+<td >
+
 </td>
 <td >
 
@@ -1933,11 +1916,11 @@ DBG_LEDS[3:0]
 </td>
 </tr>
 <tr>
-<td style="border: solid 1px black;" colspan=8  class="td_field">
-FP_LEDS[7:0]
+<td style="border: solid 1px black;" colspan=7  class="td_field">
+FP_LEDS[6:0]
 </td>
-<td >
-
+<td style="border: solid 1px black;" colspan=1  class="td_field">
+FP_LEDS_AUTO
 </td>
 <td >
 
@@ -1961,17 +1944,17 @@ FP_LEDS[7:0]
 </table>
 <ul>
 <li><b>
+FP_LEDS_AUTO
+</b>[<i>read/write</i>]: Automatic front panel LEDs
+<br>Automatic front panel LEDs control
+<li><b>
 FP_LEDS
 </b>[<i>read/write</i>]: Front panel LEDs
 <br>Front panel LEDs control
 <li><b>
-DBG_LEDS
-</b>[<i>read/write</i>]: Debug LEDs
-<br>On board debug LEDs control
-<li><b>
-GPIO_TERM
-</b>[<i>read/write</i>]: GPIO termination
-<br>GPIO termination enable.<br>0 = disabled<br>1 = enabled
+FP_LED_INT
+</b>[<i>read/write</i>]: Front panel LED intensity
+<br>Front panel LED intensity in %
 <li><b>
 GPIO_1_DIR
 </b>[<i>read/write</i>]: GPIO 1 direction
@@ -1988,10 +1971,6 @@ GPIO_34_DIR
 GPIO_OUT
 </b>[<i>read/write</i>]: GPIO outputs
 <br>GPIO ouputs value
-<li><b>
-RESERVED
-</b>[<i>read/write</i>]: Reserved
-<br>Ignore on read, write with 0's
 </ul>
 
 

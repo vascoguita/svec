@@ -600,14 +600,14 @@ NET "term_en_o[2]" LOC = W5;
 NET "term_en_o[3]" LOC = W4;
 NET "term_en_o[4]" LOC = V4;
 
-NET "fp_led_n_o[0]" LOC = AD27;
-NET "fp_led_n_o[1]" LOC = AD26;
-NET "fp_led_n_o[2]" LOC = AC28;
-NET "fp_led_n_o[3]" LOC = AC27;
-NET "fp_led_n_o[4]" LOC = AE27;
-NET "fp_led_n_o[5]" LOC = AE30;
-NET "fp_led_n_o[6]" LOC = AF28;
-NET "fp_led_n_o[7]" LOC = AE28;
+NET "fp_led_line_oen_o[0]" LOC = AD26;
+NET "fp_led_line_oen_o[1]" LOC = AD27;
+NET "fp_led_line_o[0]" LOC = AC27;
+NET "fp_led_line_o[1]" LOC = AC28;
+NET "fp_led_column_o[0]" LOC = AE30;
+NET "fp_led_column_o[1]" LOC = AE27;
+NET "fp_led_column_o[2]" LOC = AE28;
+NET "fp_led_column_o[3]" LOC = AF28;
 
 #----------------------------------------
 # 1-wire thermoeter + unique ID
@@ -1201,14 +1201,14 @@ NET "term_en_o[2]" IOSTANDARD = "LVCMOS33";
 NET "term_en_o[3]" IOSTANDARD = "LVCMOS33";
 NET "term_en_o[4]" IOSTANDARD = "LVCMOS33";
 
-NET "fp_led_n_o[0]" IOSTANDARD = "LVCMOS33";
-NET "fp_led_n_o[1]" IOSTANDARD = "LVCMOS33";
-NET "fp_led_n_o[2]" IOSTANDARD = "LVCMOS33";
-NET "fp_led_n_o[3]" IOSTANDARD = "LVCMOS33";
-NET "fp_led_n_o[4]" IOSTANDARD = "LVCMOS33";
-NET "fp_led_n_o[5]" IOSTANDARD = "LVCMOS33";
-NET "fp_led_n_o[6]" IOSTANDARD = "LVCMOS33";
-NET "fp_led_n_o[7]" IOSTANDARD = "LVCMOS33";
+NET "fp_led_line_oen_o[0]" IOSTANDARD = "LVCMOS33";
+NET "fp_led_line_oen_o[1]" IOSTANDARD = "LVCMOS33";
+NET "fp_led_line_o[0]" IOSTANDARD = "LVCMOS33";
+NET "fp_led_line_o[1]" IOSTANDARD = "LVCMOS33";
+NET "fp_led_column_o[0]" IOSTANDARD = "LVCMOS33";
+NET "fp_led_column_o[1]" IOSTANDARD = "LVCMOS33";
+NET "fp_led_column_o[2]" IOSTANDARD = "LVCMOS33";
+NET "fp_led_column_o[3]" IOSTANDARD = "LVCMOS33";
 
 #----------------------------------------
 # 1-wire thermoeter + unique ID

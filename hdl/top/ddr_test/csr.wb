@@ -143,31 +143,30 @@ peripheral {
     prefix = "ctrl";
 
     field {
+      name = "Automatic front panel LEDs";
+      description = "Automatic front panel LEDs control";
+      prefix = "fp_leds_auto";
+      type = BIT;
+      access_bus = READ_WRITE;
+      access_dev = READ_ONLY;
+    };
+
+    field {
       name = "Front panel LEDs";
       description = "Front panel LEDs control";
       prefix = "fp_leds";
       type = SLV;
-      size = 8;
+      size = 16;
       access_bus = READ_WRITE;
       access_dev = READ_ONLY;
     };
 
     field {
-      name = "Debug LEDs";
-      description = "On board debug LEDs control";
-      prefix = "dbg_leds";
+      name = "Front panel LED intensity";
+      description = "Front panel LED intensity in %";
+      prefix = "fp_led_int";
       type = SLV;
-      size = 4;
-      access_bus = READ_WRITE;
-      access_dev = READ_ONLY;
-    };
-
-    field {
-      name = "GPIO termination";
-      description = "GPIO termination enable.\n0 = disabled\n1 = enabled";
-      prefix = "gpio_term";
-      type = SLV;
-      size = 4;
+      size = 7;
       access_bus = READ_WRITE;
       access_dev = READ_ONLY;
     };
@@ -209,15 +208,6 @@ peripheral {
       access_dev = READ_ONLY;
     };
 
-    field {
-      name = "Reserved";
-      description = "Ignore on read, write with 0's";
-      prefix = "reserved";
-      type = SLV;
-      size = 9;
-      access_bus = READ_WRITE;
-      access_dev = READ_ONLY;
-    };
   };
 
 };

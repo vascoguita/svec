@@ -47,6 +47,8 @@ use work.ddr3_ctrl_pkg.all;
 use work.wishbone_pkg.all;
 use work.vme64x_pack.all;
 use work.genram_pkg.all;
+use work.bicolor_led_ctrl_pkg.all;
+
 
 entity svec_afpga_top is
   generic(
@@ -312,7 +314,9 @@ entity svec_afpga_top is
 
       term_en_o : out std_logic_vector(4 downto 1);
 
-      fp_led_n_o : out std_logic_vector(7 downto 0);
+      fp_led_line_oen_o : out std_logic_vector(1 downto 0);
+      fp_led_line_o     : out std_logic_vector(1 downto 0);
+      fp_led_column_o   : out std_logic_vector(3 downto 0);
 
       ------------------------------------------
       -- 1-wire thermoeter + unique ID
@@ -449,14 +453,13 @@ architecture rtl of svec_afpga_top is
       csr_stat_ddr3_bank5_cal_done_i : in  std_logic;
       csr_stat_gpio_in_i             : in  std_logic_vector(3 downto 0);
       csr_stat_reserved_i            : in  std_logic_vector(22 downto 0);
-      csr_ctrl_fp_leds_o             : out std_logic_vector(7 downto 0);
-      csr_ctrl_dbg_leds_o            : out std_logic_vector(3 downto 0);
-      csr_ctrl_gpio_term_o           : out std_logic_vector(3 downto 0);
+      csr_ctrl_fp_leds_auto_o        : out std_logic;
+      csr_ctrl_fp_leds_o             : out std_logic_vector(15 downto 0);
+      csr_ctrl_fp_led_int_o          : out std_logic_vector(6 downto 0);
       csr_ctrl_gpio_1_dir_o          : out std_logic;
       csr_ctrl_gpio_2_dir_o          : out std_logic;
       csr_ctrl_gpio_34_dir_o         : out std_logic;
-      csr_ctrl_gpio_out_o            : out std_logic_vector(3 downto 0);
-      csr_ctrl_reserved_o            : out std_logic_vector(8 downto 0)
+      csr_ctrl_gpio_out_o            : out std_logic_vector(3 downto 0)
       );
   end component csr;
 
@@ -554,10 +557,20 @@ architecture rtl of svec_afpga_top is
   signal owr_en    : std_logic_vector(c_ONEWIRE_NB - 1 downto 0);
   signal owr_i     : std_logic_vector(c_ONEWIRE_NB - 1 downto 0);
 
-  -- LEDs
-  signal led_blink_cnt : unsigned(25 downto 0);
-  signal led_blink     : std_logic;
-  signal fp_led_n      : std_logic_vector(7 downto 0);
+  -- Front panel LEDs
+  signal led_blink_cnt  : unsigned(25 downto 0);
+  signal led_blink      : std_logic;
+  signal led_blink_d    : std_logic;
+  signal led_blink_p    : std_logic;
+  signal led_intensity  : std_logic_vector(6 downto 0);
+  signal led_state_auto : std_logic_vector(15 downto 0);
+  signal led_state      : std_logic_vector(15 downto 0);
+  signal led_auto       : std_logic;
+  signal led_state_man  : std_logic_vector(15 downto 0);
+  signal led_state_seq  : unsigned(3 downto 0);
+  signal led_column     : std_logic_vector(3 downto 0);
+  signal led_line       : std_logic_vector(1 downto 0);
+  signal led_line_oen   : std_logic_vector(1 downto 0);
 
   -- DDR access FIFOs
   signal ddr_bank4_addr_cnt : unsigned(31 downto 0);
@@ -805,14 +818,13 @@ begin
       csr_stat_ddr3_bank5_cal_done_i => ddr3_bank5_status(0),
       csr_stat_gpio_in_i             => gpio_in,
       csr_stat_reserved_i            => "00000000000000000000000",
-      csr_ctrl_fp_leds_o             => fp_led_n,
-      csr_ctrl_dbg_leds_o            => dbg_led_n_o,
-      csr_ctrl_gpio_term_o           => term_en_o,
+      csr_ctrl_fp_leds_auto_o        => led_auto,
+      csr_ctrl_fp_leds_o             => led_state_man,
+      csr_ctrl_fp_led_int_o          => led_intensity,
       csr_ctrl_gpio_1_dir_o          => gpio_1_dir,
       csr_ctrl_gpio_2_dir_o          => gpio_2_dir,
       csr_ctrl_gpio_34_dir_o         => gpio_34_dir,
-      csr_ctrl_gpio_out_o            => gpio_out,
-      csr_ctrl_reserved_o            => open
+      csr_ctrl_gpio_out_o            => gpio_out
       );
 
   wb_stall(c_WB_CSR) <= '0';
@@ -1163,8 +1175,11 @@ begin
 
   gpio_in <= fp_gpio_b;
 
+  term_en_o <= (others => '0');
+  dbg_led_n_o <= (others => '0');
+
   ------------------------------------------------------------------------------
-  -- LEDs
+  -- Front-panel LEDs
   -----------------------------------------------------------------------------
   process (sys_clk)
   begin
@@ -1175,12 +1190,80 @@ begin
       else
         led_blink <= '0';
       end if;
+      led_blink_d <= led_blink;
     end if;
   end process;
 
-  l_fp_led : for I in 0 to 7 generate
-    fp_led_n_o(I) <= not(fp_led_n(I) or led_blink);
-  end generate l_fp_led;
+  led_blink_p <= led_blink and not(led_blink_d);
+
+
+  process (sys_clk)
+  begin
+    if rising_edge(sys_clk) then
+      if sys_rst_n = '0' then
+        led_state_seq <= (others => '0');
+      elsif led_blink_p = '1' then
+        led_state_seq <= led_state_seq + 1;
+      end if;
+    end if;
+  end process;
+
+
+  -- led_state bits : 15                              0
+  --                  ---------------------------------
+  -- fp led number :  | 5 | 6 | 7 | 8 | 1 | 2 | 3 | 4 |
+  --
+  -- 2 bits per LED
+  --    00 => OFF
+  --    01 => Green
+  --    10 => Red
+  --    11 => Orange
+  led_state_auto <= X"00AA" when led_state_seq = "0000" else  -- 1,2,3,4 = red | 5,6,7,8 = off
+                    X"AA00" when led_state_seq = "0001" else  -- 1,2,3,4 = off | 5,6,7,8 = red
+                    X"4040" when led_state_seq = "0010" else  -- 1,5 = green | 2,3,4,6,7,8 = off
+                    X"1010" when led_state_seq = "0011" else  -- 2,6 = green | 1,3,4,5,7,8 = off
+                    X"0404" when led_state_seq = "0100" else  -- 3,7 = green | 1,2,4,5,6,8 = off
+                    X"0101" when led_state_seq = "0101" else  -- 4,8 = green | 1,2,3,5,6,7 = off
+                    X"00C0" when led_state_seq = "0110" else  -- 1 = orange | 2,3,4,5,6,7,8 = off
+                    X"0030" when led_state_seq = "0111" else  -- 2 = orange | 1,3,4,5,6,7,8 = off
+                    X"000C" when led_state_seq = "1000" else  -- 3 = orange | 1,2,4,5,6,7,8 = off
+                    X"0003" when led_state_seq = "1001" else  -- 4 = orange | 1,2,3,5,6,7,8 = off
+                    X"0300" when led_state_seq = "1010" else  -- 8 = orange | 1,2,3,4,5,6,7 = off
+                    X"0C00" when led_state_seq = "1011" else  -- 7 = orange | 1,2,3,4,5,6,8 = off
+                    X"3000" when led_state_seq = "1100" else  -- 6 = orange | 1,2,3,4,5,7,8 = off
+                    X"C000" when led_state_seq = "1101" else  -- 5 = orange | 1,2,3,4,6,7,8 = off
+                    X"0000" when led_state_seq = "1110" else  -- all off
+                    X"0000" when led_state_seq = "1111" else  -- all off
+                    X"0000";
+
+  --led_intensity <= std_logic_vector(to_unsigned(100, led_intensity'length));  -- 100% intensity
+
+  led_state <= led_state_auto when led_auto = '1' else led_state_man;
+
+  cmp_bicolor_led_ctrl : bicolor_led_ctrl
+    generic map(
+      g_NB_COLUMN    => 4,
+      g_NB_LINE      => 2,
+      g_CLK_FREQ     => 62500000,       -- in Hz
+      g_REFRESH_RATE => 250             -- in Hz
+      )
+    port map(
+      rst_n_i => sys_rst_n,
+      clk_i   => sys_clk,
+
+      led_intensity_i => led_intensity,  -- in %
+
+      led_state_i => led_state,
+
+      column_o   => led_column,
+      line_o     => led_line,
+      line_oen_o => led_line_oen
+      );
+
+  fp_led_column_o <= led_column;-- when led_auto = '1' else led_state_man(3 downto 0);
+  fp_led_line_o <= led_line;-- when led_auto = '1' else led_state_man(5 downto 4);
+  fp_led_line_oen_o <= led_line_oen;-- when led_auto = '1' else led_state_man(7 downto 6);
+
 
 
 end rtl;

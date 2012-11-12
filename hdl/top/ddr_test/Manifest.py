@@ -1,7 +1,9 @@
 files = [ "svec_afpga_top.vhd",
-          "svec_v0_afpga.ucf",
+          "svec_v1_afpga.ucf",
           "csr.vhd",
-          "wb_addr_decoder.vhd"]
+          "wb_addr_decoder.vhd",
+          "../bicolor_led_test/bicolor_led_ctrl.vhd",
+          "../bicolor_led_test/bicolor_led_ctrl_pkg.vhd"]
 """
 fetchto = "ip_cores"
 
