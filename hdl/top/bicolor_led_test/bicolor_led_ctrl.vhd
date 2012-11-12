@@ -112,6 +112,7 @@ architecture rtl of bicolor_led_ctrl is
   signal intensity_ctrl     : std_logic;
   signal line_oen_cnt       : unsigned(c_LINE_OEN_CNT_NB_BITS - 1 downto 0);
   signal line_oen           : std_logic_vector(2**c_LINE_OEN_CNT_NB_BITS - 1 downto 0);
+  signal led_state          : std_logic_vector((g_NB_LINE * g_NB_COLUMN) -1 downto 0);
 
 
 begin
@@ -225,11 +226,15 @@ begin
   ------------------------------------------------------------------------------
   -- Columns output
   ------------------------------------------------------------------------------
-  f_column_o : for I in 0 to g_NB_COLUMN - 1 generate
-    column_o(I) <= '0' when led_state_i(2 * I + 1 downto 2 * I) = c_LED_RED else
-                   '1'                               when led_state_i(2 * I + 1 downto 2 * I) = c_LED_GREEN else
-                   (line_ctrl and intensity_ctrl)    when led_state_i(2 * I + 1 downto 2 * I) = c_LED_OFF   else
-                   not(line_ctrl and intensity_ctrl) when led_state_i(2 * I + 1 downto 2 * I) = c_LED_RED_GREEN;
+  f_led_state : for I in 0 to (g_NB_COLUMN * g_NB_LINE) - 1 generate
+    led_state(I) <= '0' when led_state_i(2 * I + 1 downto 2 * I) = c_LED_RED else
+                    '1'                               when led_state_i(2 * I + 1 downto 2 * I) = c_LED_GREEN else
+                    (line_ctrl and intensity_ctrl)    when led_state_i(2 * I + 1 downto 2 * I) = c_LED_OFF   else
+                    not(line_ctrl and intensity_ctrl) when led_state_i(2 * I + 1 downto 2 * I) = c_LED_RED_GREEN;
+  end generate f_led_state;
+
+  f_column_o : for C in 0 to g_NB_COLUMN - 1 generate
+    column_o(C) <= led_state(g_NB_COLUMN * to_integer(line_oen_cnt) + C);
   end generate f_column_o;
 
 
