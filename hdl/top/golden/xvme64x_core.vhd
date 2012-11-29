@@ -1,6 +1,7 @@
 library ieee;
 use ieee.STD_LOGIC_1164.all;
 use WORK.wishbone_pkg.all;
+use work.vme64x_pack.all;
 
 entity xvme64x_core is
   
@@ -49,11 +50,10 @@ end xvme64x_core;
 architecture wrapper of xvme64x_core is
 
   component VME64xCore_Top
-    generic(
-      g_width      : integer := 32;
-      g_addr_width : integer := 64;
-      g_CRAM_SIZE  : integer := 1024
-      );
+    generic (
+      g_wb_data_width      : integer := 32;
+      g_wb_addr_width : integer := 64;
+      g_CRAM_SIZE  : integer := 1024);
     port (
       clk_i           : in  std_logic;
       reset_o         : out std_logic;
@@ -66,13 +66,13 @@ architecture wrapper of xvme64x_core is
       VME_BERR_o      : out std_logic;
       VME_DTACK_n_o   : out std_logic;
       VME_RETRY_n_o   : out std_logic;
-      VME_LWORD_n_b_i : in  std_logic;
-      VME_LWORD_n_b_o : out std_logic;
-      VME_ADDR_b_i    : in  std_logic_vector(31 downto 1);
-      VME_ADDR_b_o    : out std_logic_vector(31 downto 1);
-      VME_DATA_b_i    : in  std_logic_vector(31 downto 0);
-      VME_DATA_b_o    : out std_logic_vector(31 downto 0);
-      VME_IRQ_n_o     : out std_logic_vector(6 downto 0);
+      VME_LWORD_n_i   : in  std_logic;
+      VME_LWORD_n_o   : out std_logic;
+      VME_ADDR_i      : in  std_logic_vector(31 downto 1);
+      VME_ADDR_o      : out std_logic_vector(31 downto 1);
+      VME_DATA_i      : in  std_logic_vector(31 downto 0);
+      VME_DATA_o      : out std_logic_vector(31 downto 0);
+      VME_IRQ_o       : out std_logic_vector(6 downto 0);
       VME_IACKIN_n_i  : in  std_logic;
       VME_IACK_n_i    : in  std_logic;
       VME_IACKOUT_n_o : out std_logic;
@@ -82,20 +82,20 @@ architecture wrapper of xvme64x_core is
       VME_ADDR_DIR_o  : out std_logic;
       VME_ADDR_OE_N_o : out std_logic;
       VME_RETRY_OE_o  : out std_logic;
-      DAT_i           : in  std_logic_vector(g_width - 1 downto 0);
-      DAT_o           : out std_logic_vector(g_width - 1 downto 0);
-      ADR_o           : out std_logic_vector(g_addr_width - 1 downto 0);
+      DAT_i           : in  std_logic_vector(g_wb_data_width - 1 downto 0);
+      DAT_o           : out std_logic_vector(g_wb_data_width - 1 downto 0);
+      ADR_o           : out std_logic_vector(g_wb_addr_width - 1 downto 0);
       CYC_o           : out std_logic;
       ERR_i           : in  std_logic;
       RTY_i           : in  std_logic;
-      SEL_o           : out std_logic_vector(g_width / 8 - 1 downto 0);
+      SEL_o           : out std_logic_vector(f_div8(g_wb_addr_width) - 1 downto 0);
       STB_o           : out std_logic;
       ACK_i           : in  std_logic;
       WE_o            : out std_logic;
       STALL_i         : in  std_logic;
-      INT_ack         : out std_logic;
+      INT_ack_o       : out std_logic;
       IRQ_i           : in  std_logic;
-      leds            : out std_logic_vector(7 downto 0));
+      debug           : out std_logic_vector(7 downto 0));
   end component;
 
   signal rst_in, rst_out          : std_logic;
@@ -121,13 +121,13 @@ begin  -- wrapper
       VME_DTACK_n_o   => VME_DTACK_n_o,
       VME_RETRY_n_o   => VME_RETRY_n_o,
       VME_RETRY_OE_o  => VME_RETRY_OE_o,
-      VME_LWORD_n_b_i => VME_LWORD_n_b_i,
-      VME_LWORD_n_b_o => VME_LWORD_n_b_o,
-      VME_ADDR_b_i    => VME_ADDR_b_i,
-      VME_ADDR_b_o    => VME_ADDR_b_o,
-      VME_DATA_b_i    => VME_DATA_b_i,
-      VME_DATA_b_o    => VME_DATA_b_o,
-      VME_IRQ_n_o     => VME_IRQ_n_o,
+      VME_LWORD_n_i => VME_LWORD_n_b_i,
+      VME_LWORD_n_o => VME_LWORD_n_b_o,
+      VME_ADDR_i    => VME_ADDR_b_i,
+      VME_ADDR_o    => VME_ADDR_b_o,
+      VME_DATA_i    => VME_DATA_b_i,
+      VME_DATA_o    => VME_DATA_b_o,
+      VME_IRQ_o     => VME_IRQ_n_o,
       VME_IACKIN_n_i  => VME_IACKIN_n_i,
       VME_IACK_n_i    => VME_IACK_n_i,
       VME_IACKOUT_n_o => VME_IACKOUT_n_o,
@@ -149,13 +149,16 @@ begin  -- wrapper
       WE_o    => master_o.we,
       STALL_i => master_i.stall,
       IRQ_i   => irq_i,
-      INT_ack => irq_ack_o);
+      INT_ack_o => irq_ack_o
+      );
 
   master_o.dat <= dat_out(31 downto 0);
   master_o.sel <= (others => '1');
   master_o.adr <= adr_out(29 downto 0) & "00";
   dat_in       <= master_i.dat;
 
+--  VME_IRQ_n_o <= (others => '0');
+  
   
   
 end wrapper;
