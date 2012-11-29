@@ -2,6 +2,26 @@
 `include "svec_vme_buffers.svh"
 `include "regs/xloader_regs.vh"
 
+`define WIRE_VME_PINS2(slot_id) \
+    .VME_AS_n_i(VME_AS_n),\
+    .VME_RST_n_i(VME_RST_n),\
+    .VME_WRITE_n_i(VME_WRITE_n),\
+    .VME_AM_i(VME_AM),\
+    .VME_DS_n_i(VME_DS_n),\
+    .VME_GA_i(_gen_ga(slot_id)),\
+    .VME_DTACK_n_o(VME_DTACK_n),\
+    .VME_LWORD_n_b(VME_LWORD_n),\
+    .VME_ADDR_b(VME_ADDR),\
+    .VME_DATA_b(VME_DATA),\
+    .VME_BBSY_n_i(VME_BBSY_n),\
+    .VME_DTACK_OE_o(VME_DTACK_OE),\
+    .VME_DATA_DIR_o(VME_DATA_DIR),\
+    .VME_DATA_OE_N_o(VME_DATA_OE_N),\
+    .VME_ADDR_DIR_o(VME_ADDR_DIR),\
+    .VME_ADDR_OE_N_o(VME_ADDR_OE_N)
+
+
+		
 module main;
 
    reg rst_n = 0;
@@ -29,7 +49,7 @@ module main;
 	  .lclk_n_i(clk_20m),
 	  .rst_n_i(rst_n),
      
-	  `WIRE_VME_PINS(8),
+	  `WIRE_VME_PINS2(8),
 
           .boot_clk_o(cclk),
           .boot_config_o(program_b),

@@ -1,47 +1,55 @@
 onerror {resume}
 quietly WaveActivateNextPane {} 0
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/g_interface_mode
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/g_address_granularity
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/clk_sys_i
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/rst_n_i
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/wb_cyc_i
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/wb_stb_i
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/wb_we_i
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/wb_adr_i
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/wb_sel_i
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/wb_dat_i
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/wb_dat_o
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/wb_ack_o
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/wb_stall_o
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/xlx_cclk_o
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/xlx_din_o
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/xlx_program_b_o
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/xlx_init_b_i
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/xlx_done_i
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/xlx_suspend_o
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/xlx_m_o
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/boot_trig_p1_o
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/boot_exit_p1_o
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/boot_en_i
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/gpio_o
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/state
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/clk_div
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/tick
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/init_b_synced
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/done_synced
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/timeout_counter
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/wb_in
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/wb_out
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/regs_in
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/regs_out
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/d_data
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/d_size
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/d_last
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/bit_counter
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/boot_state
-add wave -noupdate -radix hexadecimal /main/DUT/U_Xilinx_Loader/U_Wrapped_XLDR/startup_count
+add wave -noupdate /main/DUT/lclk_n_i
+add wave -noupdate /main/DUT/rst_n_i
+add wave -noupdate /main/DUT/VME_AS_n_i
+add wave -noupdate /main/DUT/VME_RST_n_i
+add wave -noupdate /main/DUT/VME_WRITE_n_i
+add wave -noupdate /main/DUT/VME_AM_i
+add wave -noupdate /main/DUT/VME_DS_n_i
+add wave -noupdate /main/DUT/VME_GA_i
+add wave -noupdate /main/DUT/VME_DTACK_n_o
+add wave -noupdate /main/DUT/VME_LWORD_n_b
+add wave -noupdate /main/DUT/VME_ADDR_b
+add wave -noupdate /main/DUT/VME_DATA_b
+add wave -noupdate /main/DUT/VME_DTACK_OE_o
+add wave -noupdate /main/DUT/VME_DATA_DIR_o
+add wave -noupdate /main/DUT/VME_DATA_OE_N_o
+add wave -noupdate /main/DUT/VME_ADDR_DIR_o
+add wave -noupdate /main/DUT/VME_ADDR_OE_N_o
+add wave -noupdate /main/DUT/VME_BBSY_n_i
+add wave -noupdate /main/DUT/boot_clk_o
+add wave -noupdate /main/DUT/boot_config_o
+add wave -noupdate /main/DUT/boot_done_i
+add wave -noupdate /main/DUT/boot_dout_o
+add wave -noupdate /main/DUT/boot_status_i
+add wave -noupdate /main/DUT/debugled_o
+add wave -noupdate /main/DUT/pll_ce_o
+add wave -noupdate /main/DUT/VME_DATA_o_int
+add wave -noupdate /main/DUT/vme_dtack_oe_int
+add wave -noupdate /main/DUT/VME_DTACK_n_int
+add wave -noupdate /main/DUT/vme_data_dir_int
+add wave -noupdate /main/DUT/VME_DATA_OE_N_int
+add wave -noupdate /main/DUT/wb_vme_in
+add wave -noupdate /main/DUT/wb_vme_out
+add wave -noupdate /main/DUT/passive
+add wave -noupdate /main/DUT/gpio
+add wave -noupdate /main/DUT/boot_en
+add wave -noupdate /main/DUT/boot_trig_p1
+add wave -noupdate /main/DUT/boot_exit_p1
+add wave -noupdate /main/DUT/CONTROL
+add wave -noupdate /main/DUT/TRIG0
+add wave -noupdate /main/DUT/TRIG1
+add wave -noupdate /main/DUT/TRIG2
+add wave -noupdate /main/DUT/TRIG3
+add wave -noupdate /main/DUT/boot_config_int
+add wave -noupdate /main/DUT/erase_afpga_n
+add wave -noupdate /main/DUT/erase_afpga_n_d0
+add wave -noupdate /main/DUT/pllout_clk_fb_sys
+add wave -noupdate /main/DUT/pllout_clk_sys
+add wave -noupdate /main/DUT/clk_sys
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {123219856 ps} 0}
+WaveRestoreCursors {{Cursor 1} {1539887 ps} 0}
 configure wave -namecolwidth 177
 configure wave -valuecolwidth 100
 configure wave -justifyvalue left
