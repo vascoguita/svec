@@ -238,14 +238,14 @@ NET "clk_20m_vcxo_i" IOSTANDARD = "LVCMOS33";
 #----------------------------------------
 NET "tempid_dq_b" IOSTANDARD = "LVCMOS33";
 
-NET "fmc0_prsntm2c_n_i" LOC = N30;
-NET "fmc0_scl_b" LOC = P28;
-NET "fmc0_sda_b" LOC = P30;
 
-NET "fmc1_prsntm2c_n_i" LOC = AE29;
-NET "fmc1_scl_b" LOC = W29;
-NET "fmc1_sda_b" LOC = V30;
+NET "fmc0_prsntm2c_n_i" LOC = AE29;
+NET "fmc0_scl_b" LOC = W29;
+NET "fmc0_sda_b" LOC = V30;
 
+NET "fmc1_prsntm2c_n_i" LOC = N30;
+NET "fmc1_scl_b" LOC = P28;
+NET "fmc1_sda_b" LOC = P30;
 
 NET "fmc0_prsntm2c_n_i" IOSTANDARD = "LVCMOS33";
 NET "fmc0_scl_b" IOSTANDARD = "LVCMOS33";
