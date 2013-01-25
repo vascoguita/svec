@@ -1,0 +1,15 @@
+
+# This is an example config file, that can be used to build a filesystem
+# from this very directory. Please note that gensdbfs doesn't look for
+# config files in subdirectories but only in the tol-level one.
+
+.
+	vendor = 0xce42
+	device = 0x5fec
+	position = 0x500000
+
+sfpga.bin
+	position = 0
+
+afpga.bin
+	position = 0x100000
