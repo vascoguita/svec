@@ -1,6 +1,6 @@
 `include "vme64x_bfm.svh"
 `include "svec_vme_buffers.svh"
-`include "regs/xloader_regs.vh"
+`include "regs/sxldr_regs.vh"
 
 `define WIRE_VME_PINS2(slot_id) \
     .VME_AS_n_i(VME_AS_n),\
@@ -33,7 +33,7 @@ module main;
    always #25ns clk_20m <= ~clk_20m;
    
    initial begin
-      repeat(20) @(posedge clk_20m);
+      repeat(10000) @(posedge clk_20m);
       rst_n = 1;
    end
 
@@ -55,7 +55,13 @@ module main;
           .boot_config_o(program_b),
           .boot_status_i(init_b),
           .boot_done_i(done),
-          .boot_dout_o(din)
+          .boot_dout_o(din),
+
+           .spi_cs_n_o(spi_cs),
+          .spi_sclk_o(spi_sclk),
+          .spi_mosi_o(spi_mosi),
+          .spi_miso_i(spi_miso)
+      
 	  );
 
    SIM_CONFIG_S6_SERIAL2
@@ -72,24 +78,66 @@ module main;
      );
 
 
+   M25Pxxx Flash(.S(spi_cs), .C(spi_sclk), .HOLD(1'b1), .D(spi_mosi), .Q(spi_miso), .Vpp_W(32'h0), .Vcc(32'd3000));
 
+   parameter [12*8:1] mem = "../../../software/sdb-flash/image.vmf";
+   defparam Flash.memory_file = mem;
+   
 class CSimDrv_Xloader;
 
    protected CBusAccessor_VME64x acc;
    protected uint64_t base;
+   protected byte _dummy;
    
    function new(CBusAccessor_VME64x _acc, uint64_t _base);
       acc = _acc;
       base = _base;
    endfunction
+
+   protected task flash_xfer(bit cs, byte data_in, ref byte data_out = _dummy);
+      uint64_t rv;
+      
+      while(1) begin
+         acc.read(base + `ADDR_SXLDR_FAR, rv);
+         if(rv & `SXLDR_FAR_READY)
+           break;
+      end
+
+      acc.write(base + `ADDR_SXLDR_FAR, data_in | (cs ? `SXLDR_FAR_CS:0) | `SXLDR_FAR_XFER);
+      
+      while(1) begin
+         acc.read(base + `ADDR_SXLDR_FAR, rv);
+         if(rv & `SXLDR_FAR_READY)
+           break;
+      end
+
+      data_out = rv & 'hff;
+         
+   endtask // flash_xfer
+   
+   
+   task flash_command(int cmd, byte data_in[], output byte data_out[], input int size);
+      int i;
+      flash_xfer(0, 0);
+      flash_xfer(1, cmd);
+      for(i=0;i<size;i++)
+        begin
+           byte t;
+           flash_xfer(1, data_in[i], t);
+           data_out[i] = t;
+        end
+      
+      flash_xfer(0, 0);
+   endtask // flash_command
+   
      
-        
+   
    task enter_boot_mode();
       int i;
       const int boot_seq[8] = '{'hde, 'had, 'hbe, 'hef, 'hca, 'hfe, 'hba, 'hbe};
       
       for(i=0;i<8;i++)
-        acc.write(base + `ADDR_XLDR_BTRIGR, boot_seq[i]);
+        acc.write(base + `ADDR_SXLDR_BTRIGR, boot_seq[i]);
    endtask // enter_boot_mode
 
    
@@ -97,16 +145,16 @@ class CSimDrv_Xloader;
       int f,i, pos=0;
       uint64_t csr;
      
-      acc.write(base + `ADDR_XLDR_CSR, `XLDR_CSR_SWRST );
-      acc.write(base + `ADDR_XLDR_CSR, `XLDR_CSR_START | `XLDR_CSR_MSBF);
+      acc.write(base + `ADDR_SXLDR_CSR, `SXLDR_CSR_SWRST );
+      acc.write(base + `ADDR_SXLDR_CSR, `SXLDR_CSR_START | `SXLDR_CSR_MSBF);
       f  = $fopen(filename, "r");
       
       while(!$feof(f))
         begin
            uint64_t r,r2;
-           acc.read(base + `ADDR_XLDR_FIFO_CSR, r);
+           acc.read(base + `ADDR_SXLDR_FIFO_CSR, r);
            
-           if(!(r&`XLDR_FIFO_CSR_FULL)) begin
+           if(!(r&`SXLDR_FIFO_CSR_FULL)) begin
               int n;
               int x;
               
@@ -118,19 +166,19 @@ class CSimDrv_Xloader;
               
               
               r=x;
-              r2=(n - 1) | ($feof(f) ? `XLDR_FIFO_R0_XLAST : 0);
-              acc.write(base +`ADDR_XLDR_FIFO_R0, r2);
-              acc.write(base +`ADDR_XLDR_FIFO_R1, r);
+              r2=(n - 1) | ($feof(f) ? `SXLDR_FIFO_R0_XLAST : 0);
+              acc.write(base +`ADDR_SXLDR_FIFO_R0, r2);
+              acc.write(base +`ADDR_SXLDR_FIFO_R1, r);
               end
         end
 
       $fclose(f);
 
       while(1) begin
-        acc.read (base + `ADDR_XLDR_CSR, csr);
-         if(csr & `XLDR_CSR_DONE) begin
-            $display("Bitstream loaded, status: %s", (csr & `XLDR_CSR_ERROR ? "ERROR" : "OK"));
-            acc.write(base + `ADDR_XLDR_CSR, `XLDR_CSR_EXIT);
+        acc.read (base + `ADDR_SXLDR_CSR, csr);
+         if(csr & `SXLDR_CSR_DONE) begin
+            $display("Bitstream loaded, status: %s", (csr & `SXLDR_CSR_ERROR ? "ERROR" : "OK"));
+            acc.write(base + `ADDR_SXLDR_CSR, `SXLDR_CSR_EXIT);
             return;
          end
       end
@@ -143,18 +191,23 @@ endclass
    
    initial begin
       uint64_t d;
+      byte payload[];
+
       
       int i, result;
+
       
       CBusAccessor_VME64x acc = new(VME.master);
       CSimDrv_Xloader drv;
+
+      payload[0] = 0;
+      payload[1] = 0;
+      payload[2] = 0;
+      
       
 
-      #10us;
+      #600us;
       acc.set_default_modifiers(A32 | CR_CSR | D32);
-     // acc.write('h70000 + `ADDR_XLDR_GPIOR, 'haa);
-
-      
 
       drv = new(acc, 'h70000);
 
@@ -163,8 +216,13 @@ endclass
       drv.enter_boot_mode();
 
       #100us;
+
+      // read ID from the flash
+      drv.flash_command('h9f, payload, payload, 3);
+
+      $display("Flash ID: %02x %02x %02x\n", payload[0], payload[1], payload[2]);
       
-      drv.load_bitstream("sample_bitstream/crc_gen.bin");
+    //  drv.load_bitstream("sample_bitstream/crc_gen.bin");
       
       
    end

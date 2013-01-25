@@ -233,6 +233,16 @@ NET "boot_status_i" IOSTANDARD="LVCMOS33";
 NET "debugled_o[2]" IOSTANDARD="LVCMOS33";
 NET "debugled_o[1]" IOSTANDARD="LVCMOS33";
 
+NET "spi_sclk_o" IOSTANDARD="LVCMOS33";
+NET "spi_cs_n_o" IOSTANDARD="LVCMOS33";
+NET "spi_mosi_o" IOSTANDARD="LVCMOS33";
+NET "spi_miso_i" IOSTANDARD="LVCMOS33";
+
+NET "spi_sclk_o" LOC = R11;
+NET "spi_cs_n_o" LOC = T3;
+NET "spi_mosi_o" LOC = T10;
+NET "spi_miso_i" LOC = P10;
+
 # Clocks/resets
 
 NET "rst_n_i" LOC = E15;

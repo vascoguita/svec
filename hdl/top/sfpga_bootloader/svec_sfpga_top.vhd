@@ -1,3 +1,40 @@
+-------------------------------------------------------------------------------
+-- Title        : SVEC System FPGA top level
+-- Project      : Simple VME64x FMC Carrier (SVEC)
+-------------------------------------------------------------------------------
+-- File         : svec_sfpga_top.vhd
+-- Author       : Tomasz Włostowski
+-- Company      : CERN BE-CO-HT
+-- Created      : 2012-03-20
+-- Last update  : 2013-01-25
+-- Platform     : FPGA-generic
+-- Standard     : VHDL '93
+-------------------------------------------------------------------------------
+-- Description: Top level of the System FPGA. Contains a stripped-down VME64x
+-- core and the Appliaction FPGA bootloader core. Used solely for booting up
+-- the AFPGA. Possible boot configurations are: HOST -> AFPGA, FLASH -> AFPGA
+-- and HOST -> FLASH.
+-------------------------------------------------------------------------------
+--
+-- Copyright (c) 2013 CERN / BE-CO-HT
+--
+-- This source file is free software; you can redistribute it   
+-- and/or modify it under the terms of the GNU Lesser General   
+-- Public License as published by the Free Software Foundation; 
+-- either version 2.1 of the License, or (at your option) any   
+-- later version.                                               
+--
+-- This source is distributed in the hope that it will be       
+-- useful, but WITHOUT ANY WARRANTY; without even the implied   
+-- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
+-- PURPOSE.  See the GNU Lesser General Public License for more 
+-- details.                                                     
+--
+-- You should have received a copy of the GNU Lesser General    
+-- Public License along with this source; if not, download it   
+-- from http://www.gnu.org/licenses/lgpl-2.1.html
+--
+-------------------------------------------------------------------------------
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
@@ -5,6 +42,7 @@ use IEEE.NUMERIC_STD.all;
 
 use work.gencores_pkg.all;
 use work.wishbone_pkg.all;
+use work.svec_bootloader_pkg.all;
 
 library UNISIM;
 use UNISIM.vcomponents.all;
@@ -14,10 +52,10 @@ entity svec_sfpga_top is
     (
 
       -------------------------------------------------------------------------
-      -- Standard SVEC ports (Gennum bridge, LEDS, Etc. Do not modify
+      -- Standard SVEC ports (Clocks & Reset)
       -------------------------------------------------------------------------
 
-      lclk_n_i : in std_logic;          -- 20MHz VCXO clock
+      lclk_n_i : in std_logic;          -- 20 MHz VCXO clock
       rst_n_i  : in std_logic;
 
       -------------------------------------------------------------------------
@@ -41,10 +79,10 @@ entity svec_sfpga_top is
 
       -- unused pins, tied hi-impedance
 
-      VME_ADDR_DIR_o  : inout std_logic                    := 'Z';
-      VME_ADDR_OE_N_o : inout std_logic                    := 'Z';
+      VME_ADDR_DIR_o  : inout std_logic := 'Z';
+      VME_ADDR_OE_N_o : inout std_logic := 'Z';
       VME_BBSY_n_i    : in    std_logic;
-  
+
       -------------------------------------------------------------------------
       -- AFPGA boot signals
       -------------------------------------------------------------------------
@@ -55,10 +93,20 @@ entity svec_sfpga_top is
       boot_dout_o   : out std_logic;
       boot_status_i : in  std_logic;
 
+      -------------------------------------------------------------------------
+      -- SPI Flash Interface
+      -------------------------------------------------------------------------
+
+      spi_cs_n_o : out std_logic;
+      spi_mosi_o : out std_logic;
+      spi_miso_i : in  std_logic;
+      spi_sclk_o : out std_logic;
+
       debugled_o : out std_logic_vector(2 downto 1);
 
-      pll_ce_o: out std_logic
-      
+      -- Onboard PLL enable signal. Must be one for the clock system to work.
+      pll_ce_o : out std_logic
+
       );
 end svec_sfpga_top;
 
@@ -71,7 +119,6 @@ architecture rtl of svec_sfpga_top is
     port (
       clk_sys_i       : in  std_logic;
       rst_n_i         : in  std_logic;
-      passive_i       : in  std_logic;
       VME_RST_n_i     : in  std_logic;
       VME_AS_n_i      : in  std_logic;
       VME_LWORD_n_i   : in  std_logic;
@@ -90,7 +137,7 @@ architecture rtl of svec_sfpga_top is
       master_i        : in  t_wishbone_master_in);
   end component;
 
-  component xwb_xilinx_fpga_loader
+  component sfpga_bootloader
     generic (
       g_interface_mode      : t_wishbone_interface_mode;
       g_address_granularity : t_wishbone_address_granularity;
@@ -98,9 +145,15 @@ architecture rtl of svec_sfpga_top is
     port (
       clk_sys_i       : in  std_logic;
       rst_n_i         : in  std_logic;
-      slave_i         : in  t_wishbone_slave_in;
-      slave_o         : out t_wishbone_slave_out;
-      desc_o          : out t_wishbone_device_descriptor;
+      wb_cyc_i        : in  std_logic;
+      wb_stb_i        : in  std_logic;
+      wb_we_i         : in  std_logic;
+      wb_adr_i        : in  std_logic_vector(c_wishbone_address_width - 1 downto 0);
+      wb_sel_i        : in  std_logic_vector((c_wishbone_data_width + 7) / 8 - 1 downto 0);
+      wb_dat_i        : in  std_logic_vector(c_wishbone_data_width-1 downto 0);
+      wb_dat_o        : out std_logic_vector(c_wishbone_data_width-1 downto 0);
+      wb_ack_o        : out std_logic;
+      wb_stall_o      : out std_logic;
       xlx_cclk_o      : out std_logic := '0';
       xlx_din_o       : out std_logic;
       xlx_program_b_o : out std_logic := '1';
@@ -108,27 +161,14 @@ architecture rtl of svec_sfpga_top is
       xlx_done_i      : in  std_logic;
       xlx_suspend_o   : out std_logic;
       xlx_m_o         : out std_logic_vector(1 downto 0);
-      boot_trig_p1_o  : out std_logic;
-      boot_exit_p1_o  : out std_logic;
+      boot_trig_p1_o  : out std_logic := '0';
+      boot_exit_p1_o  : out std_logic := '0';
       boot_en_i       : in  std_logic;
-      gpio_o          : out std_logic_vector(7 downto 0));
+      spi_cs_n_o      : out std_logic;
+      spi_sclk_o      : out std_logic;
+      spi_mosi_o      : out std_logic;
+      spi_miso_i      : in  std_logic);
   end component;
-
-  signal VME_DATA_o_int                    : std_logic_vector(31 downto 0);
-  signal vme_dtack_oe_int, VME_DTACK_n_int : std_logic;
-  signal vme_data_dir_int                  : std_logic;
-  signal VME_DATA_OE_N_int                 : std_logic;
-
-  signal wb_vme_in  : t_wishbone_master_out;
-  signal wb_vme_out : t_wishbone_master_in;
-
-  signal passive : std_logic := '1';
-  signal gpio    : std_logic_vector(7 downto 0);
-
-
--- bootloader is active right after bootup
-  signal boot_en                    : std_logic := '1';
-  signal boot_trig_p1, boot_exit_p1 : std_logic;
 
   component chipscope_ila
     port (
@@ -145,22 +185,36 @@ architecture rtl of svec_sfpga_top is
       CONTROL0 : inout std_logic_vector (35 downto 0));
   end component;
 
+  signal VME_DATA_o_int                    : std_logic_vector(31 downto 0);
+  signal vme_dtack_oe_int, VME_DTACK_n_int : std_logic;
+  signal vme_data_dir_int                  : std_logic;
+  signal VME_DATA_OE_N_int                 : std_logic;
 
-  signal CONTROL : std_logic_vector(35 downto 0);
-  signal CLK     : std_logic;
-  signal TRIG0   : std_logic_vector(31 downto 0);
-  signal TRIG1   : std_logic_vector(31 downto 0);
-  signal TRIG2   : std_logic_vector(31 downto 0);
-  signal TRIG3   : std_logic_vector(31 downto 0);
+  signal wb_vme_in  : t_wishbone_master_out;
+  signal wb_vme_out : t_wishbone_master_in;
+
+  signal passive : std_logic := '0';
+
+-- VME bootloader is inactive by default
+
+  signal boot_en                    : std_logic := '0';
+  signal boot_trig_p1, boot_exit_p1 : std_logic;
+  signal CONTROL                    : std_logic_vector(35 downto 0);
+  signal CLK                        : std_logic;
+  signal TRIG0                      : std_logic_vector(31 downto 0);
+  signal TRIG1                      : std_logic_vector(31 downto 0);
+  signal TRIG2                      : std_logic_vector(31 downto 0);
+  signal TRIG3                      : std_logic_vector(31 downto 0);
 
   signal boot_config_int                 : std_logic;
   signal erase_afpga_n, erase_afpga_n_d0 : std_logic;
 
   signal pllout_clk_fb_sys, pllout_clk_sys, clk_sys : std_logic;
-  
+  signal rst_n_sys: std_logic;
 begin
 
-  cmp_dmtd_clk_pll : PLL_BASE
+-- PLL for producing 62.5 MHz system clock (clk_sys) from a 20 MHz reference.
+  U_Sys_clk_pll : PLL_BASE
     generic map (
       BANDWIDTH          => "OPTIMIZED",
       CLK_FEEDBACK       => "CLKFBOUT",
@@ -192,12 +246,23 @@ begin
       CLKFBIN  => pllout_clk_fb_sys,
       CLKIN    => lclk_n_i);
 
-  cmp_clk_sys_buf : BUFG
+  U_clk_sys_buf : BUFG
     port map (
       O => clk_sys,
       I => pllout_clk_sys);
 
-  
+
+  U_Sync_Reset : gc_sync_ffs
+    port map (
+      clk_i    => clk_sys,
+      rst_n_i  => '1',
+      data_i   => rst_n_i,
+      synced_o => rst_n_sys);
+
+-------------------------------------------------------------------------------
+-- Chipscope instantiation (for VME bus monitoring, I sincerely hate VMetro)
+-------------------------------------------------------------------------------
+
   chipscope_ila_1 : chipscope_ila
     port map (
       CONTROL => CONTROL,
@@ -230,15 +295,13 @@ begin
   trig2(25)          <= VME_RST_n_i;
   trig2(26)          <= passive;
 
-
   U_MiniVME : xmini_vme
     generic map (
       g_user_csr_start => resize(x"70000", 21),
       g_user_csr_end   => resize(x"70020", 21))
     port map (
       clk_sys_i       => clk_sys,
-      rst_n_i         => rst_n_i,
-      passive_i       => '0',
+      rst_n_i         => rst_n_sys,
       VME_RST_n_i     => VME_RST_n_i,
       VME_AS_n_i      => VME_AS_n_i,
       VME_LWORD_n_i   => VME_LWORD_n_b,
@@ -256,45 +319,61 @@ begin
       master_o        => wb_vme_in,
       master_i        => wb_vme_out);
 
-  U_Xilinx_Loader : xwb_xilinx_fpga_loader
+  U_Bootloader_Core : sfpga_bootloader
     generic map (
-      g_interface_mode      => PIPELINED,
+      g_interface_mode      => CLASSIC,
       g_address_granularity => BYTE,
-      g_idr_value           => x"53564543")
+      g_idr_value           => c_CSR_SIGNATURE)
     port map (
       clk_sys_i       => clk_sys,
-      rst_n_i         => rst_n_i,
-      slave_i         => wb_vme_in,
-      slave_o         => wb_vme_out,
+      rst_n_i         => rst_n_sys,
+      wb_cyc_i        => wb_vme_in.cyc,
+      wb_stb_i        => wb_vme_in.stb,
+      wb_we_i         => wb_vme_in.we,
+      wb_adr_i        => wb_vme_in.adr,
+      wb_sel_i        => wb_vme_in.sel,
+      wb_dat_i        => wb_vme_in.dat,
+      wb_dat_o        => wb_vme_out.dat,
+      wb_ack_o        => wb_vme_out.ack,
+      wb_stall_o      => wb_vme_out.stall,
       xlx_cclk_o      => boot_clk_o,
       xlx_din_o       => boot_dout_o,
       xlx_program_b_o => boot_config_int,
       xlx_init_b_i    => boot_status_i,
       xlx_done_i      => boot_done_i,
-      xlx_suspend_o   => open,
-      xlx_m_o         => open,
       boot_trig_p1_o  => boot_trig_p1,
       boot_exit_p1_o  => boot_exit_p1,
       boot_en_i       => boot_en,
-      gpio_o          => gpio);
+      spi_cs_n_o      => spi_cs_n_o,
+      spi_sclk_o      => spi_sclk_o,
+      spi_mosi_o      => spi_mosi_o,
+      spi_miso_i      => spi_miso_i);
 
+  -- produces a longer pulse on PROGRAM_B pin of the Application FPGA when
+  -- the VME bootloader mode is activated
   U_Extend_Erase_Pulse : gc_extend_pulse
     generic map (
       g_width => 100)
     port map (
       clk_i      => clk_sys,
-      rst_n_i    => rst_n_i,
+      rst_n_i    => rst_n_sys,
       pulse_i    => boot_trig_p1,
       extended_o => erase_afpga_n);
 
+  -- Erase the application FPGA as soon as we have received a bootloader
+  -- trigger command - this is to prevent two VME cores from working simultaneously
+  -- on a single bus.
   boot_config_o <= boot_config_int and (not erase_afpga_n);
 
-  p_enable_disable_bootloader : process(clk_sys)
+  p_enable_disable_bootloader : process(clk_sys, VME_RST_n_i, rst_n_i)
   begin
-    if rising_edge(clk_sys) then
+    if(rst_n_i = '0' or VME_RST_n_i = '0') then
+      boot_en <= '0';  -- VME bootloader is inactive after reset
+    elsif rising_edge(clk_sys) then
 
       erase_afpga_n_d0 <= erase_afpga_n;
 
+      -- VME activation occurs after erasing the AFPGA
       if(erase_afpga_n = '0' and erase_afpga_n_d0 = '1') then
         boot_en <= '1';
       elsif(boot_exit_p1 = '1') then
@@ -303,8 +382,8 @@ begin
     end if;
   end process;
 
+  -- When the VME bootloader is not active, do NOT drive any outputs and sit quiet.
   passive <= not boot_en;
-
 
   VME_ADDR_b <= (others => 'Z');
 
@@ -317,9 +396,10 @@ begin
   VME_ADDR_DIR_o  <= '0'               when passive = '0'                                                          else 'Z';
   VME_LWORD_n_b   <= 'Z';
 
-  debugled_o(1) <= gpio(0);
+  debugled_o(1) <= '0';
   debugled_o(2) <= boot_en;
 
+  -- Permanently enable onboard PLL
   pll_ce_o <= '1';
   
 end rtl;

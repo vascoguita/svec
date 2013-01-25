@@ -1,5 +1,40 @@
--- minimalistic VME core providing only CR/CSR accesses. For SVEC AFPGA bootup
--- purposes.
+-------------------------------------------------------------------------------
+-- Title      : Minimalistic VME64x Core
+-- Project    : Simple VME64x FMC Carrier (SVEC)
+-------------------------------------------------------------------------------
+-- File       : mini_vme.vhd
+-- Author     : Tomasz Wlostowski
+-- Company    : CERN
+-- Created    : 2012-01-20
+-- Last update: 2013-01-25
+-- Platform   : FPGA-generic
+-- Standard   : VHDL'93
+-------------------------------------------------------------------------------
+-- Description: A stripped-down version of VME64x core. Supports only CR/CSR/D32
+-- accesses to a range of addresses specified in g_user_csr_start/end. Matching
+-- transactions are executed through a Wishbone master.
+-------------------------------------------------------------------------------
+--
+-- Copyright (c) 2012 - 2013 CERN / BE-CO-HT
+--
+-- This source file is free software; you can redistribute it   
+-- and/or modify it under the terms of the GNU Lesser General   
+-- Public License as published by the Free Software Foundation; 
+-- either version 2.1 of the License, or (at your option) any   
+-- later version.                                               
+--
+-- This source is distributed in the hope that it will be       
+-- useful, but WITHOUT ANY WARRANTY; without even the implied   
+-- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
+-- PURPOSE.  See the GNU Lesser General Public License for more 
+-- details.                                                     
+--
+-- You should have received a copy of the GNU Lesser General    
+-- Public License along with this source; if not, download it   
+-- from http://www.gnu.org/licenses/lgpl-2.1.html
+--
+-------------------------------------------------------------------------------
+
 
 library ieee;
 use ieee.STD_LOGIC_1164.all;
@@ -10,33 +45,35 @@ use work.wishbone_pkg.all;
 
 entity xmini_vme is
   generic (
+    -- Start/end of our CSR space
     g_user_csr_start : unsigned(20 downto 0);
     g_user_csr_end   : unsigned(20 downto 0));
   port (
     clk_sys_i : in std_logic;
     rst_n_i   : in std_logic;
 
-    -- "Passive" mode enable: when '1', the core never touches the bus
-    passive_i : in std_logic;
-
-    -- stripped-down VME I/O
+    -- Stripped-down VME bus. 
     VME_RST_n_i    : in  std_logic;
     VME_AS_n_i     : in  std_logic;
     VME_LWORD_n_i  : in  std_logic;
     VME_WRITE_n_i  : in  std_logic;
     VME_DS_n_i     : in  std_logic_vector(1 downto 0);
-    VME_GA_i       : in  std_logic_vector(5 downto 0);  -- Geographical Address and GA parity
-    VME_DTACK_n_o  : out std_logic;
-    VME_DTACK_OE_o : out std_logic;
 
+    -- Geographical Address. Bit 5 is GA parity.
+    VME_GA_i       : in  std_logic_vector(5 downto 0);  
     VME_AM_i   : in std_logic_vector(5 downto 0);
     VME_ADDR_i : in std_logic_vector(31 downto 1);
 
+    -- Bidirectional/tristate driver signals: please put the tristates in the
+    -- top level entity of your design.
+    VME_DTACK_n_o  : out std_logic;
+    VME_DTACK_OE_o : out std_logic;
     VME_DATA_b_i    : in  std_logic_vector(31 downto 0);
     VME_DATA_b_o    : out std_logic_vector(31 downto 0);
     VME_DATA_DIR_o  : out std_logic;
     VME_DATA_OE_N_o : out std_logic;
 
+    -- Wishbone master
     master_o : out t_wishbone_master_out;
     master_i : in  t_wishbone_master_in
     );
@@ -45,7 +82,10 @@ end xmini_vme;
 
 architecture rtl of xmini_vme is
 
+  -- We are only interested in CR/CSR transfers (AM = 0x2f)
   constant c_AM_CS_CSR    : std_logic_vector(5 downto 0) := "101111";
+
+  -- How long (in clock cycles) is our DTACK. Useful for slower VME controllers.
   constant c_DTACK_LENGTH : integer                      := 20;
 
   signal as_synced, ds_synced                 : std_logic;
@@ -143,8 +183,8 @@ begin  -- rtl
         else
           am_match <= '0';
         end if;
-        -- ... D32 data type
 
+        -- ... D32 data type
         if(ds_latched = "00" and lword_latched = '0' and addr_latched(1) = '0') then
           dtype_match <= '1';
         else
@@ -222,15 +262,9 @@ begin  -- rtl
           when DTACK =>
             VME_DATA_b_o <= readback_data;
 
-            if(passive_i = '1') then
-              VME_DATA_DIR_o <= '0';
-              VME_DATA_DIR_o <= '0';
-              VME_DTACK_OE_o <= '0';
-            else
-              VME_DTACK_n_o  <= '0';
-              VME_DTACK_OE_o <= '1';
-              VME_DATA_DIR_o <= not is_write;
-            end if;
+            VME_DTACK_n_o  <= '0';
+            VME_DTACK_OE_o <= '1';
+            VME_DATA_DIR_o <= not is_write;
 
             dtack_counter <= dtack_counter + 1;
 
