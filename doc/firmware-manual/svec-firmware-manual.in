@@ -1,0 +1,176 @@
+\input texinfo    @c -*-texinfo-*-
+%
+% fine-delay.in - main file for the documentation
+%
+%%%%
+
+%------------------------------------------------------------------------------
+%
+%                         NOTE FOR THE UNAWARE USER
+%                         =========================
+%
+%    This file is a texinfo source. It isn't the binary file of some strange
+%    editor of mine. If you want ASCII, you should "make fine-delay.txt".
+%
+%------------------------------------------------------------------------------
+
+%
+% This is not a conventional info file...
+% I use three extra features:
+%   - The '%' as a comment marker, if at beginning of line ("\%" -> "%")
+%   - leading blanks are allowed (this is something I can't live without)
+%   - braces are automatically escaped when they appear in example blocks
+%
+
+@comment %**start of header
+@documentlanguage en
+@documentencoding UTF-8
+@setfilename svec-firmware-manual.info
+@settitle svec-firmware-manual
+@iftex
+@afourpaper
+@end iftex
+@paragraphindent 3
+@comment %**end of header
+
+@setchapternewpage off
+
+@set update-month January 2013
+
+@finalout
+
+@titlepage
+@title Default firmware for the SVEC card
+@subtitle Programmer's manual
+@author CERN BE-CO-HT / Tomasz Włostowski
+
+@end titlepage
+@headings single
+
+@iftex
+@contents
+@end iftex
+
+@c ##########################################################################
+@node Top
+@chapter Introduction
+
+This document describes the default bitstreams that come preloaded with every SVEC card. As there are two FPGAs on the SVEC, there are two default bitstreams:
+@itemize
+@item @b{Bootloader bitstream}, residing in the System FPGA whose role is to start up the Application FPGA
+@item @b{Golden bitstream}, residing in the Application FPGA, which allows the device driver to enumerate the mezzanines.
+@end itemize
+
+@chapter The Bootloader
+
+The System FPGA bootloader allows to boot the Application FPGA from the VME bus or from the onboard Flash memory and reprogram both the System and Application bitstreams in the flash via VME. The boot process goes as follows:
+@itemize
+@item Power up.
+@item SFPGA checks for presence of a valid bitstream file for the Application FPGA in the Flash memory.
+@item If a valid bitstream has been found, the AFPGA is initialized with it,
+@item if not, the Bootloader enters passive mode. Upon reception of a boot sequence, if gives access to the Flash for the host or lets it program the AFPGA directly.
+@end itemize
+
+@section VME Interface
+The bootloader core supports only 32-bit data CR/CSR accesses from/to address range @code{0x70000} - @code{0x70020}, allowing for plug&play reprogramming of the cards only knowing their physical slot locations. All other transfers are ignored. The base address is @code{0x70000}, and corresponds to the @code{CSR} register. When the card is powered up, the VME interface stays in passive mode, monitoring VME accesses without ACKing them. This is to prevent conflicts with the CR/CSR space of the VME core in the Application FPGA. 
+
+@section Entering bootloader mode
+In order to enter the bootloader, one needs to write a magic sequence of 8 following transfers: @code{0xde}, @code{0xad}, @code{0xad}, @code{0xbe}, @code{0xca}, @code{0xfe}, @code{0xba}, @code{0xbe} to @code{BTRIGR} register. Afterwards, read the @code{IDR} register. It should be equal to @code{SVEC} ASCII string encoded in HEX. Any other value indicates that the boot trigger sequence was not correctly recognized. 
+
+
+@b{Note 1:} Triggering bootloader mode causes automatic reset (un-programming) of the Application FPGA.
+
+@b{Note 2:} Write operations to @code{BTRIGR} register while the core is still in passie mode will not be acknowledged on the VME bus and will most likely cause bus errors. Please ignore them.
+
+@section Programming the AFPGA
+Programming the Application FPGA directly via VME involves following steps:
+@itemize
+@item Reset the Xilinx Passive Serial boot interface by writing @code{CSR.SWRST} bit,
+@item Set download speed by writing @code{CSR.CLKDIV} field. Default value is @code{1}.
+@item Write @code{CSR.START} bit and set endianess via @code{CSR.MSBF} bit,
+@item Write the bitstream to the FIFO registers, observing FIFO full/empty status. Last transfer should have @code{FIFO_R1.XLAST} bit set to 1.
+@item Wait for assertion of @code{CSR.DONE}. @code{CSR.ERROR} bit indicates a problem during configuration (most likely, an invalid bitstream)
+@item Exit bootloader mode by writing 1 to @code{CSR.EXIT} bit.
+@end itemize
+
+Successful firmware download to the Application FPGA is indicated by turning on the ``AFPGA DONE'' LED.
+
+@section Programming the Flash
+SFPGA also allows raw access to the Flash memory (M25P128) via @code{FAR} register. The code below shows how to execute a single SPI transaction (command + N data bytes). 
+
+@example
+uint8 spi_transfer(int cs, uint8 data) {
+  while (! FAR.READY);
+  FAR.CS = cs;
+  FAR.XFER = 1;
+  FAR.DATA = data;
+  while (! FAR.READY);
+  return FAR.DATA;
+}
+
+void flash_command(uint8 command, uint8 data[]) {
+  spi_transfer(0, 0);
+  spi_transfer(1, cmd);
+  for(i=0;i<length(data);i++)
+    data[i] = spi_transfer(1, data[i]);
+  spi_transfer(0, 0);
+}
+@end example
+
+Low-level details about programming M25Pxxx series Flash memories can be found in their datasheets.
+
+@b{Note 1:} It is advised to protect the System FPGA bitstream from being accidentally overwritten, as this will result in bricking the card and will require re-programming the flash via JTAG.
+
+@b{Note 2:} The freshly-programmed bitstreams will be loaded into the FPGAs after power-cycling the card. 
+
+@section Flash memory organization
+
+The flash memory of the SVEC contains 16 Megabytes of memory, that is 64k pages of 256 bytes. First 6 MBs are used for bitstream storage, the rest is available for the user application. The flash format is compatible with the SDB filesystem, with the SDB descriptor table located at offset @code{0x500000}. Locations of the bitstreams are fixed to:
+@itemize
+@item @code{0}: Raw bitstream for the System FPGA (up to 1 MB)
+@item @code{0x100000}: Bitstream for the Application FPGA (up to 4 MB)
+@end itemize
+
+An example script for building the default flash filesystem (containg the bootloader and golden bitstreams) is located in the @code{software/sdb-flash} subdirectory. The presence of SDB descriptor table at @code{0x500000}, as the SDB signature is checked by the bootloader to prevent booting up from a corrupted flash. 
+
+@b{Note:} Both bitstreams must be in raw (@code{.bin} file extension) format. @code{.bit}, @code{.mcs}, @code{.xsvf} and other formats will not work. This also applies to direct VME boot mode.
+
+
+@chapter The Golden Bitstream
+The SVEC Application FPGA golden bitstream allows the SVEC device driver to:
+@itemize
+@item Query the board's serial number,
+@item Check the presence of the FMC mezzanines,
+@item Read out their @math{I^2C} identification EEPROMs.
+@end itemize
+The bitstream does not drive any of the mezzanine user/clock pins to protect from electrical damage resulting from mismatched I/O standards.
+
+@section Block diagram
+
+The bitstream encompasses @math{I^2C}, OneWire and GPIO modules from the @code{general-cores} library. For further details, refer to the library's manual.
+
+@float Figure,fig:block
+@center @image{drawings/golden_block, 15cm,,,.pdf}
+@caption{Block diagram of the SVEC golden gateware.}
+@end float
+
+Presence detection is done by reading out the @code{PRSNT} lines (active low) through the GPIO port. EEPROM readout is performed via the two @math{I^2C} masters. Board serial number
+is equal to the serial number of the DS18B20U+ temperature sensor, accessible via the OneWire master. The clock freqency for @code{I^2C} and OneWire dividers calculation is 62.5 MHz. 
+
+@section Memory map
+
+@b{Warning:} Please do not hardcode the base addresses of the cores, query them from the SDB descriptor. The SDB address of @code{0x0} is guaranteed to stay constant.
+Only A32/A24/D32/CSR address modifiers are supported.
+
+@multitable @columnfractions .20 .10 .15 .65
+@headitem Core @tab Base address @tab Library @tab Description
+@item @code{sdb_rom} @tab @code{0x0} @tab @code{general-cores} @tab SDB descriptor.
+@item @code{xwb_i2c_master} @tab @code{0x10000} @tab @code{general-cores} @tab I2C Master for accessing FMC 1 identification EEPROM.
+@item @code{xwb_i2c_master} @tab @code{0x11000} @tab @code{general-cores} @tab I2C Master for accessing FMC 2 identification EEPROM.
+@item @code{xwb_onewire_master} @tab @code{0x12000} @tab @code{general-cores} @tab OneWire Master for accessing temperature sensor/serial ID.
+@item @code{xwb_gpio_port} @tab @code{0x13000} @tab @code{general-cores} @tab GPIO port for accessing FMC1/2 presence lines.
+@end multitable
+
+@appendix System FPGA register map
+   @include svec_xloader.in
+@bye

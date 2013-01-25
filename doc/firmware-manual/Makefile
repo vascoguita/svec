@@ -6,7 +6,7 @@
 #################
 
 # There is not basenames here, all *.in are considered input
-INPUT = svec-golden.in
+INPUT = svec-firmware-manual.in
 
 TEXI = $(INPUT:.in=.texi)
 INFO = $(INPUT:.in=.info)

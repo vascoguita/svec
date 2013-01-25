@@ -1,0 +1,208 @@
+@subsubsection Memory map summary
+@multitable  @columnfractions .10 .15 .15 .55
+@headitem Address @tab Type @tab Prefix @tab Name
+@item @code{0x0} @tab
+REG @tab
+@code{CSR} @tab
+Control/status register
+@item @code{0x4} @tab
+REG @tab
+@code{BTRIGR} @tab
+Bootloader Trigger Register
+@item @code{0x8} @tab
+REG @tab
+@code{FAR} @tab
+Flash Access Register
+@item @code{0xc} @tab
+REG @tab
+@code{IDR} @tab
+ID Register
+@item @code{0x10} @tab
+FIFOREG @tab
+@code{FIFO_R0} @tab
+FIFO 'Bitstream FIFO' data input register 0
+@item @code{0x14} @tab
+FIFOREG @tab
+@code{FIFO_R1} @tab
+FIFO 'Bitstream FIFO' data input register 1
+@item @code{0x18} @tab
+REG @tab
+@code{FIFO_CSR} @tab
+FIFO 'Bitstream FIFO' control/status register
+@end multitable 
+@subsubsection @code{CSR} - Control/status register
+@multitable @columnfractions .10 .10 .15 .10 .55
+@headitem Bits @tab Access @tab Prefix @tab Default @tab Name
+@item @code{0}
+@tab W/O @tab
+@code{START}
+@tab @code{X} @tab 
+Start configuration
+@item @code{1}
+@tab R/O @tab
+@code{DONE}
+@tab @code{X} @tab 
+Configuration done
+@item @code{2}
+@tab R/O @tab
+@code{ERROR}
+@tab @code{X} @tab 
+Configuration error
+@item @code{3}
+@tab R/O @tab
+@code{BUSY}
+@tab @code{X} @tab 
+Loader busy
+@item @code{4}
+@tab R/W @tab
+@code{MSBF}
+@tab @code{X} @tab 
+Byte order select
+@item @code{5}
+@tab W/O @tab
+@code{SWRST}
+@tab @code{X} @tab 
+Software resest
+@item @code{6}
+@tab W/O @tab
+@code{EXIT}
+@tab @code{X} @tab 
+Exit bootloader mode
+@item @code{13...8}
+@tab R/W @tab
+@code{CLKDIV}
+@tab @code{X} @tab 
+Serial clock divider
+@end multitable
+@multitable @columnfractions 0.15 0.85
+@headitem Field @tab Description
+@item @code{START} @tab write 1: starts the configuration process.@* write 0: no effect
+@item @code{DONE} @tab read 1: the bitstream has been loaded@* read 0: configuration still in progress
+@item @code{ERROR} @tab read 1: an error occured during the configuration (DONE/INIT_B timeout)@* read 0: configuration was successful
+@item @code{BUSY} @tab read 1: the loader is busy (can't start configuration yet)@* read 0: the loader is ready to re-configure the FPGA
+@item @code{MSBF} @tab write 1: MSB first (big endian host)@* write 0: LSB first (little endian host)
+@item @code{SWRST} @tab write 1: resets the loader core@* write 0: no effect
+@item @code{EXIT} @tab write 1: terminate bootloader mode and go passive (VME only)
+@item @code{CLKDIV} @tab CCLK division ratio. CCLK frequency = F_sysclk / 2 / (CLKDIV + 1)
+@end multitable
+@subsubsection @code{BTRIGR} - Bootloader Trigger Register
+@multitable @columnfractions .10 .10 .15 .10 .55
+@headitem Bits @tab Access @tab Prefix @tab Default @tab Name
+@item @code{7...0}
+@tab W/O @tab
+@code{BTRIGR}
+@tab @code{X} @tab 
+Trigger Sequence Input
+@end multitable
+@multitable @columnfractions 0.15 0.85
+@headitem Field @tab Description
+@item @code{BTRIGR} @tab Write a sequence of 0xde, 0xad, 0xbe, 0xef, 0xca, 0xfe, 0xba, 0xbe to enter bootloader mode (VME only)
+@end multitable
+@subsubsection @code{FAR} - Flash Access Register
+Provides direct access to the SPI flash memory containing the bitstream.
+@multitable @columnfractions .10 .10 .15 .10 .55
+@headitem Bits @tab Access @tab Prefix @tab Default @tab Name
+@item @code{7...0}
+@tab R/W @tab
+@code{DATA}
+@tab @code{X} @tab 
+SPI Data
+@item @code{8}
+@tab R/W @tab
+@code{XFER}
+@tab @code{X} @tab 
+SPI Start Transfer
+@item @code{9}
+@tab R/O @tab
+@code{READY}
+@tab @code{X} @tab 
+SPI Ready
+@item @code{10}
+@tab R/W @tab
+@code{CS}
+@tab @code{X} @tab 
+SPI Chip Select
+@end multitable
+@multitable @columnfractions 0.15 0.85
+@headitem Field @tab Description
+@item @code{DATA} @tab Data to be written / read to/from the flash SPI controller.
+@item @code{XFER} @tab write 1: initiate an SPI transfer with an 8-bit data word taken from the @code{DATA}field@* write 0: no effect
+@item @code{READY} @tab read 1: Core is ready to initiate another transfer. DATA field contains the data read during previous transaction.@*read 0: core is busy
+@item @code{CS} @tab write 1: Enable target SPI controller@*write 0: Disable target SPI controller
+@end multitable
+@subsubsection @code{IDR} - ID Register
+@multitable @columnfractions .10 .10 .15 .10 .55
+@headitem Bits @tab Access @tab Prefix @tab Default @tab Name
+@item @code{31...0}
+@tab R/O @tab
+@code{IDR}
+@tab @code{X} @tab 
+Identification code
+@end multitable
+@multitable @columnfractions 0.15 0.85
+@headitem Field @tab Description
+@item @code{IDR} @tab User-defined identification code (g_idr_value generic)
+@end multitable
+@subsubsection @code{FIFO_R0} - FIFO 'Bitstream FIFO' data input register 0
+@multitable @columnfractions .10 .10 .15 .10 .55
+@headitem Bits @tab Access @tab Prefix @tab Default @tab Name
+@item @code{1...0}
+@tab W/O @tab
+@code{XSIZE}
+@tab @code{X} @tab 
+Entry size
+@item @code{2}
+@tab W/O @tab
+@code{XLAST}
+@tab @code{X} @tab 
+Last xfer
+@end multitable
+@multitable @columnfractions 0.15 0.85
+@headitem Field @tab Description
+@item @code{XSIZE} @tab Number of bytes to send (0 = 1 byte .. 3 = full 32-bit word)
+@item @code{XLAST} @tab write 1: indicates the last word to be written to the FPGA
+@end multitable
+@subsubsection @code{FIFO_R1} - FIFO 'Bitstream FIFO' data input register 1
+@multitable @columnfractions .10 .10 .15 .10 .55
+@headitem Bits @tab Access @tab Prefix @tab Default @tab Name
+@item @code{31...0}
+@tab W/O @tab
+@code{XDATA}
+@tab @code{X} @tab 
+Data
+@end multitable
+@multitable @columnfractions 0.15 0.85
+@headitem Field @tab Description
+@item @code{XDATA} @tab Subsequent words of the bitstream
+@end multitable
+@subsubsection @code{FIFO_CSR} - FIFO 'Bitstream FIFO' control/status register
+@multitable @columnfractions .10 .10 .15 .10 .55
+@headitem Bits @tab Access @tab Prefix @tab Default @tab Name
+@item @code{16}
+@tab R/O @tab
+@code{FULL}
+@tab @code{X} @tab 
+FIFO full flag
+@item @code{17}
+@tab R/O @tab
+@code{EMPTY}
+@tab @code{X} @tab 
+FIFO empty flag
+@item @code{18}
+@tab W/O @tab
+@code{CLEAR_BUS}
+@tab @code{X} @tab 
+FIFO clear
+@item @code{7...0}
+@tab R/O @tab
+@code{USEDW}
+@tab @code{X} @tab 
+FIFO counter
+@end multitable
+@multitable @columnfractions 0.15 0.85
+@headitem Field @tab Description
+@item @code{full} @tab 1: FIFO 'Bitstream FIFO' is full@*0: FIFO is not full
+@item @code{empty} @tab 1: FIFO 'Bitstream FIFO' is empty@*0: FIFO is not empty
+@item @code{clear_bus} @tab write 1: clears FIFO 'Bitstream FIFO@*write 0: no effect
+@item @code{usedw} @tab Number of data records currently being stored in FIFO 'Bitstream FIFO'
+@end multitable
