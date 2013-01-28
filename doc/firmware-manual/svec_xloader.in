@@ -1,4 +1,4 @@
-@subsubsection Memory map summary
+@regsection Memory map summary
 @multitable  @columnfractions .10 .15 .15 .55
 @headitem Address @tab Type @tab Prefix @tab Name
 @item @code{0x0} @tab
@@ -30,7 +30,7 @@ REG @tab
 @code{FIFO_CSR} @tab
 FIFO 'Bitstream FIFO' control/status register
 @end multitable 
-@subsubsection @code{CSR} - Control/status register
+@regsection @code{CSR} - Control/status register
 @multitable @columnfractions .10 .10 .15 .10 .55
 @headitem Bits @tab Access @tab Prefix @tab Default @tab Name
 @item @code{0}
@@ -85,7 +85,7 @@ Serial clock divider
 @item @code{EXIT} @tab write 1: terminate bootloader mode and go passive (VME only)
 @item @code{CLKDIV} @tab CCLK division ratio. CCLK frequency = F_sysclk / 2 / (CLKDIV + 1)
 @end multitable
-@subsubsection @code{BTRIGR} - Bootloader Trigger Register
+@regsection @code{BTRIGR} - Bootloader Trigger Register
 @multitable @columnfractions .10 .10 .15 .10 .55
 @headitem Bits @tab Access @tab Prefix @tab Default @tab Name
 @item @code{7...0}
@@ -98,7 +98,7 @@ Trigger Sequence Input
 @headitem Field @tab Description
 @item @code{BTRIGR} @tab Write a sequence of 0xde, 0xad, 0xbe, 0xef, 0xca, 0xfe, 0xba, 0xbe to enter bootloader mode (VME only)
 @end multitable
-@subsubsection @code{FAR} - Flash Access Register
+@regsection @code{FAR} - Flash Access Register
 Provides direct access to the SPI flash memory containing the bitstream.
 @multitable @columnfractions .10 .10 .15 .10 .55
 @headitem Bits @tab Access @tab Prefix @tab Default @tab Name
@@ -130,7 +130,7 @@ SPI Chip Select
 @item @code{READY} @tab read 1: Core is ready to initiate another transfer. DATA field contains the data read during previous transaction.@*read 0: core is busy
 @item @code{CS} @tab write 1: Enable target SPI controller@*write 0: Disable target SPI controller
 @end multitable
-@subsubsection @code{IDR} - ID Register
+@regsection @code{IDR} - ID Register
 @multitable @columnfractions .10 .10 .15 .10 .55
 @headitem Bits @tab Access @tab Prefix @tab Default @tab Name
 @item @code{31...0}
@@ -143,7 +143,7 @@ Identification code
 @headitem Field @tab Description
 @item @code{IDR} @tab User-defined identification code (g_idr_value generic)
 @end multitable
-@subsubsection @code{FIFO_R0} - FIFO 'Bitstream FIFO' data input register 0
+@regsection @code{FIFO_R0} - FIFO 'Bitstream FIFO' data input register 0
 @multitable @columnfractions .10 .10 .15 .10 .55
 @headitem Bits @tab Access @tab Prefix @tab Default @tab Name
 @item @code{1...0}
@@ -162,7 +162,7 @@ Last xfer
 @item @code{XSIZE} @tab Number of bytes to send (0 = 1 byte .. 3 = full 32-bit word)
 @item @code{XLAST} @tab write 1: indicates the last word to be written to the FPGA
 @end multitable
-@subsubsection @code{FIFO_R1} - FIFO 'Bitstream FIFO' data input register 1
+@regsection @code{FIFO_R1} - FIFO 'Bitstream FIFO' data input register 1
 @multitable @columnfractions .10 .10 .15 .10 .55
 @headitem Bits @tab Access @tab Prefix @tab Default @tab Name
 @item @code{31...0}
@@ -175,7 +175,7 @@ Data
 @headitem Field @tab Description
 @item @code{XDATA} @tab Subsequent words of the bitstream
 @end multitable
-@subsubsection @code{FIFO_CSR} - FIFO 'Bitstream FIFO' control/status register
+@regsection @code{FIFO_CSR} - FIFO 'Bitstream FIFO' control/status register
 @multitable @columnfractions .10 .10 .15 .10 .55
 @headitem Bits @tab Access @tab Prefix @tab Default @tab Name
 @item @code{16}

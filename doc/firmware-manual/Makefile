@@ -14,7 +14,7 @@ HTML = $(INPUT:.in=.html)
 TXT  = $(INPUT:.in=.txt)
 PDF  = $(INPUT:.in=.pdf)
 
-ALL    =  $(TXT) $(PDF)
+ALL    =  $(PDF)
 
 MAKEINFO ?= makeinfo
 
