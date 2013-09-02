@@ -8,7 +8,7 @@
 	device = 0x5fec
 	position = 0x500000
 
-sfpga.bin
+bootldr.bin
 	position = 0
 
 afpga.bin

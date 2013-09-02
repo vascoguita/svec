@@ -36,7 +36,7 @@ FIFO 'Bitstream FIFO' control/status register
 @item @code{0}
 @tab W/O @tab
 @code{START}
-@tab @code{X} @tab 
+@tab @code{0} @tab 
 Start configuration
 @item @code{1}
 @tab R/O @tab
@@ -56,23 +56,28 @@ Loader busy
 @item @code{4}
 @tab R/W @tab
 @code{MSBF}
-@tab @code{X} @tab 
+@tab @code{0} @tab 
 Byte order select
 @item @code{5}
 @tab W/O @tab
 @code{SWRST}
-@tab @code{X} @tab 
+@tab @code{0} @tab 
 Software resest
 @item @code{6}
 @tab W/O @tab
 @code{EXIT}
-@tab @code{X} @tab 
+@tab @code{0} @tab 
 Exit bootloader mode
 @item @code{13...8}
 @tab R/W @tab
 @code{CLKDIV}
-@tab @code{X} @tab 
+@tab @code{0} @tab 
 Serial clock divider
+@item @code{21...14}
+@tab R/O @tab
+@code{VERSION}
+@tab @code{X} @tab 
+Bootloader version
 @end multitable
 @multitable @columnfractions 0.15 0.85
 @headitem Field @tab Description
@@ -91,7 +96,7 @@ Serial clock divider
 @item @code{7...0}
 @tab W/O @tab
 @code{BTRIGR}
-@tab @code{X} @tab 
+@tab @code{0} @tab 
 Trigger Sequence Input
 @end multitable
 @multitable @columnfractions 0.15 0.85
@@ -110,7 +115,7 @@ SPI Data
 @item @code{8}
 @tab R/W @tab
 @code{XFER}
-@tab @code{X} @tab 
+@tab @code{0} @tab 
 SPI Start Transfer
 @item @code{9}
 @tab R/O @tab
@@ -120,7 +125,7 @@ SPI Ready
 @item @code{10}
 @tab R/W @tab
 @code{CS}
-@tab @code{X} @tab 
+@tab @code{0} @tab 
 SPI Chip Select
 @end multitable
 @multitable @columnfractions 0.15 0.85
@@ -149,12 +154,12 @@ Identification code
 @item @code{1...0}
 @tab W/O @tab
 @code{XSIZE}
-@tab @code{X} @tab 
+@tab @code{0} @tab 
 Entry size
 @item @code{2}
 @tab W/O @tab
 @code{XLAST}
-@tab @code{X} @tab 
+@tab @code{0} @tab 
 Last xfer
 @end multitable
 @multitable @columnfractions 0.15 0.85
@@ -168,7 +173,7 @@ Last xfer
 @item @code{31...0}
 @tab W/O @tab
 @code{XDATA}
-@tab @code{X} @tab 
+@tab @code{0} @tab 
 Data
 @end multitable
 @multitable @columnfractions 0.15 0.85
@@ -191,7 +196,7 @@ FIFO empty flag
 @item @code{18}
 @tab W/O @tab
 @code{CLEAR_BUS}
-@tab @code{X} @tab 
+@tab @code{0} @tab 
 FIFO clear
 @item @code{7...0}
 @tab R/O @tab

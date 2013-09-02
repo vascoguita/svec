@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #ifndef __MSDOS__
 #include <unistd.h>
 #endif
@@ -199,7 +200,7 @@ int Dots, int Extended)
 	if ((Address + InBytes) > MaxOffset) {
 	    if (Dots)
 		fputc('\n',stderr);
-	    fprintf(stderr,"%s: Record address exceeded 0x%X.\n",
+	    fprintf(stderr,"%s: Record address exceeded 0x%lX.\n",
 	    Name,MaxOffset);
 	    break;
 	}

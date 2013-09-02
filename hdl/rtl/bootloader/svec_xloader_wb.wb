@@ -119,6 +119,15 @@ peripheral {
          access_bus = READ_WRITE;
          access_dev =READ_ONLY;
       };
+      
+      field {
+         name = "Bootloader version";
+         prefix = "VERSION";
+         type = CONSTANT;
+         size = 8;
+         value = 2;
+      }
+
 	};
 	
    reg {
