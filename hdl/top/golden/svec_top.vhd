@@ -6,7 +6,7 @@
 -- Author     : Tomasz Wlostowski
 -- Company    : CERN
 -- Created    : 2011-08-24
--- Last update: 2012-11-29
+-- Last update: 2013-05-16
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -44,6 +44,7 @@ use IEEE.NUMERIC_STD.all;
 
 use work.gencores_pkg.all;
 use work.wishbone_pkg.all;
+use work.golden_core_pkg.all;
 
 library UNISIM;
 use UNISIM.vcomponents.all;
@@ -79,10 +80,10 @@ entity svec_top is
       VME_ADDR_b      : inout std_logic_vector(31 downto 1);
       VME_DATA_b      : inout std_logic_vector(31 downto 0);
       VME_BBSY_n_i    : in    std_logic;
-      VME_IRQ_n_o     : out   std_logic_vector(6 downto 0);
+      VME_IRQ_n_o     : inout std_logic_vector(6 downto 0);
       VME_IACK_n_i    : in    std_logic;
       VME_IACKIN_n_i  : in    std_logic;
-      VME_IACKOUT_n_o : out   std_logic;
+      VME_IACKOUT_n_o : inout std_logic;
       VME_DTACK_OE_o  : inout std_logic;
       VME_DATA_DIR_o  : inout std_logic;
       VME_DATA_OE_N_o : inout std_logic;
@@ -113,7 +114,6 @@ architecture rtl of svec_top is
     port (
       clk_i           : in  std_logic;
       rst_n_i         : in  std_logic;
-      rst_n_o         : out std_logic;
       VME_AS_n_i      : in  std_logic;
       VME_RST_n_i     : in  std_logic;
       VME_WRITE_n_i   : in  std_logic;
@@ -145,25 +145,44 @@ architecture rtl of svec_top is
       irq_ack_o       : out std_logic);
   end component;
 
+  component chipscope_ila
+    port (
+      CONTROL : inout std_logic_vector(35 downto 0);
+      CLK     : in    std_logic;
+      TRIG0   : in    std_logic_vector(31 downto 0);
+      TRIG1   : in    std_logic_vector(31 downto 0);
+      TRIG2   : in    std_logic_vector(31 downto 0);
+      TRIG3   : in    std_logic_vector(31 downto 0));
+  end component;
+
+  component chipscope_icon
+    port (
+      CONTROL0 : inout std_logic_vector (35 downto 0));
+  end component;
+
+  signal CONTROL : std_logic_vector(35 downto 0);
+  signal CLK     : std_logic;
+  signal TRIG0   : std_logic_vector(31 downto 0);
+  signal TRIG1   : std_logic_vector(31 downto 0);
+  signal TRIG2   : std_logic_vector(31 downto 0);
+  signal TRIG3   : std_logic_vector(31 downto 0);
+
+
   signal VME_DATA_b_out                                        : std_logic_vector(31 downto 0);
   signal VME_ADDR_b_out                                        : std_logic_vector(31 downto 1);
   signal VME_LWORD_n_b_out, VME_DATA_DIR_int, VME_ADDR_DIR_int : std_logic;
 
-  constant c_NUM_WB_MASTERS : integer := 4;
+  constant c_NUM_WB_MASTERS : integer := 2;
   constant c_NUM_WB_SLAVES  : integer := 1;
 
   constant c_MASTER_VME : integer := 0;
 
-  constant c_SLAVE_I2C_FMC0 : integer := 0;
-  constant c_SLAVE_I2C_FMC1 : integer := 1;
-  constant c_SLAVE_ONEWIRE  : integer := 2;
-  constant c_SLAVE_GPIO     : integer := 3;
+  constant c_SLAVE_GOLDEN  : integer := 0;
+  constant c_SLAVE_ONEWIRE : integer := 1;
 
   constant c_INTERCONNECT_LAYOUT : t_sdb_record_array(c_NUM_WB_MASTERS-1 downto 0) :=
-    (c_SLAVE_I2C_FMC0 => f_sdb_embed_device(c_xwb_i2c_master_sdb, x"00010000"),
-     c_SLAVE_I2C_FMC1 => f_sdb_embed_device(c_xwb_i2c_master_sdb, x"00011000"),
-     c_SLAVE_ONEWIRE  => f_sdb_embed_device(c_xwb_onewire_master_sdb, x"00012000"),
-     c_SLAVE_GPIO     => f_sdb_embed_device(c_xwb_gpio_port_sdb, x"00013000")
+    (c_SLAVE_GOLDEN  => f_sdb_embed_device(c_xwb_golden_sdb, x"00010000"),
+     c_SLAVE_ONEWIRE => f_sdb_embed_device(c_xwb_onewire_master_sdb, x"00012000")
      );
 
   constant c_SDB_ADDRESS : t_wishbone_address := x"00000000";
@@ -181,16 +200,12 @@ architecture rtl of svec_top is
   signal pllout_clk_fb_sys, pllout_clk_sys : std_logic;
   signal clk_20m_vcxo_buf                  : std_logic;
   signal clk_sys                           : std_logic;
-  signal local_reset_n            : std_logic;
+  signal local_reset_n                     : std_logic;
 
   signal vme_master_out : t_wishbone_master_out;
   signal vme_master_in  : t_wishbone_master_in;
 
-  signal gpio_out : std_logic_vector(31 downto 0);
-  signal gpio_in  : std_logic_vector(31 downto 0);
 
-  signal dummy_pins : std_logic_vector(1 downto 0);
-  
   signal powerup_reset_cnt : unsigned(7 downto 0) := "00000000";
   signal powerup_rst_n     : std_logic            := '0';
   signal sys_locked        : std_logic;
@@ -265,7 +280,7 @@ begin
     port map (
       O => clk_20m_vcxo_buf,
       I => clk_20m_vcxo_i);
-  
+
   U_cmp_clk_sys_buf : BUFG
     port map (
       O => clk_sys,
@@ -308,7 +323,49 @@ begin
       master_i        => vme_master_in,
       irq_i           => '0');
 
-  
+  TRIG0(0)            <= VME_AS_n_i;
+  trig0(1)            <= VME_WRITE_n_i;
+  trig0(3 downto 2)   <= VME_DS_n_i;
+  trig0(9 downto 4)   <= VME_AM_i;
+  trig0(10)           <= VME_DTACK_n_o;
+  trig0(11)           <= VME_DTACK_OE_o;
+  trig0(12)           <= VME_LWORD_n_b;
+  trig0(19 downto 13) <= VME_IRQ_n_o;
+  trig0(20)           <= VME_IACKIN_n_i;
+  trig0(21)           <= VME_IACKOUT_n_o;
+  trig0(22)           <= VME_IACK_n_i;
+  trig0(23)           <= VME_DTACK_OE_o;
+  trig0(24)           <= VME_DATA_DIR_int;
+  trig0(25)           <= VME_addr_DIR_int;
+
+  trig1(30 downto 0) <= VME_ADDR_b;
+  trig2(31 downto 0) <= VME_DATA_b;
+
+
+
+  chipscope_ila_1 : chipscope_ila
+    port map (
+      CONTROL => CONTROL,
+      CLK     => clk_sys,
+      TRIG0   => TRIG0,
+      TRIG1   => TRIG1,
+      TRIG2   => TRIG2,
+      TRIG3   => TRIG3);
+
+  chipscope_icon_1 : chipscope_icon
+    port map (
+      CONTROL0 => CONTROL);
+
+
+  --VME_IRQ_n_o <= (others => 'Z');
+  --VME_DTACK_OE_o <= '0';
+  --VME_DATA_OE_N_o <= '1';
+  --VME_ADDR_OE_N_o <= '1';
+  --VME_RETRY_OE_o <= '0';
+  --VME_RETRY_n_o <= '0';
+
+  --VME_IACKOUT_n_o <= VME_IACKIN_n_i;
+
   VME_DATA_b    <= VME_DATA_b_out    when VME_DATA_DIR_int = '1' else (others => 'Z');
   VME_ADDR_b    <= VME_ADDR_b_out    when VME_ADDR_DIR_int = '1' else (others => 'Z');
   VME_LWORD_n_b <= VME_LWORD_n_b_out when VME_ADDR_DIR_int = '1' else 'Z';
@@ -358,43 +415,12 @@ begin
       master_i  => cnx_master_in,
       master_o  => cnx_master_out);
 
-  U_I2C_FMC0 : xwb_i2c_master
-    generic map (
-      g_interface_mode      => PIPELINED,
-      g_address_granularity => BYTE)
-    port map (
-      clk_sys_i    => clk_sys,
-      rst_n_i      => local_reset_n,
-      slave_i      => cnx_master_out(c_SLAVE_I2C_FMC0),
-      slave_o      => cnx_master_in(c_SLAVE_I2C_FMC0),
-      scl_pad_i    => fd0_scl_in,
-      scl_pad_o    => open,
-      scl_padoen_o => fd0_scl_out,
-      sda_pad_i    => fd0_sda_in,
-      sda_pad_o    => open,
-      sda_padoen_o => fd0_sda_out);
-
-  U_I2C_FMC1 : xwb_i2c_master
-    generic map (
-      g_interface_mode      => PIPELINED,
-      g_address_granularity => BYTE)
-    port map (
-      clk_sys_i    => clk_sys,
-      rst_n_i      => local_reset_n,
-      slave_i      => cnx_master_out(c_SLAVE_I2C_FMC1),
-      slave_o      => cnx_master_in(c_SLAVE_I2C_FMC1),
-      scl_pad_i    => fd1_scl_in,
-      scl_pad_o    => open,
-      scl_padoen_o => fd1_scl_out,
-      sda_pad_i    => fd1_sda_in,
-      sda_pad_o    => open,
-      sda_padoen_o => fd1_sda_out);
 
   U_Onewire : xwb_onewire_master
     generic map (
       g_interface_mode      => PIPELINED,
       g_address_granularity => BYTE,
-      g_num_ports => 1)
+      g_num_ports           => 1)
     port map (
       clk_sys_i   => clk_sys,
       rst_n_i     => local_reset_n,
@@ -403,20 +429,26 @@ begin
       owr_en_o(0) => wrc_owr_en(0),
       owr_i(0)    => wrc_owr_in(0));
 
-  U_GPIO : xwb_gpio_port
+  U_Golden_Core : golden_core
     generic map (
-      g_interface_mode         => PIPELINED,
-      g_address_granularity    => BYTE,
-      g_num_pins               => 2,
-      g_with_builtin_tristates => false)
+      g_slot_count => 2)
     port map (
       clk_sys_i    => clk_sys,
       rst_n_i      => local_reset_n,
-      slave_i      => cnx_master_out(c_SLAVE_GPIO),
-      slave_o      => cnx_master_in(c_SLAVE_GPIO),
-      gpio_b       => dummy_pins,
-      gpio_in_i(0) => fmc0_prsntm2c_n_i,
-      gpio_in_i(1) => fmc1_prsntm2c_n_i
+      slave_i      => cnx_master_out(c_SLAVE_GOLDEN),
+      slave_o      => cnx_master_in(c_SLAVE_GOLDEN),
+      fmc_scl_o(0) => fd0_scl_out,
+      fmc_scl_o(1) => fd1_scl_out,
+      fmc_sda_o(0) => fd0_sda_out,
+      fmc_sda_o(1) => fd1_sda_out,
+
+      fmc_scl_i(0) => fd0_scl_in,
+      fmc_scl_i(1) => fd1_scl_in,
+      fmc_sda_i(0) => fd0_sda_in,
+      fmc_sda_i(1) => fd1_sda_in,
+
+      fmc_prsnt_n_i(0) => fmc0_prsntm2c_n_i,
+      fmc_prsnt_n_i(1) => fmc1_prsntm2c_n_i
       );
 
 end rtl;
