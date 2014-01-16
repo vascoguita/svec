@@ -6,9 +6,9 @@
 .
 	vendor = 0xce42
 	device = 0x5fec
-	position = 0x500000
+	position = 0x600000
 
-bootldr.bin
+svec-bootloader.bin
 	position = 0
 
 afpga.bin
