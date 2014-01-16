@@ -102,7 +102,7 @@ entity svec_sfpga_top is
       spi_miso_i : in  std_logic;
       spi_sclk_o : out std_logic;
 
-      debugled_o : out std_logic_vector(2 downto 1);
+      debugled_n_o : out std_logic_vector(2 downto 1);
 
       -- Onboard PLL enable signal. Must be one for the clock system to work.
       pll_ce_o : out std_logic
@@ -111,6 +111,14 @@ entity svec_sfpga_top is
 end svec_sfpga_top;
 
 architecture rtl of svec_sfpga_top is
+
+  component reset_gen
+    port (
+      clk_sys_i       : in  std_logic;
+      rst_vme_n_a_i   : in  std_logic;
+      rst_local_n_a_i : in  std_logic;
+      rst_n_o         : out std_logic);
+  end component;
 
   component xmini_vme
     generic (
@@ -134,7 +142,8 @@ architecture rtl of svec_sfpga_top is
       VME_DATA_DIR_o  : out std_logic;
       VME_DATA_OE_N_o : out std_logic;
       master_o        : out t_wishbone_master_out;
-      master_i        : in  t_wishbone_master_in);
+      master_i        : in  t_wishbone_master_in;
+      idle_o          : out std_logic);
   end component;
 
   component sfpga_bootloader
@@ -193,11 +202,11 @@ architecture rtl of svec_sfpga_top is
   signal wb_vme_in  : t_wishbone_master_out;
   signal wb_vme_out : t_wishbone_master_in;
 
-  signal passive : std_logic := '0';
+  signal passive : std_logic;
 
 -- VME bootloader is inactive by default
 
-  signal boot_en                    : std_logic := '0';
+  signal boot_en                    : std_logic := '1';
   signal boot_trig_p1, boot_exit_p1 : std_logic;
   signal CONTROL                    : std_logic_vector(35 downto 0);
   signal CLK                        : std_logic;
@@ -210,7 +219,9 @@ architecture rtl of svec_sfpga_top is
   signal erase_afpga_n, erase_afpga_n_d0 : std_logic;
 
   signal pllout_clk_fb_sys, pllout_clk_sys, clk_sys : std_logic;
-  signal rst_n_sys: std_logic;
+  signal rst_n_sys                                  : std_logic;
+  signal go_passive                                 : std_logic;
+  signal vme_idle                                   : std_logic;
 begin
 
 -- PLL for producing 62.5 MHz system clock (clk_sys) from a 20 MHz reference.
@@ -222,7 +233,7 @@ begin
       DIVCLK_DIVIDE      => 1,
       CLKFBOUT_MULT      => 50,
       CLKFBOUT_PHASE     => 0.000,
-      CLKOUT0_DIVIDE     => 12,         -- 62.5 MHz
+      CLKOUT0_DIVIDE     => 12,         -- 83.3 MHz
       CLKOUT0_PHASE      => 0.000,
       CLKOUT0_DUTY_CYCLE => 0.500,
       CLKOUT1_DIVIDE     => 16,         -- 62.5 MHz
@@ -251,13 +262,12 @@ begin
       O => clk_sys,
       I => pllout_clk_sys);
 
-
-  U_Sync_Reset : gc_sync_ffs
+  U_Powerup_Reset : reset_gen
     port map (
-      clk_i    => clk_sys,
-      rst_n_i  => '1',
-      data_i   => rst_n_i,
-      synced_o => rst_n_sys);
+      clk_sys_i       => clk_sys,
+      rst_vme_n_a_i   => VME_RST_n_i,
+      rst_local_n_a_i => rst_n_i,
+      rst_n_o         => rst_n_sys);
 
 -------------------------------------------------------------------------------
 -- Chipscope instantiation (for VME bus monitoring, I sincerely hate VMetro)
@@ -294,6 +304,8 @@ begin
   trig2(24)          <= '1';
   trig2(25)          <= VME_RST_n_i;
   trig2(26)          <= passive;
+  trig2(27)          <= vme_idle;
+  trig2(28)          <= rst_n_sys;
 
   U_MiniVME : xmini_vme
     generic map (
@@ -317,7 +329,8 @@ begin
       VME_DATA_DIR_o  => vme_data_dir_int,
       VME_DATA_OE_N_o => VME_DATA_OE_N_int,
       master_o        => wb_vme_in,
-      master_i        => wb_vme_out);
+      master_i        => wb_vme_out,
+      idle_o          => vme_idle);
 
   U_Bootloader_Core : sfpga_bootloader
     generic map (
@@ -365,19 +378,26 @@ begin
   -- on a single bus.
   boot_config_o <= boot_config_int and (not erase_afpga_n);
 
-  p_enable_disable_bootloader : process(clk_sys, VME_RST_n_i, rst_n_i)
+  p_enable_disable_bootloader : process(clk_sys)
   begin
-    if(rst_n_i = '0' or VME_RST_n_i = '0') then
-      boot_en <= '0';  -- VME bootloader is inactive after reset
-    elsif rising_edge(clk_sys) then
+    if rising_edge(clk_sys) then
+      if(rst_n_sys = '0') then
+        boot_en    <= '0';  -- VME bootloader is inactive after reset
+        go_passive <= '0';
+      else
 
-      erase_afpga_n_d0 <= erase_afpga_n;
+        erase_afpga_n_d0 <= erase_afpga_n;
 
-      -- VME activation occurs after erasing the AFPGA
-      if(erase_afpga_n = '0' and erase_afpga_n_d0 = '1') then
-        boot_en <= '1';
-      elsif(boot_exit_p1 = '1') then
-        boot_en <= '0';
+        -- VME activation occurs after erasing the AFPGA
+        if(erase_afpga_n = '0' and erase_afpga_n_d0 = '1') then
+          boot_en    <= '1';
+          go_passive <= '0';
+        elsif(boot_exit_p1 = '1') then
+          go_passive <= '1';
+        elsif (go_passive = '1' and vme_idle = '1') then
+          go_passive <= '0';
+          boot_en    <= '0';
+        end if;
       end if;
     end if;
   end process;
@@ -396,10 +416,10 @@ begin
   VME_ADDR_DIR_o  <= '0'               when passive = '0'                                                          else 'Z';
   VME_LWORD_n_b   <= 'Z';
 
-  debugled_o(1) <= '0';
-  debugled_o(2) <= boot_en;
+  debugled_n_o(1) <= '1';
+  debugled_n_o(2) <= not boot_en;
 
-  -- Permanently enable onboard PLL
+-- Permanently enable onboard PLL
   pll_ce_o <= '1';
   
 end rtl;

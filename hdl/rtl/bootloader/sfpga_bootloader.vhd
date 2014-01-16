@@ -148,26 +148,27 @@ architecture behavioral of sfpga_bootloader is
 
   component flash_boot
     port (
-      clk_sys_i      : in  std_logic;
-      rst_n_i        : in  std_logic;
-      regs_i         : in  t_sxldr_out_registers;
-      regs_o         : out t_sxldr_in_registers;
-      enable_i       : in  std_logic;
-      xldr_start_o   : out std_logic;
-      xldr_mode_o    : out std_logic;
-      xldr_data_o    : out std_logic_vector(31 downto 0);
-      xldr_dsize_o   : out std_logic_vector(1 downto 0);
-      xldr_dlast_o   : out std_logic;
-      xldr_msbf_o    : out std_logic;
-      xldr_done_i    : in  std_logic;
-      xldr_rd_i      : in  std_logic;
-      xldr_empty_o   : out std_logic;
-      xldr_startup_o : out std_logic;
-      xldr_clk_div_o : out std_logic_vector(6 downto 0);
-      spi_cs_n_o     : out std_logic;
-      spi_sclk_o     : out std_logic;
-      spi_mosi_o     : out std_logic;
-      spi_miso_i     : in  std_logic);
+      clk_sys_i         : in  std_logic;
+      rst_n_i           : in  std_logic;
+      regs_i            : in  t_sxldr_out_registers;
+      regs_o            : out t_sxldr_in_registers;
+      enable_i          : in  std_logic;
+      xldr_start_o      : out std_logic;
+      xldr_mode_o       : out std_logic;
+      xldr_data_o       : out std_logic_vector(31 downto 0);
+      xldr_dsize_o      : out std_logic_vector(1 downto 0);
+      xldr_dlast_o      : out std_logic;
+      xldr_msbf_o       : out std_logic;
+      xldr_done_i       : in  std_logic;
+      xldr_rd_i         : in  std_logic;
+      xldr_empty_o      : out std_logic;
+      xldr_startup_o    : out std_logic;
+      xldr_clk_div_o    : out std_logic_vector(6 downto 0);
+      spi_cs_n_o        : out std_logic;
+      spi_sclk_o        : out std_logic;
+      spi_mosi_o        : out std_logic;
+      spi_miso_i        : in  std_logic;
+      no_bitstream_p1_o : out std_logic);
   end component;
 
   component xilinx_loader
@@ -207,10 +208,11 @@ architecture behavioral of sfpga_bootloader is
   signal from_flash_ldr, from_host_ldr, to_xilinx_boot : t_xilinx_boot_in;
   signal to_flash_ldr, to_host_ldr, from_xilinx_boot   : t_xilinx_boot_out;
 
-  signal boot_state       : t_bootseq_state;
-  signal boot_source      : t_boot_source;
-  signal boot_trig_p1_int : std_logic;
-  signal flash_enable     : std_logic;
+  signal boot_state            : t_bootseq_state;
+  signal boot_source           : t_boot_source;
+  signal boot_trig_p1_int      : std_logic;
+  signal flash_enable          : std_logic;
+  signal flash_no_bitstream_p1 : std_logic;
 
   -- Trivial helper for boot sequence detection. Advances the state machine if
   -- a matching byte has been detected or goes back to the starting point.
@@ -249,25 +251,26 @@ begin  -- behavioral
 
   U_Flash_Boot_Engine : flash_boot
     port map (
-      clk_sys_i      => clk_sys_i,
-      rst_n_i        => rst_n_i,
-      regs_i         => regs_in,
-      regs_o         => regs_out_flash,
-      enable_i       => flash_enable,
-      xldr_start_o   => from_flash_ldr.start,
-      xldr_data_o    => from_flash_ldr.data,
-      xldr_dsize_o   => from_flash_ldr.dsize,
-      xldr_dlast_o   => from_flash_ldr.dlast,
-      xldr_msbf_o    => from_flash_ldr.msbf,
-      xldr_done_i    => to_flash_ldr.done,
-      xldr_rd_i      => to_flash_ldr.rd,
-      xldr_empty_o   => from_flash_ldr.empty,
-      xldr_startup_o => from_flash_ldr.startup,
-      xldr_clk_div_o => from_flash_ldr.clk_div,
-      spi_cs_n_o     => spi_cs_n_o,
-      spi_sclk_o     => spi_sclk_o,
-      spi_mosi_o     => spi_mosi_o,
-      spi_miso_i     => spi_miso_i);
+      clk_sys_i         => clk_sys_i,
+      rst_n_i           => rst_n_i,
+      regs_i            => regs_in,
+      regs_o            => regs_out_flash,
+      enable_i          => flash_enable,
+      xldr_start_o      => from_flash_ldr.start,
+      xldr_data_o       => from_flash_ldr.data,
+      xldr_dsize_o      => from_flash_ldr.dsize,
+      xldr_dlast_o      => from_flash_ldr.dlast,
+      xldr_msbf_o       => from_flash_ldr.msbf,
+      xldr_done_i       => to_flash_ldr.done,
+      xldr_rd_i         => to_flash_ldr.rd,
+      xldr_empty_o      => from_flash_ldr.empty,
+      xldr_startup_o    => from_flash_ldr.startup,
+      xldr_clk_div_o    => from_flash_ldr.clk_div,
+      spi_cs_n_o        => spi_cs_n_o,
+      spi_sclk_o        => spi_sclk_o,
+      spi_mosi_o        => spi_mosi_o,
+      spi_miso_i        => spi_miso_i,
+      no_bitstream_p1_o => flash_no_bitstream_p1);
 
   -- Route host registers to the boot source multiplexer (p_select_boot_source).
   from_host_ldr.start          <= regs_in.csr_start_o and boot_en_i;
@@ -361,7 +364,7 @@ begin  -- behavioral
     end if;
   end process;
 
-  boot_trig_p1_o <= boot_trig_p1_int;
+  boot_trig_p1_o <= boot_trig_p1_int or flash_no_bitstream_p1;
   boot_exit_p1_o <= regs_in.csr_exit_o;
 
   xlx_m_o       <= "11";                -- permamently select Passive serial

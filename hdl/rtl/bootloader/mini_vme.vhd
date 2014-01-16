@@ -6,7 +6,7 @@
 -- Author     : Tomasz Wlostowski
 -- Company    : CERN
 -- Created    : 2012-01-20
--- Last update: 2013-01-25
+-- Last update: 2014-01-13
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -75,7 +75,10 @@ entity xmini_vme is
 
     -- Wishbone master
     master_o : out t_wishbone_master_out;
-    master_i : in  t_wishbone_master_in
+    master_i : in  t_wishbone_master_in;
+
+    -- VME bus idle
+    idle_o: out std_logic
     );
 
 end xmini_vme;
@@ -207,7 +210,7 @@ begin  -- rtl
     if rising_edge(clk_sys_i) then
       if rst_n_i = '0' then
         state <= IDLE;
-
+        idle_o <= '1';
         VME_DATA_DIR_o  <= '0';
         VME_DATA_OE_N_o <= '0';
         VME_DTACK_n_o   <= '0';
@@ -215,12 +218,14 @@ begin  -- rtl
       else
         case state is
           when IDLE =>
+            idle_o <= '1';
             VME_DATA_DIR_o  <= '0';
             VME_DTACK_n_o  <= '1';
             VME_DTACK_OE_o <= '0';
             dtack_counter  <= (others => '0');
 
             if(addr_valid = '1' and data_valid = '1') then
+              idle_o <= '0';
               state <= DECODE_ADDR;
             end if;
             
@@ -268,7 +273,7 @@ begin  -- rtl
 
             dtack_counter <= dtack_counter + 1;
 
-            if(ds_synced = '1') then
+            if(ds_synced = '1' and as_synced = '1') then
               state <= IDLE;
             end if;
             

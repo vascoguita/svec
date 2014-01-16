@@ -6,7 +6,7 @@
 -- Author     : Tomasz Wlostowski
 -- Company    : CERN
 -- Created    : 2011-01-24
--- Last update: 2013-01-25
+-- Last update: 2014-01-15
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -75,7 +75,9 @@ entity flash_boot is
     spi_cs_n_o : out std_logic;
     spi_sclk_o : out std_logic;
     spi_mosi_o : out std_logic;
-    spi_miso_i : in  std_logic
+    spi_miso_i : in  std_logic;
+
+    no_bitstream_p1_o : out std_logic
     );
 
 end flash_boot;
@@ -133,8 +135,8 @@ architecture behavioral of flash_boot is
 
   signal byte_count : unsigned(23 downto 0);
 
-  signal state : t_boot_state;
-  
+  signal state                                 : t_boot_state;
+  signal no_bitstream_int, no_bitstream_int_d0 : std_logic;
 begin  -- rtl
 
   U_Flash_Controller : m25p_flash
@@ -169,11 +171,12 @@ begin  -- rtl
   begin
     if rising_edge(clk_sys_i) then
       if rst_n_i = '0' or enable_i = '0' then
-        state          <= STARTUP;
-        flash_set_addr <= '0';
-        flash_read     <= '0';
-        xldr_start_o   <= '0';
-        xldr_empty_o   <= '1';
+        state            <= STARTUP;
+        flash_set_addr   <= '0';
+        flash_read       <= '0';
+        xldr_start_o     <= '0';
+        xldr_empty_o     <= '1';
+        no_bitstream_int <= '0';
       else
         case state is
 -- Wait until we are allowed to start flash boot sequence
@@ -267,7 +270,8 @@ begin  -- rtl
 
 -- We have no (or invalid) bitstream. Wait until reset
           when NO_BITSTREAM =>
-            flash_read <= '0';
+            flash_read       <= '0';
+            no_bitstream_int <= '1';
             if enable_i = '0' then
               state <= STARTUP;
             end if;
@@ -280,6 +284,20 @@ begin  -- rtl
       end if;
     end if;
   end process;
+
+  p_gen_no_bitstream_pulse : process(clk_sys_i)
+  begin
+    if rising_edge(clk_sys_i) then
+      if rst_n_i = '0' then
+        no_bitstream_p1_o   <= '0';
+        no_bitstream_int_d0 <= '0';
+      else
+        no_bitstream_int_d0 <= no_bitstream_int;
+        no_bitstream_p1_o   <= no_bitstream_int and not no_bitstream_int_d0;
+      end if;
+    end if;
+  end process;
+  
   
 end behavioral;
 
