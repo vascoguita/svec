@@ -33,7 +33,7 @@ module main;
    always #25ns clk_20m <= ~clk_20m;
    
    initial begin
-      repeat(10000) @(posedge clk_20m);
+      repeat(20000) @(posedge clk_20m);
       rst_n = 1;
    end
 
@@ -80,7 +80,7 @@ module main;
 
    M25Pxxx Flash(.S(spi_cs), .C(spi_sclk), .HOLD(1'b1), .D(spi_mosi), .Q(spi_miso), .Vpp_W(32'h0), .Vcc(32'd3000));
 
-   parameter [12*8:1] mem = "../../../software/sdb-flash/image.vmf";
+   parameter [128*8:1] mem = "../../../software/sdb-flash/image.vmf";
    defparam Flash.memory_file = mem;
    
 class CSimDrv_Xloader;
@@ -138,6 +138,10 @@ class CSimDrv_Xloader;
       
       for(i=0;i<8;i++)
         acc.write(base + `ADDR_SXLDR_BTRIGR, boot_seq[i]);
+   endtask // enter_boot_mode
+
+   task exit_boot_mode();
+      acc.write(base + `ADDR_SXLDR_CSR, `SXLDR_CSR_EXIT);
    endtask // enter_boot_mode
 
    
@@ -206,7 +210,7 @@ endclass
       
       
 
-      #600us;
+      #1100us;
       acc.set_default_modifiers(A32 | CR_CSR | D32);
 
       drv = new(acc, 'h70000);
@@ -221,6 +225,8 @@ endclass
       drv.flash_command('h9f, payload, payload, 3);
 
       $display("Flash ID: %02x %02x %02x\n", payload[0], payload[1], payload[2]);
+
+      drv.exit_boot_mode();
       
     //  drv.load_bitstream("sample_bitstream/crc_gen.bin");
       

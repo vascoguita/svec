@@ -250,9 +250,9 @@ class CBusAccessor_VME64x extends CBusAccessor;
         A16: 
           a_out = {16'h0, m_ba[7:3], a[10:2], 2'b00};
         A24: 
-          a_out = {8'h0, m_ba[7:3], a[18:2], 2'b00};
+          a_out = {8'h0, a[23:2], 2'b00};
         A32:
-          a_out = {m_ba[7:3], a[26:2], 2'b00};
+          a_out = {a[31:2], 2'b00};
       endcase // case (xtype)
 
       vme.q_addr[31:2] = a_out[31:2];
