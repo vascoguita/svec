@@ -269,6 +269,7 @@ All necessary firmware files are located in the ``Files'' section of the SVEC pr
 @itemize
 @item @code{svec-bootloader-v2-20140116.mcs}: the V2 bootloader, MCS file for flashing using Xilinx tools
 @item @code{svec-bootloader-v2-20140116.bin}: the V2 bootloader, binary file for XC3Sprog and PTS factory flasher.
+@item @code{svec-bootloader-v2-20140116.bit}: the V2 bootloader, Xilinx BIT file.
 @item @code{svec-golden-20140116.bin}: the golden bitstream.
 @end itemize
 @bye
