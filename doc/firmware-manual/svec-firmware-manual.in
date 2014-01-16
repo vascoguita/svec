@@ -35,14 +35,14 @@
 
 @setchapternewpage off
 
-@set update-month January 2013
+@set update-month January 2014
 
 @finalout
 
 @titlepage
-@title Default firmware for the SVEC card
+@title Standard SVEC firmware
 @subtitle Programmer's manual
-@author CERN BE-CO-HT / Tomasz Włostowski, 28.01.2013
+@author CERN BE-CO-HT / Tomasz Włostowski, 16.01.2014
 @end titlepage
 @headings single
 
@@ -57,7 +57,7 @@
 This document describes the default bitstreams that come preloaded with every SVEC card. As there are two FPGAs on the SVEC, there are two default bitstreams:
 @itemize
 @item @b{Bootloader bitstream}, residing in the System FPGA whose role is to start up the Application FPGA,
-@item @b{Golden bitstream}, residing in the Application FPGA, which allows the device driver to enumerate the mezzanines.
+@item @b{Golden bitstream}, residing in the Application FPGA, which allows the SVEC device driver to enumerate the mezzanines.
 @end itemize
 
 @chapter The Bootloader
@@ -75,13 +75,23 @@ The System FPGA bootloader allows to boot the Application FPGA from the VME bus 
 @caption{Boot modes of the SVEC card.}
 @end float
 
+@section Bootloader versions
+
+There are two versions of the bootloader in use:
+@itemize 
+@item The new one (a.k.a. version 2) which supports everything described in this manual.
+@item The old one (version 1) which only allows booting the Application FPGA via VME (no flash support). This version of the bootloader has been programmed in older SVEC cards. If the VME flasher (@code{svec-flasher}) tool is unable to detect the flash memory, you're likely running the old bootloader.
+@end itemize
+
+The new version is software-compatible with the old one, there is no need to update any drivers. The register description applies to both versions, except that for the version 1, the Flash Access Register (@code{FAR}) is not functional.
+
 @section VME Interface
 The bootloader core supports only 32-bit data CR/CSR accesses from/to address range @code{0x70000} - @code{0x70020}, allowing for plug&play reprogramming of the cards only knowing their physical slot locations. All other transfers are ignored. The base address is @code{0x70000}, and corresponds to the @code{CSR} register. When the card is powered up, the VME interface stays in passive mode, monitoring VME accesses without ACKing them. This is to prevent conflicts with the CR/CSR space of the VME core in the Application FPGA. 
 
 @section Entering bootloader mode
 In order to enter the bootloader, one needs to write the magic sequence of 8 following transfers: @code{0xde}, @code{0xad}, @code{0xbe}, @code{0xef}, @code{0xca}, @code{0xfe}, @code{0xba}, @code{0xbe} to the @code{BTRIGR} register (for register definitions, @pxref{System FPGA Register Map}).
 
-In order to check if the bootloader has been activated, one can read the @code{IDR} register. It should be equal to @code{SVEC} ASCII string encoded in HEX. Any other value indicates that the boot trigger sequence was not correctly recognized, the System FPGA is unprogrammed, the geographical address of the card is wrong or that the card itself is faulty.
+In order to check if the bootloader has been activated, read the @code{IDR} register. It should be equal to @code{SVEC} ASCII string encoded in HEX. Any other value indicates that the boot trigger sequence was not correctly recognized, the System FPGA is unprogrammed, the geographical address of the card is wrong or that the card itself is faulty.
 
 @b{Note 1:} Triggering bootloader mode causes automatic reset (un-programming) of the Application FPGA.
 
@@ -89,7 +99,7 @@ In order to check if the bootloader has been activated, one can read the @code{I
 
 @b{Note 3:} Trigger sequence must not be interleaved with other accesses to the bootloader address range of the same card.
 
-@b{Note 4:} Write operations to @code{BTRIGR} register while the core is still in passive mode will not be acknowledged on the VME bus and will most likely cause bus errors. Please ignore them.
+@b{Note 4:} Write operations to @code{BTRIGR} register while the bootloader is in passive mode will not be acknowledged on the VME bus and may sometimes cause bus errors to be reported by the host VME driver. They are not harmful, though. 
 
 @section Programming the AFPGA
 Programming the Application FPGA directly via VME involves the following steps:
@@ -107,26 +117,7 @@ A code example is available in the repository (@pxref{repo_link,,2}). Successful
 @section Programming the Flash
 The SFPGA also allows raw access to the Flash memory (M25P128) via the @code{FAR} register. The code below shows how to execute a single SPI transaction (command + N data bytes). 
 
-@example
-uint8 spi_transfer(int cs, uint8 data) {
-  while (! FAR.READY);
-  FAR.CS = cs;
-  FAR.XFER = 1;
-  FAR.DATA = data;
-  while (! FAR.READY);
-  return FAR.DATA;
-}
-
-void flash_command(uint8 command, uint8 data[]) {
-  spi_transfer(0, 0);
-  spi_transfer(1, cmd);
-  for(i=0;i<length(data);i++)
-    data[i] = spi_transfer(1, data[i]);
-  spi_transfer(0, 0);
-}
-@end example
-
-Low-level details about programming M25Pxxx series Flash memories can be found in their datasheets (@pxref{m25p_datasheet,,1}).
+Low-level details about programming M25Pxxx series Flash memories can be found in their datasheets (@pxref{m25p_datasheet,,1}). A simple VME flasher is provided in @code{software/vme-flasher} directory.
 
 @b{Note 1:} It is advised to protect the region of the flash containing the system FPGA bitstream from being accidentally overwritten, as this will result in rendering the card unusable and will require re-programming the flash via JTAG. Details on memory protection can be found in the M25P series datasheet.
 
@@ -134,23 +125,22 @@ Low-level details about programming M25Pxxx series Flash memories can be found i
 
 @section Flash memory organization
 
-The flash memory of the SVEC contains 16 Megabytes of data, that is 64k pages of 256 bytes. The first 6 MBs are used for bitstream storage, the rest is available for the user application. The flash format is compatible with the SDB filesystem, with the SDB descriptor table located at offset @code{0x500000}. Locations of the bitstreams are fixed to:
+The flash memory of the SVEC contains 16 Megabytes of data, that is 65536 pages of 256 bytes. The first 6 MBs are used for bitstream storage. The flash format is compatible with the SDB filesystem, with the SDB descriptor table located at offset @code{0x600000}. Locations of the bitstreams are fixed to:
 @itemize
-@item @code{0}: Raw bitstream for the System FPGA (up to 1 MB)
-@item @code{0x100000}: Bitstream for the Application FPGA (up to 4 MB)
+@item @code{0}: Raw bitstream for the System FPGA (up to 1 MB).
+@item @code{0x100000}: Raw bitstream for the Application FPGA (up to 5 MB).
 @end itemize
 
-An example script for building the default flash filesystem (containg the bootloader and golden bitstreams) is located in the @code{software/sdb-flash} subdirectory in the SVEC project's repository(@pxref{repo_link,,2}). Presence of the SDB descriptor table at @code{0x500000} is checked by the bootloader to prevent booting up from a corrupted flash. 
+An example script for building the default flash filesystem (containg the bootloader and golden bitstreams) is located in the @code{software/sdb-flash} subdirectory in the SVEC project's repository(@pxref{repo_link,,2}). Presence of the SDB descriptor table at @code{0x600000} is checked by the bootloader to prevent booting up from a corrupted or unprogrammed flash. 
 
-@b{Note:} Both bitstreams must be in raw (@code{.bin} file extension) format. @code{.bit}, @code{.mcs}, @code{.xsvf} and other formats will not work. This also applies to direct VME boot mode.
-
+@b{Note:} Both bitstreams must be in raw (@code{.bin} file extension) format. @code{.bit}, @code{.mcs}, @code{.xsvf} and other formats will not work. 
 
 @page
 @chapter The Golden Bitstream
-The SVEC Application FPGA golden bitstream is usually loaded by default by the bootloader and allows the SVEC device driver to:
+The SVEC Application FPGA golden bitstream is loaded by the SVEC driver during its startup. Its purpose is to:
 @itemize
-@item Query the board's serial number,
-@item Check the presence of the FMC mezzanines,
+@item Query the board's serial number.
+@item Check the presence of the FMC mezzanines.
 @item Read out their @math{I^2C} identification EEPROMs.
 @end itemize
 The bitstream does not drive any of the mezzanine user/clock pins to protect from electrical damage resulting from mismatched I/O standards.
@@ -209,19 +199,19 @@ Programming OK.
 # rmmod svec
 @end example
 @b{Note 2:} The flasher must be run as root.
-@b{Note 3:} The card must be rebooted for the new bitstream to start working.
+@b{Note 3:} The card must be rebooted for the new bitstream to be loaded to the Application FPGA.
 
 @section Updating the bootloader
 
 Certain older SVEC cards have been shipped with the first version of the bootloader that does not support booting the AFPGA from the Flash memory. In order to use from the VME Flasher, an update is necessary. The procedure goes as follows:
 @itemize
-@item Download the updated bootloader @code{svec-bootloader-v2.mcs} from @uref{http://www.ohwr.org/projects/svec/files}.
+@item Download the updated bootloader @code{svec-bootloader-v2-20140116.mcs} from @uref{http://www.ohwr.org/projects/svec/files}.
 @item Connect Xilinx JTAG programmer to the JTAG connector of the card to be updated.
 @item Launch ISE iMPACT.
 @item Double-Click ``Boundary Scan'' in the left pane (``iMPACT flows'').
 @item Open the right-click menu in the main work area and select ``Initialize chain'' or press Ctrl+I.
 @item Right click on the ``SPI/BPI ?'' box above the ``xc6slx9'' FPGA and select ``Add SPI/BPI Flash''.
-@item Pick the @code{svec-bootloader-v2.mcs} file.
+@item Pick the @code{svec-bootloader-v2-20140116.mcs} file.
 @item Select flash type: SPI PROM, M25P128, data width: 1.
 @item Right click on the ``FLASH'' chip above the ``xc6slx9'' and select ``Program''. Select the ``Verify'' option and click OK.
 @item If everything went fine, ``Programming succeeded'' message will appear.
@@ -271,4 +261,15 @@ make
 
 @anchor{System FPGA Register Map}
    @include svec_xloader.in
+
+@appendix Important File Locations
+All necessary firmware files are located in the ``Files'' section of the SVEC project:
+@uref{http://www.ohwr.org/projects/svec/files}. This is the @b{only} place where official binaries are held. We will not provide support for bootloader/golden bitstreams downloaded elsewhere.
+
+@itemize
+@item @code{svec-bootloader-v2-20140116.mcs}: the V2 bootloader, MCS file for flashing using Xilinx tools
+@item @code{svec-bootloader-v2-20140116.bin}: the V2 bootloader, binary file for XC3Sprog and PTS factory flasher.
+@item @code{svec-golden-20140116.bin}: the golden bitstream.
+@end itemize
 @bye
+
