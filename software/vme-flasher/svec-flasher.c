@@ -114,6 +114,21 @@ void enter_bootloader()
 	}
 }
 
+/* Tests the presence of the SPI master in the bootloader to check if we are running
+   version > 1 (v1 does not have the version ID register) */
+int spi_test_presence()
+{
+    csr_writel(	SXLDR_FAR_XFER | SXLDR_FAR_DATA_W(0xff),
+		 SXLDR_REG_FAR);
+
+    usleep(100000);
+    
+    uint32_t far = csr_readl(SXLDR_REG_FAR);
+
+    /* transaction is not complete after so much time? no SPI... */
+    return (far & SXLDR_FAR_READY);
+}
+
 void spi_cs(int cs)
 {
 	csr_writel(cs ? SXLDR_FAR_CS : 0, SXLDR_REG_FAR);
@@ -291,12 +306,22 @@ int main(int argc, char *argv[])
 	init_vme(slot);
 	enter_bootloader();
 
+	if (!spi_test_presence())
+	{
+		fprintf(stderr,
+			"SPI Master core not responding. You are probably be running an old version of the bootloader that doesn't support flash programming via VME.\n");
+		exit(-1);
+	}
+
 	if (flash_read_id() != ID_M25P128) {
 		fprintf(stderr,
 			"Flash memory ID invalid. You are probably be running an old version of the bootloader that doesn't support flash programming via VME.\n");
 		exit(-1);
 	}
 
+	int version = SXLDR_CSR_VERSION_R(csr_readl( SXLDR_REG_CSR ));
+	printf("Bootloader version: %d\n", version);
+    
 	flash_program(BOOTLOADER_SDB_BASE, sdb_header, sizeof(sdb_header));
 	flash_program(BOOTLOADER_BITSTREAM_BASE, buf, size);
 
