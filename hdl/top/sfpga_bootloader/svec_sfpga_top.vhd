@@ -224,7 +224,7 @@ architecture rtl of svec_sfpga_top is
   signal vme_idle                                   : std_logic;
 begin
 
--- PLL for producing 62.5 MHz system clock (clk_sys) from a 20 MHz reference.
+-- PLL for producing 83.3 MHz system clock (clk_sys) from a 20 MHz reference.
   U_Sys_clk_pll : PLL_BASE
     generic map (
       BANDWIDTH          => "OPTIMIZED",
