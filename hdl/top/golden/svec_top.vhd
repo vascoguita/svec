@@ -6,7 +6,7 @@
 -- Author     : Tomasz Wlostowski
 -- Company    : CERN
 -- Created    : 2011-08-24
--- Last update: 2013-05-16
+-- Last update: 2014-01-31
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -334,10 +334,11 @@ begin
   trig0(20)           <= VME_IACKIN_n_i;
   trig0(21)           <= VME_IACKOUT_n_o;
   trig0(22)           <= VME_IACK_n_i;
-  trig0(23)           <= VME_DTACK_OE_o;
+  trig0(23)           <= VME_BERR_o;
   trig0(24)           <= VME_DATA_DIR_int;
   trig0(25)           <= VME_addr_DIR_int;
-
+  trig0(31 downto 26) <= VME_GA_i;
+  
   trig1(30 downto 0) <= VME_ADDR_b;
   trig2(31 downto 0) <= VME_DATA_b;
 
