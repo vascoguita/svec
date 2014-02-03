@@ -1,0 +1,139 @@
+@regsection Memory map summary
+@multitable  @columnfractions .10 .15 .15 .55
+@headitem Address @tab Type @tab Prefix @tab Name
+@item @code{0x0} @tab
+REG @tab
+@code{CSR} @tab
+Control/Status reg
+@item @code{0x4} @tab
+REG @tab
+@code{I2CR0} @tab
+I2C bitbanged IO register for mezzanine 0
+@item @code{0x8} @tab
+REG @tab
+@code{I2CR1} @tab
+I2C bitbanged IO register for mezzanine 1
+@item @code{0xc} @tab
+REG @tab
+@code{I2CR2} @tab
+I2C bitbanged IO register for mezzanine 2
+@item @code{0x10} @tab
+REG @tab
+@code{I2CR3} @tab
+I2C bitbanged IO register for mezzanine 3
+@end multitable 
+@regsection @code{CSR} - Control/Status reg
+@multitable @columnfractions .10 .10 .15 .10 .55
+@headitem Bits @tab Access @tab Prefix @tab Default @tab Name
+@item @code{3...0}
+@tab R/O @tab
+@code{SLOT_COUNT}
+@tab @code{X} @tab 
+Number of FMC slots
+@item @code{7...4}
+@tab R/O @tab
+@code{FMC_PRESENT}
+@tab @code{X} @tab 
+FMC presence line status
+@end multitable
+@multitable @columnfractions 0.15 0.85
+@headitem Field @tab Description
+@item @code{SLOT_COUNT} @tab Number of FMC slots provided by this carrier
+@item @code{FMC_PRESENT} @tab State of presence lines in the respective slots (1 = mezzanine inserted). Bit N = mezzanine (N+1).
+@end multitable
+@regsection @code{I2CR0} - I2C bitbanged IO register for mezzanine 0
+@multitable @columnfractions .10 .10 .15 .10 .55
+@headitem Bits @tab Access @tab Prefix @tab Default @tab Name
+@item @code{0}
+@tab R/W @tab
+@code{SCL_OUT}
+@tab @code{1} @tab 
+SCL Line out
+@item @code{1}
+@tab R/W @tab
+@code{SDA_OUT}
+@tab @code{1} @tab 
+SDA Line out
+@item @code{2}
+@tab R/O @tab
+@code{SCL_IN}
+@tab @code{X} @tab 
+SCL Line in
+@item @code{3}
+@tab R/O @tab
+@code{SDA_IN}
+@tab @code{X} @tab 
+SDA Line in
+@end multitable
+@regsection @code{I2CR1} - I2C bitbanged IO register for mezzanine 1
+@multitable @columnfractions .10 .10 .15 .10 .55
+@headitem Bits @tab Access @tab Prefix @tab Default @tab Name
+@item @code{0}
+@tab R/W @tab
+@code{SCL_OUT}
+@tab @code{1} @tab 
+SCL Line out
+@item @code{1}
+@tab R/W @tab
+@code{SDA_OUT}
+@tab @code{1} @tab 
+SDA Line out
+@item @code{2}
+@tab R/O @tab
+@code{SCL_IN}
+@tab @code{X} @tab 
+SCL Line in
+@item @code{3}
+@tab R/O @tab
+@code{SDA_IN}
+@tab @code{X} @tab 
+SDA Line in
+@end multitable
+@regsection @code{I2CR2} - I2C bitbanged IO register for mezzanine 2
+@multitable @columnfractions .10 .10 .15 .10 .55
+@headitem Bits @tab Access @tab Prefix @tab Default @tab Name
+@item @code{0}
+@tab R/W @tab
+@code{SCL_OUT}
+@tab @code{1} @tab 
+SCL Line out
+@item @code{1}
+@tab R/W @tab
+@code{SDA_OUT}
+@tab @code{1} @tab 
+SDA Line out
+@item @code{2}
+@tab R/O @tab
+@code{SCL_IN}
+@tab @code{X} @tab 
+SCL Line in
+@item @code{3}
+@tab R/O @tab
+@code{SDA_IN}
+@tab @code{X} @tab 
+SDA Line in
+@end multitable
+@regsection @code{I2CR3} - I2C bitbanged IO register for mezzanine 3
+@multitable @columnfractions .10 .10 .15 .10 .55
+@headitem Bits @tab Access @tab Prefix @tab Default @tab Name
+@item @code{0}
+@tab R/W @tab
+@code{SCL_OUT}
+@tab @code{1} @tab 
+SCL Line out
+@item @code{1}
+@tab R/W @tab
+@code{SDA_OUT}
+@tab @code{1} @tab 
+SDA Line out
+@item @code{2}
+@tab R/O @tab
+@code{SCL_IN}
+@tab @code{X} @tab 
+SCL Line in
+@item @code{3}
+@tab R/O @tab
+@code{SDA_IN}
+@tab @code{X} @tab 
+SDA Line in
+@end multitable

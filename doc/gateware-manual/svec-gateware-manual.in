@@ -26,7 +26,7 @@
 @documentlanguage en
 @documentencoding UTF-8
 @setfilename svec-firmware-manual.info
-@settitle svec-firmware-manual
+@settitle svec-gateware-manual
 @iftex
 @afourpaper
 @end iftex
@@ -35,14 +35,15 @@
 
 @setchapternewpage off
 
-@set update-month January 2014
+@set update-month February 2014
+@include git_revision.in
 
 @finalout
 
 @titlepage
-@title Standard SVEC firmware
-@subtitle Programmer's manual
-@author CERN BE-CO-HT / Tomasz Włostowski, 16.01.2014
+@title Standard SVEC Gateware
+@subtitle Programmer and User manual (Git revision: @code{@value{git-revision}})
+@author CERN BE-CO-HT / Tomasz Włostowski, @value{update-month}
 @end titlepage
 @headings single
 
@@ -112,7 +113,7 @@ Programming the Application FPGA directly via VME involves the following steps:
 @item Exit bootloader mode by writing 1 to @code{CSR.EXIT} bit.
 @end itemize
 
-A code example is available in the repository (@pxref{repo_link,,2}). Successful firmware download to the Application FPGA is indicated by turning on the ``AFPGA DONE'' LED in the middle of the PCB.
+A code example is available in the repository (@pxref{repo_link,,2}). Successful gateware download to the Application FPGA is indicated by turning on the ``AFPGA DONE'' LED in the middle of the PCB.
 
 @section Programming the Flash
 The SFPGA also allows raw access to the Flash memory (M25P128) via the @code{FAR} register. The code below shows how to execute a single SPI transaction (command + N data bytes). 
@@ -147,16 +148,21 @@ The bitstream does not drive any of the mezzanine user/clock pins to protect fro
 
 @section Block diagram
 
-The bitstream encompasses @math{I^2C}, OneWire and GPIO modules from the @code{general-cores} library. For further details, refer to the library's manual.
+The bitstream is based on a generic ``Golden Bistream'' core and a One-Wire master core from the @code{general-cores} library. For further details, refer to the library's manual.
 
 @float Figure,fig:block
 @center @image{drawings/golden_block, 15cm,,,.pdf}
 @caption{Block diagram of the SVEC golden gateware.}
 @end float
 
-Presence detection is done by reading out the @code{PRSNT} lines (active low) through the GPIO port. EEPROM readout is performed via the two @math{I^2C} masters. The board serial number
-is equal to the serial number of the DS18B20U+ temperature sensor, accessible via the OneWire master. The clock freqency for @math{I^2C} and OneWire dividers calculation is 62.5 MHz. 
+The Golden core is responsible for:
+@itemize
+@item FMC insertion detection, through @code{FMC_PRESENT} bits of the @code{CSR} register.
+@item FMC EEPROM readout, done by bit-banging the @code{I2CRx} registers.
+@end itemize
 
+The OneWire core allows reading the board's serial number (equal to S/N of the DS18B20U+ temperature sensor) and its temperature. The clock freqency for @math{I^2C} and OneWire dividers calculation is 62.5 MHz. 
+@page
 @section Memory map
 
 @b{Note:} Please do not hardcode the base addresses of the cores, query them from the SDB descriptor. The SDB address of @code{0x0} is guaranteed to stay constant.
@@ -165,19 +171,14 @@ Only A32/A24/D32/CSR address modifiers are supported.
 @multitable @columnfractions .20 .10 .15 .65
 @headitem Core @tab Base address @tab Library @tab Description
 @item @code{sdb_rom} @tab @code{0x0} @tab @code{general-cores} @tab SDB descriptor.
-@item @code{xwb_i2c_master} @tab @code{0x10000} @tab @code{general-cores} @tab I2C Master for accessing FMC 1 identification EEPROM.
-@item @code{xwb_i2c_master} @tab @code{0x11000} @tab @code{general-cores} @tab I2C Master for accessing FMC 2 identification EEPROM.
+@item @code{golden_core} @tab @code{0x10000} @tab local @tab Golden Bitstream core.
 @item @code{xwb_onewire_master} @tab @code{0x12000} @tab @code{general-cores} @tab OneWire Master for accessing temperature sensor/serial ID.
-@item @code{xwb_gpio_port} @tab @code{0x13000} @tab @code{general-cores} @tab GPIO port for accessing FMC1/2 presence lines.
 @end multitable
-
-
 
 @macro regsection{name}
 @section \name\
 @end macro
 
-@page
 @chapter Flashing the SVEC
 @section Application FPGA Flash programming through VME
 
@@ -247,6 +248,16 @@ make
 @item Copy @code{gensdbfs} binary to a directory within the @code{PATH}.
 @end itemize
 
+@subsection Note for Windows users
+Preparation of the flash image described above requires some (currently) Linux-only tools. An altarnative method for flashing without these tools is described below:
+@itemize
+@item Open a hex editor and create an empty file of 6 MB and 4 bytes (@code{0x600004}).
+@item Place the bootloader bitstream (@code{.bin} extension) at offset @code{0x0}.
+@item Place the AFPGA bitstream (@code{.bin} extension) at offset @code{0x100000}.
+@item Place an SDB filesystem signature: @code{0x53 0x44 0x42 0x2D} starting at offset @code{0x600000}.
+@item Store the image in Intel HEX (@code{.mcs} extension format) and flash using Xilinx Impact.
+@end itemize
+
 @page
 @chapter References
 @enumerate
@@ -256,21 +267,28 @@ make
 @item @uref{http://www.ohwr.org/projects/svec/repository/} - Git repository containing this document's sources and revision history (@code{doc} subdirectory) and bootloading code examples (@code{software/sveclib} subdirectory).
 @end enumerate
 @page
+
 @appendix System FPGA register map
 @b{Note:} All registers are 32 bits-wide. Unaligned accesses, or accesses with data width other than 32 bits are @b{ignored}. Bits not specified in tables are not used (writes are ignored, reads return undefined values).
 
 @anchor{System FPGA Register Map}
    @include svec_xloader.in
 
+@appendix Golden Core register map
+@b{Note:} All registers are 32 bits-wide. Unaligned accesses, or accesses with data width other than 32 bits are @b{ignored}. Bits not specified in tables are not used (writes are ignored, reads return undefined values).
+
+@anchor{Golden Core Register Map}
+   @include golden-regs.in
+
 @appendix Important File Locations
-All necessary firmware files are located in the ``Files'' section of the SVEC project:
-@uref{http://www.ohwr.org/projects/svec/files}. This is the @b{only} place where official binaries are held. We will not provide support for bootloader/golden bitstreams downloaded elsewhere.
+All necessary gateware files are located in the ``Files'' section of the SVEC project:
+@uref{http://www.ohwr.org/projects/svec/files}. This is the @b{only} place where official binaries will be published. We will not provide support for bootloader/golden bitstreams downloaded from other sources.
 
 @itemize
 @item @code{svec-bootloader-v2-20140116.mcs}: the V2 bootloader, MCS file for flashing using Xilinx tools
 @item @code{svec-bootloader-v2-20140116.bin}: the V2 bootloader, binary file for XC3Sprog and PTS factory flasher.
 @item @code{svec-bootloader-v2-20140116.bit}: the V2 bootloader, Xilinx BIT file.
-@item @code{svec-golden-20140116.bin}: the golden bitstream.
+@item @code{svec-golden-v2-20140203.bin}: the golden bitstream.
 @end itemize
 @bye
 

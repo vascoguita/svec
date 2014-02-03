@@ -1,0 +1,6 @@
+*.texi
+git_revision.in
+*.txt
+*.pdf
+Backup_*.cdr
+*.wmf
