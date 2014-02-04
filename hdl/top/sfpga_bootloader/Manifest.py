@@ -4,5 +4,5 @@ fetchto = "../../ip_cores"
 
 modules = {
     "local" : ["../../rtl/bootloader" ],
-    "git" : [ "git://ohwr.org/hdl-core-lib/general-cores.git::proposed_master" ]
+    "git" : [ "git://ohwr.org/hdl-core-lib/general-cores.git" ]
     }

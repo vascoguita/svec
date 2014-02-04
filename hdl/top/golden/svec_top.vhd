@@ -6,7 +6,7 @@
 -- Author     : Tomasz Wlostowski
 -- Company    : CERN
 -- Created    : 2011-08-24
--- Last update: 2014-01-31
+-- Last update: 2014-02-03
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
@@ -45,6 +45,7 @@ use IEEE.NUMERIC_STD.all;
 use work.gencores_pkg.all;
 use work.wishbone_pkg.all;
 use work.golden_core_pkg.all;
+use work.synthesis_descriptor.all;
 
 library UNISIM;
 use UNISIM.vcomponents.all;
@@ -177,12 +178,16 @@ architecture rtl of svec_top is
 
   constant c_MASTER_VME : integer := 0;
 
-  constant c_SLAVE_GOLDEN  : integer := 0;
-  constant c_SLAVE_ONEWIRE : integer := 1;
+  constant c_SLAVE_GOLDEN   : integer := 0;
+  constant c_SLAVE_ONEWIRE  : integer := 1;
+  constant c_DESC_SYNTHESIS : integer := 2;
+  constant c_DESC_REPO_URL  : integer := 3;
 
-  constant c_INTERCONNECT_LAYOUT : t_sdb_record_array(c_NUM_WB_MASTERS-1 downto 0) :=
-    (c_SLAVE_GOLDEN  => f_sdb_embed_device(c_xwb_golden_sdb, x"00010000"),
-     c_SLAVE_ONEWIRE => f_sdb_embed_device(c_xwb_onewire_master_sdb, x"00012000")
+  constant c_INTERCONNECT_LAYOUT : t_sdb_record_array(c_NUM_WB_MASTERS + 1 downto 0) :=
+    (c_SLAVE_GOLDEN   => f_sdb_embed_device(c_xwb_golden_sdb, x"00010000"),
+     c_SLAVE_ONEWIRE  => f_sdb_embed_device(c_xwb_onewire_master_sdb, x"00012000"),
+     c_DESC_SYNTHESIS => f_sdb_embed_synthesis(c_sdb_synthesis_info),
+     c_DESC_REPO_URL  => f_sdb_embed_repo_url(c_sdb_repo_url)
      );
 
   constant c_SDB_ADDRESS : t_wishbone_address := x"00000000";
@@ -338,7 +343,7 @@ begin
   trig0(24)           <= VME_DATA_DIR_int;
   trig0(25)           <= VME_addr_DIR_int;
   trig0(31 downto 26) <= VME_GA_i;
-  
+
   trig1(30 downto 0) <= VME_ADDR_b;
   trig2(31 downto 0) <= VME_DATA_b;
 

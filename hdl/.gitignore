@@ -20,3 +20,10 @@ doc/
 *.bin
 *.elf
 Makefile
+Backup*.cdr
+*.cmd
+*.log
+*.htm
+*.html
+*.vmf
+*.bit
