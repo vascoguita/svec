@@ -1,0 +1,173 @@
+-- -*- Mode: LUA; tab-width: 2 -*-
+
+peripheral {
+   name = "Golden Bitstream WB Slave";
+   description = "A universal Golden Bitstream core for FMC carriers. Supports detection of up to 4 mezzanines";
+   hdl_entity = "golden_wb";
+   prefix = "gld";
+
+   reg {
+      name = "Control/Status reg";
+      prefix = "CSR";
+      field {
+         name = "Number of FMC slots";
+         description = "Number of FMC slots provided by this carrier";
+         prefix = "SLOT_COUNT";
+         type = SLV;
+         size = 4;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+
+      field {
+         name = "FMC presence line status";
+         description = "State of presence lines in the respective slots (1 = mezzanine inserted). Bit N = mezzanine (N+1).";
+         prefix = "FMC_PRESENT";
+         type = SLV;
+         size = 4;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+   };
+
+   reg {
+      name = "I2C bitbanged IO register for mezzanine 0";
+      prefix = "I2CR0";
+      field {
+         name = "SCL Line out";
+         prefix = "SCL_OUT";
+         type = BIT;
+         reset_value = 1;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+      field {
+         name = "SDA Line out";
+         prefix = "SDA_OUT";
+         type = BIT;
+         reset_value = 1;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+      field {
+         name = "SCL Line in";
+         prefix = "SCL_IN";
+         type = BIT;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+      field {
+         name = "SDA Line in";
+         prefix = "SDA_IN";
+         type = BIT;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+   };
+
+   reg {
+      name = "I2C bitbanged IO register for mezzanine 1";
+      prefix = "I2CR1";
+      field {
+         name = "SCL Line out";
+         prefix = "SCL_OUT";
+         type = BIT;
+         reset_value = 1;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+      field {
+         name = "SDA Line out";
+         prefix = "SDA_OUT";
+         type = BIT;
+         reset_value = 1;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+      field {
+         name = "SCL Line in";
+         prefix = "SCL_IN";
+         type = BIT;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+      field {
+         name = "SDA Line in";
+         prefix = "SDA_IN";
+         type = BIT;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+   };
+
+   reg {
+      name = "I2C bitbanged IO register for mezzanine 2";
+      prefix = "I2CR2";
+      field {
+         name = "SCL Line out";
+         prefix = "SCL_OUT";
+         type = BIT;
+         reset_value = 1;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+      field {
+         name = "SDA Line out";
+         prefix = "SDA_OUT";
+         type = BIT;
+         reset_value = 1;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+      field {
+         name = "SCL Line in";
+         prefix = "SCL_IN";
+         type = BIT;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+      field {
+         name = "SDA Line in";
+         prefix = "SDA_IN";
+         type = BIT;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+   };
+
+   reg {
+      name = "I2C bitbanged IO register for mezzanine 3";
+      prefix = "I2CR3";
+      field {
+         name = "SCL Line out";
+         prefix = "SCL_OUT";
+         type = BIT;
+         reset_value = 1;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+      field {
+         name = "SDA Line out";
+         prefix = "SDA_OUT";
+         type = BIT;
+         reset_value = 1;
+         access_bus = READ_WRITE;
+         access_dev = READ_ONLY;
+      };
+      field {
+         name = "SCL Line in";
+         prefix = "SCL_IN";
+         type = BIT;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+      field {
+         name = "SDA Line in";
+         prefix = "SDA_IN";
+         type = BIT;
+         access_bus = READ_ONLY;
+         access_dev = WRITE_ONLY;
+      };
+   };
+
+};
