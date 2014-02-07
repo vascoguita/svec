@@ -206,13 +206,13 @@ Programming OK.
 
 Certain older SVEC cards have been shipped with the first version of the bootloader that does not support booting the AFPGA from the Flash memory. In order to use from the VME Flasher, an update is necessary. The procedure goes as follows:
 @itemize
-@item Download the updated bootloader @code{svec-bootloader-v2-20140116.mcs} from @uref{http://www.ohwr.org/projects/svec/files}.
+@item Download the updated bootloader @code{svec-bootloader-v2-20140207.mcs} from @uref{http://www.ohwr.org/projects/svec/files}.
 @item Connect Xilinx JTAG programmer to the JTAG connector of the card to be updated.
 @item Launch ISE iMPACT.
 @item Double-Click ``Boundary Scan'' in the left pane (``iMPACT flows'').
 @item Open the right-click menu in the main work area and select ``Initialize chain'' or press Ctrl+I.
 @item Right click on the ``SPI/BPI ?'' box above the ``xc6slx9'' FPGA and select ``Add SPI/BPI Flash''.
-@item Pick the @code{svec-bootloader-v2-20140116.mcs} file.
+@item Pick the @code{svec-bootloader-v2-20140107.mcs} file.
 @item Select flash type: SPI PROM, M25P128, data width: 1.
 @item Right click on the ``FLASH'' chip above the ``xc6slx9'' and select ``Program''. Select the ``Verify'' option and click OK.
 @item If everything went fine, ``Programming succeeded'' message will appear.
@@ -285,10 +285,10 @@ All necessary gateware files are located in the ``Files'' section of the SVEC pr
 @uref{http://www.ohwr.org/projects/svec/files}. This is the @b{only} place where official binaries will be published. We will not provide support for bootloader/golden bitstreams downloaded from other sources.
 
 @itemize
-@item @code{svec-bootloader-v2-20140116.mcs}: the V2 bootloader, MCS file for flashing using Xilinx tools
-@item @code{svec-bootloader-v2-20140116.bin}: the V2 bootloader, binary file for XC3Sprog and PTS factory flasher.
-@item @code{svec-bootloader-v2-20140116.bit}: the V2 bootloader, Xilinx BIT file.
-@item @code{svec-golden-v2-20140203.bin}: the golden bitstream.
+@item @code{svec-bootloader-v2-20140207.mcs}: the V2 bootloader, MCS file for flashing using Xilinx tools
+@item @code{svec-bootloader-v2-20140207.bin}: the V2 bootloader, binary file for XC3Sprog and PTS factory flasher.
+@item @code{svec-bootloader-v2-20140207.bit}: the V2 bootloader, Xilinx BIT file.
+@item @code{svec-golden-v2-20140204.bin}: the golden bitstream.
 @end itemize
 @bye
 
