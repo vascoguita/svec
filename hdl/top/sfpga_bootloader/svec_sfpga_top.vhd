@@ -112,6 +112,8 @@ end svec_sfpga_top;
 
 architecture rtl of svec_sfpga_top is
 
+  constant c_PLL_RESET_DURATION : integer := 300;
+
   component reset_gen
     port (
       clk_sys_i       : in  std_logic;
@@ -222,6 +224,9 @@ architecture rtl of svec_sfpga_top is
   signal rst_n_sys                                  : std_logic;
   signal go_passive                                 : std_logic;
   signal vme_idle                                   : std_logic;
+
+  signal pll_reset_count : unsigned(15 downto 0);
+
 begin
 
 -- PLL for producing 83.3 MHz system clock (clk_sys) from a 20 MHz reference.
@@ -402,6 +407,24 @@ begin
     end if;
   end process;
 
+  -- drive the PLL CE (powerup reset)
+
+  p_reset_cdcm61004_pll : process(clk_sys)
+  begin
+    if rising_edge(clk_sys) then
+      if rst_n_sys = '0' then
+        pll_reset_count <= (others => '0');
+        pll_ce_o        <= '0';
+      else
+        if(pll_reset_count = c_PLL_RESET_DURATION) then
+          pll_ce_o <= '1';
+        else
+          pll_reset_count <= pll_reset_count + 1;
+        end if;
+      end if;
+    end if;
+  end process;
+
   -- When the VME bootloader is not active, do NOT drive any outputs and sit quiet.
   passive <= not boot_en;
 
@@ -419,8 +442,6 @@ begin
   debugled_n_o(1) <= '1';
   debugled_n_o(2) <= not boot_en;
 
--- Permanently enable onboard PLL
-  pll_ce_o <= '1';
   
 end rtl;
 
