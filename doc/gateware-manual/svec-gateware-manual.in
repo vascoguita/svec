@@ -206,7 +206,7 @@ Programming OK.
 
 Certain older SVEC cards have been shipped with the first version of the bootloader that does not support booting the AFPGA from the Flash memory. In order to use from the VME Flasher, an update is necessary. The procedure goes as follows:
 @itemize
-@item Download the updated bootloader @code{svec-bootloader-v2-20140207.mcs} from @uref{http://www.ohwr.org/projects/svec/files}.
+@item Download the updated bootloader @code{svec-bootloader-v2-20140207.mcs} from @uref{http://www.ohwr.org/projects/svec/wiki/Gateware_release_2_0}.
 @item Connect Xilinx JTAG programmer to the JTAG connector of the card to be updated.
 @item Launch ISE iMPACT.
 @item Double-Click ``Boundary Scan'' in the left pane (``iMPACT flows'').
@@ -281,14 +281,8 @@ Preparation of the flash image described above requires some (currently) Linux-o
    @include golden-regs.in
 
 @appendix Important File Locations
-All necessary gateware files are located in the ``Files'' section of the SVEC project:
-@uref{http://www.ohwr.org/projects/svec/files}. This is the @b{only} place where official binaries will be published. We will not provide support for bootloader/golden bitstreams downloaded from other sources.
+All necessary gateware files are located in the ``Releases'' page of the SVEC project:
+@uref{http://www.ohwr.org/projects/svec/wiki/Releases}. This is the @b{only} place where the official binaries will be published. We will not provide support for bootloader/golden bitstreams downloaded from other sources.
 
-@itemize
-@item @code{svec-bootloader-v2-20140207.mcs}: the V2 bootloader, MCS file for flashing using Xilinx tools
-@item @code{svec-bootloader-v2-20140207.bin}: the V2 bootloader, binary file for XC3Sprog and PTS factory flasher.
-@item @code{svec-bootloader-v2-20140207.bit}: the V2 bootloader, Xilinx BIT file.
-@item @code{svec-golden-v2-20140204.bin}: the golden bitstream.
-@end itemize
 @bye
 
