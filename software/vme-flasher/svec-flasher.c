@@ -280,11 +280,17 @@ int main(int argc, char *argv[])
 	void *buf;
 	uint32_t size;
 	int slot;
+	int program_boot=0;
 
 	if (argc < 3) {
-		printf("usage: %s slot bitstream.bin\n", argv[0]);
-		return -1;
-
+		printf("usage: %s slot bitstream.bin [-b]\n", argv[0]);
+		printf("   -b: updates the bootloader itself\n");
+		return 0;
+	}
+	
+	if(argc > 3 && !strcmp(argv[3], "-b"))
+	{
+	    program_boot = 1;
 	}
 
 	printf("Programming the Application FPGA flash with bitstream %s.\n",
@@ -322,9 +328,25 @@ int main(int argc, char *argv[])
 	int version = SXLDR_CSR_VERSION_R(csr_readl( SXLDR_REG_CSR ));
 	printf("Bootloader version: %d\n", version);
     
-	flash_program(BOOTLOADER_SDB_BASE, sdb_header, sizeof(sdb_header));
-	flash_program(BOOTLOADER_BITSTREAM_BASE, buf, size);
 
+	if(program_boot)
+	{
+	    char confirm[1024];	    
+	    printf("\nWARNING! You're about to update the SVEC bootloader. \nIf this operation fails (due to incorrect bitstream or power loss), the card "
+		   "can be only recovered through JTAG.\n\n");
+
+	    printf("Type 'yes' to continue or Ctrl-C to exit the program: ");
+	    fgets(confirm, 1024, stdin);
+	    if(strncmp(confirm,"yes", 3))
+	    {
+		    printf("Bootloader update aborted.\n");
+		    return -1;
+	    }
+	    flash_program(0, buf, size);
+	} else {
+	    flash_program(BOOTLOADER_SDB_BASE, sdb_header, sizeof(sdb_header));
+	    flash_program(BOOTLOADER_BITSTREAM_BASE, buf, size);
+	}
 	free(buf);
 	printf("Programming OK.\n");
 	return 0;
