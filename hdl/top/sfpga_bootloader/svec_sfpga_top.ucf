@@ -250,6 +250,17 @@ NET "lclk_n_i" IOSTANDARD="LVCMOS33";
 
 NET "pll_ce_o" IOSTANDARD="LVCMOS33";
 NET "pll_ce_o" LOC=G14;
+
+NET "afpga_flash_sck_i" LOC=G16;
+NET "afpga_flash_mosi_i" LOC=H15;
+NET "afpga_flash_cs_n_i" LOC=H16;
+NET "afpga_flash_miso_o" LOC=J14;
+
+NET "afpga_flash_sck_i" IOSTANDARD=LVCMOS33;
+NET "afpga_flash_mosi_i" IOSTANDARD=LVCMOS33;
+NET "afpga_flash_cs_n_i" IOSTANDARD=LVCMOS33;
+NET "afpga_flash_miso_o" IOSTANDARD=LVCMOS33;
+
 #Created by Constraints Editor (xc6slx9-ftg256-2) - 2014/01/15
 NET "lclk_n_i" TNM_NET = lclk_n_i;
 TIMESPEC TS_lclk_n_i = PERIOD "lclk_n_i" 20 MHz HIGH 50%;

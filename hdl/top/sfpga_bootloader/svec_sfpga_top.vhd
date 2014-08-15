@@ -104,6 +104,15 @@ entity svec_sfpga_top is
 
       debugled_n_o : out std_logic_vector(2 downto 1);
 
+      -------------------------------------------------------------------------
+      -- Slave SPI interface allowing the Application FPGA to access the SPI flash
+      -------------------------------------------------------------------------
+
+      afpga_flash_sck_i  : in  std_logic;
+      afpga_flash_mosi_i : in  std_logic;
+      afpga_flash_cs_n_i : in  std_logic;
+      afpga_flash_miso_o : out std_logic;
+
       -- Onboard PLL enable signal. Must be one for the clock system to work.
       pll_ce_o : out std_logic
 
@@ -227,6 +236,9 @@ architecture rtl of svec_sfpga_top is
 
   signal pll_reset_count : unsigned(15 downto 0);
 
+  signal spi_cs_n_int, spi_mosi_int, spi_sclk_int : std_logic;
+  signal pass_flash: std_logic;
+  
 begin
 
 -- PLL for producing 83.3 MHz system clock (clk_sys) from a 20 MHz reference.
@@ -362,9 +374,9 @@ begin
       boot_trig_p1_o  => boot_trig_p1,
       boot_exit_p1_o  => boot_exit_p1,
       boot_en_i       => boot_en,
-      spi_cs_n_o      => spi_cs_n_o,
-      spi_sclk_o      => spi_sclk_o,
-      spi_mosi_o      => spi_mosi_o,
+      spi_cs_n_o      => spi_cs_n_int,
+      spi_sclk_o      => spi_sclk_int,
+      spi_mosi_o      => spi_mosi_int,
       spi_miso_i      => spi_miso_i);
 
   -- produces a longer pulse on PROGRAM_B pin of the Application FPGA when
@@ -425,6 +437,13 @@ begin
     end if;
   end process;
 
+  -- multiplex flash access between the AFPGA and SFPGA bootloader (if the
+  -- AFPGA is programmed, it's wired to the SPI flash).
+  spi_cs_n_o <= spi_cs_n_int when boot_done_i = '0' else afpga_flash_cs_n_i;
+  spi_sclk_o <= spi_sclk_int when boot_done_i = '0' else afpga_flash_sck_i;
+  spi_mosi_o <= spi_mosi_int when boot_done_i = '0' else afpga_flash_mosi_i;
+  afpga_flash_miso_o <= spi_miso_i;
+  
   -- When the VME bootloader is not active, do NOT drive any outputs and sit quiet.
   passive <= not boot_en;
 

@@ -35,15 +35,15 @@
 
 @setchapternewpage off
 
-@set update-month February 2014
+@set update-month August 2014
 @include git_revision.in
 
 @finalout
 
 @titlepage
 @title Standard SVEC Gateware
-@subtitle Programmer and User manual (Git revision: @code{@value{git-revision}})
-@author CERN BE-CO-HT / Tomasz Włostowski, @value{update-month}
+@subtitle Programmer and User manual (Git revision: @code{@value{git-revision}}, @value{update-month})
+@author CERN BE-CO-HT / Tomasz Włostowski
 @end titlepage
 @headings single
 
@@ -78,10 +78,11 @@ The System FPGA bootloader allows to boot the Application FPGA from the VME bus 
 
 @section Bootloader versions
 
-There are two versions of the bootloader in use:
+There are three versions of the bootloader in use:
 @itemize 
-@item The new one (a.k.a. version 2) which supports everything described in this manual.
-@item The old one (version 1) which only allows booting the Application FPGA via VME (no flash support). This version of the bootloader has been programmed in older SVEC cards. If the VME flasher (@code{svec-flasher}) tool is unable to detect the flash memory, you're likely running the old bootloader.
+@item @b{Version 1} which only allows booting the Application FPGA via VME (no flash support). This version of the bootloader has been programmed in older SVEC cards. If the VME flasher (@code{svec-flasher}) tool is unable to detect the flash memory, you're likely running the old bootloader.
+@item @b{Version 2} which supports everything described in this manual except for providing SPI flash access to the AFPGA.
+@item @b{Version 3} which supports everything described in this manual, including accessing the SPI flash from AFPGA.
 @end itemize
 
 The new version is software-compatible with the old one, there is no need to update any drivers. The register description applies to both versions, except that for the version 1, the Flash Access Register (@code{FAR}) is not functional.
@@ -130,6 +131,7 @@ The flash memory of the SVEC contains 16 Megabytes of data, that is 65536 pages 
 @itemize
 @item @code{0}: Raw bitstream for the System FPGA (up to 1 MB).
 @item @code{0x100000}: Raw bitstream for the Application FPGA (up to 5 MB).
+@item @code{0x601000 - 0xffffff}: User-defined area, foreseen for AFPGA data storage.
 @end itemize
 
 An example script for building the default flash filesystem (containg the bootloader and golden bitstreams) is located in the @code{software/sdb-flash} subdirectory in the SVEC project's repository(@pxref{repo_link,,2}). Presence of the SDB descriptor table at @code{0x600000} is checked by the bootloader to prevent booting up from a corrupted or unprogrammed flash. 
@@ -257,6 +259,23 @@ Preparation of the flash image described above requires some (currently) Linux-o
 @item Place an SDB filesystem signature: @code{0x53 0x44 0x42 0x2D} starting at offset @code{0x600000}.
 @item Store the image in Intel HEX (@code{.mcs} extension format) and flash using Xilinx Impact.
 @end itemize
+
+@section Accessing the SPI Flash from the Application FPGA
+
+The Version 3 of the bootloader allows the Application FPGA to access the SPI interface of the Flash memory. Once the boot process is done, the System FPGA routes the following AFPGA pins
+directly to the Flash memory's SPI interface (Xilinx UCF file syntax):
+
+@example
+NET "flash_sck_o" LOC=AG26;
+NET "flash_mosi_o" LOC=AH26;
+NET "flash_cs_n_o" LOC=AG27;
+NET "flash_miso_i" LOC=AH27;
+
+NET "flash_sck_o" IOSTANDARD = "LVCMOS33";
+NET "flash_mosi_o" IOSTANDARD = "LVCMOS33";
+NET "flash_cs_n_o" IOSTANDARD = "LVCMOS33";
+NET "flash_miso_i" IOSTANDARD = "LVCMOS33";
+@end example
 
 @page
 @chapter References
