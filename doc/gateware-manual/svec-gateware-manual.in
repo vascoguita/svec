@@ -35,7 +35,7 @@
 
 @setchapternewpage off
 
-@set update-month August 2014
+@set update-month November 2014
 @include git_revision.in
 
 @finalout
