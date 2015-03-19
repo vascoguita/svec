@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2013 CERN (www.cern.ch)
  * Author: Tomasz Włostowski <tomasz.wlostowski@cern.ch>
@@ -112,6 +113,9 @@ void enter_bootloader()
 	 Done\" LED next to the fuses should be on).\n");
 		exit(-1);
 	}
+
+	int version = SXLDR_CSR_VERSION_R(csr_readl( SXLDR_REG_CSR ));
+	printf("Bootloader version: %d\n", version);
 }
 
 /* Tests the presence of the SPI master in the bootloader to check if we are running
@@ -274,27 +278,106 @@ void flash_program(uint32_t addr, const uint8_t * data, int size)
 
 }
 
+void program_flash(char *name, uint8_t *buf, size_t size, int program_boot)
+{
+	printf("Programming the Application FPGA flash with bitstream %s.\n",
+	       name);
+
+	if (!spi_test_presence())
+	{
+		fprintf(stderr,
+			"SPI Master core not responding. You are probably be running an old version of the bootloader that doesn't support flash programming via VME.\n");
+		exit(-1);
+	}
+
+	if (flash_read_id() != ID_M25P128) {
+		fprintf(stderr,
+			"Flash memory ID invalid. You are probably be running an old version of the bootloader that doesn't support flash programming via VME.\n");
+		exit(-1);
+	}
+
+	if(program_boot)
+	{
+	    char confirm[1024];	    
+	    printf("\nWARNING! You're about to update the SVEC bootloader. \nIf this operation fails (due to incorrect bitstream or power loss), the card "
+		   "can be only recovered through JTAG.\n\n");
+
+	    printf("Type 'yes' to continue or Ctrl-C to exit the program: ");
+	    fgets(confirm, 1024, stdin);
+	    if(strncmp(confirm,"yes", 3))
+	    {
+		    printf("Bootloader update aborted.\n");
+		    exit(-1);
+	    }
+	    flash_program(0, buf, size);
+	} else {
+	    flash_program(BOOTLOADER_SDB_BASE, sdb_header, sizeof(sdb_header));
+	    flash_program(BOOTLOADER_BITSTREAM_BASE, buf, size);
+	}
+}
+
+void program_afpga(char *name, uint8_t *buf, size_t size)
+{
+	size_t i;
+
+	printf("Booting the Application FPGA flash with bitstream %s.\n",
+	       name);
+
+	csr_writel(SXLDR_CSR_SWRST, SXLDR_REG_CSR);
+    csr_writel(SXLDR_CSR_START | SXLDR_CSR_MSBF, SXLDR_REG_CSR);
+
+    while(i < size) {
+		if(! (csr_readl(SXLDR_REG_FIFO_CSR) & SXLDR_FIFO_CSR_FULL)) 
+		{
+		
+			uint32_t word = *(uint32_t *) ( buf + i );
+		    size_t n = (size-i>4?4:size-i);
+		    csr_writel((n - 1) | ((n<4) ? SXLDR_FIFO_R0_XLAST : 0), SXLDR_REG_FIFO_R0);
+		    csr_writel(htonl(word), SXLDR_REG_FIFO_R1);
+		    i+=n;
+		}
+    }
+	
+    while(1) 
+    {
+		uint32_t rval = csr_readl(SXLDR_REG_CSR);
+		
+		if(rval & SXLDR_CSR_DONE) {
+    	    printf("Bitstream loaded, status: %s\n", (rval & SXLDR_CSR_ERROR ? "ERROR" : "OK"));
+/* give the VME bus control to App FPGA */
+            csr_writel(SXLDR_CSR_EXIT, SXLDR_REG_CSR);
+	        if ( rval & SXLDR_CSR_ERROR )
+	        	exit(-1);
+		}
+    }
+
+}
+
 int main(int argc, char *argv[])
 {
 	FILE *f;
 	void *buf;
 	uint32_t size;
 	int slot;
-	int program_boot=0;
+	int program_boot = 0;
+	int direct_boot = 0;
 
 	if (argc < 3) {
 		printf("usage: %s slot bitstream.bin [-b]\n", argv[0]);
 		printf("   -b: updates the bootloader itself\n");
+		printf("   -f: loads the bitstream straight to the Application FPGA (without programming the flash)\n");
 		return 0;
 	}
 	
 	if(argc > 3 && !strcmp(argv[3], "-b"))
 	{
 	    program_boot = 1;
-	}
+	} else	if(argc > 3 && !strcmp(argv[3], "-f"))
+	{
+	    direct_boot = 1;
+	} 
 
-	printf("Programming the Application FPGA flash with bitstream %s.\n",
-	       argv[2]);
+
 	f = fopen(argv[2], "rb");
 	if (!f) {
 		perror("fopen()");
@@ -312,41 +395,13 @@ int main(int argc, char *argv[])
 	init_vme(slot);
 	enter_bootloader();
 
-	if (!spi_test_presence())
-	{
-		fprintf(stderr,
-			"SPI Master core not responding. You are probably be running an old version of the bootloader that doesn't support flash programming via VME.\n");
-		exit(-1);
-	}
+	if(!direct_boot)
+	    program_flash(argv[2], buf, size, program_boot);
+	else
+	    program_afpga(argv[2], buf, size);
 
-	if (flash_read_id() != ID_M25P128) {
-		fprintf(stderr,
-			"Flash memory ID invalid. You are probably be running an old version of the bootloader that doesn't support flash programming via VME.\n");
-		exit(-1);
-	}
 
-	int version = SXLDR_CSR_VERSION_R(csr_readl( SXLDR_REG_CSR ));
-	printf("Bootloader version: %d\n", version);
-    
 
-	if(program_boot)
-	{
-	    char confirm[1024];	    
-	    printf("\nWARNING! You're about to update the SVEC bootloader. \nIf this operation fails (due to incorrect bitstream or power loss), the card "
-		   "can be only recovered through JTAG.\n\n");
-
-	    printf("Type 'yes' to continue or Ctrl-C to exit the program: ");
-	    fgets(confirm, 1024, stdin);
-	    if(strncmp(confirm,"yes", 3))
-	    {
-		    printf("Bootloader update aborted.\n");
-		    return -1;
-	    }
-	    flash_program(0, buf, size);
-	} else {
-	    flash_program(BOOTLOADER_SDB_BASE, sdb_header, sizeof(sdb_header));
-	    flash_program(BOOTLOADER_BITSTREAM_BASE, buf, size);
-	}
 	free(buf);
 	printf("Programming OK.\n");
 	return 0;
