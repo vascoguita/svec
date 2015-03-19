@@ -1,8 +1,9 @@
-CC=/acc/sys/L866/cdk/gcc
+CC = gcc
 CFLAGS = -I.
 OBJS = libvmebus.o svec-flasher.o
 
-#CC = gcc
-
 all:	$(OBJS)
-			${CC} -o svec-flasher $(OBJS)
+	${CC} -o svec-flasher $(OBJS)
+
+clean:
+	rm -f $(OBJS) svec-flasher
