@@ -108,9 +108,9 @@ void enter_bootloader()
 		csr_writel(boot_seq[i], SXLDR_REG_BTRIGR);
 	if (csr_readl(SXLDR_REG_IDR) != 0x53564543) {	/* "SVEC" in hex */
 		fprintf(stderr,
-			"The bootloader is not responding. Are you sure the slot you've\
-	specified hosts a SVEC card? Is the SVEC's System FPGA programmer (the \"SFPGA\
-	 Done\" LED next to the fuses should be on).\n");
+			"The bootloader is not responding. Are you sure the slot you've\n"
+			"specified hosts a SVEC card? Is the SVEC's System FPGA programmed (the SFPGA\n"
+			"Done' LED next to the fuses should be on).\n");
 		exit(-1);
 	}
 
@@ -276,9 +276,10 @@ void flash_program(uint32_t addr, const uint8_t * data, int size)
 	}
 	spi_cs(0);
 
+
 }
 
-void program_flash(char *name, uint8_t *buf, size_t size, int program_boot)
+int program_flash(char *name, uint8_t *buf, size_t size, int program_boot)
 {
 	printf("Programming the Application FPGA flash with bitstream %s.\n",
 	       name);
@@ -286,14 +287,14 @@ void program_flash(char *name, uint8_t *buf, size_t size, int program_boot)
 	if (!spi_test_presence())
 	{
 		fprintf(stderr,
-			"SPI Master core not responding. You are probably be running an old version of the bootloader that doesn't support flash programming via VME.\n");
-		exit(-1);
+			"SPI Master core not responding. You are probably be running an\nold version of the bootloader that doesn't support flash programming via VME.\n");
+		return -1;
 	}
 
 	if (flash_read_id() != ID_M25P128) {
 		fprintf(stderr,
-			"Flash memory ID invalid. You are probably be running an old version of the bootloader that doesn't support flash programming via VME.\n");
-		exit(-1);
+			"Flash memory ID invalid. You are probably be running an old version\nof the bootloader that doesn't support flash programming via VME.\n");
+		return -1;
 	}
 
 	if(program_boot)
@@ -307,23 +308,26 @@ void program_flash(char *name, uint8_t *buf, size_t size, int program_boot)
 	    if(strncmp(confirm,"yes", 3))
 	    {
 		    printf("Bootloader update aborted.\n");
-		    exit(-1);
+		    return -1;
 	    }
 	    flash_program(0, buf, size);
 	} else {
 	    flash_program(BOOTLOADER_SDB_BASE, sdb_header, sizeof(sdb_header));
 	    flash_program(BOOTLOADER_BITSTREAM_BASE, buf, size);
+    	    printf("Programming OK.\n");
+
 	}
+	return 0;
 }
 
-void program_afpga(char *name, uint8_t *buf, size_t size)
+int program_afpga(char *name, uint8_t *buf, size_t size)
 {
-	size_t i;
+	size_t i = 0;
 
-	printf("Booting the Application FPGA flash with bitstream %s.\n",
+	printf("Booting the Application FPGA with bitstream %s.\n",
 	       name);
 
-	csr_writel(SXLDR_CSR_SWRST, SXLDR_REG_CSR);
+    csr_writel(SXLDR_CSR_SWRST, SXLDR_REG_CSR);
     csr_writel(SXLDR_CSR_START | SXLDR_CSR_MSBF, SXLDR_REG_CSR);
 
     while(i < size) {
@@ -340,17 +344,19 @@ void program_afpga(char *name, uint8_t *buf, size_t size)
 	
     while(1) 
     {
-		uint32_t rval = csr_readl(SXLDR_REG_CSR);
-		
-		if(rval & SXLDR_CSR_DONE) {
-    	    printf("Bitstream loaded, status: %s\n", (rval & SXLDR_CSR_ERROR ? "ERROR" : "OK"));
+	uint32_t rval = csr_readl(SXLDR_REG_CSR);
+
+	if(rval & SXLDR_CSR_DONE) {
+	    printf("Bitstream loaded, status: %s\n", (rval & SXLDR_CSR_ERROR ? "ERROR" : "OK"));
 /* give the VME bus control to App FPGA */
             csr_writel(SXLDR_CSR_EXIT, SXLDR_REG_CSR);
-	        if ( rval & SXLDR_CSR_ERROR )
-	        	exit(-1);
-		}
+	    if ( rval & SXLDR_CSR_ERROR )
+	    	return -1;
+	    return 0;
+	}
     }
 
+    return 0;
 }
 
 int main(int argc, char *argv[])
@@ -361,6 +367,7 @@ int main(int argc, char *argv[])
 	int slot;
 	int program_boot = 0;
 	int direct_boot = 0;
+	int rv;
 
 	if (argc < 3) {
 		printf("usage: %s slot bitstream.bin [-b]\n", argv[0]);
@@ -390,19 +397,19 @@ int main(int argc, char *argv[])
 	fread(buf, 1, size, f);
 	fclose(f);
 
+
 	slot = atoi(argv[1]);
 
 	init_vme(slot);
 	enter_bootloader();
 
 	if(!direct_boot)
-	    program_flash(argv[2], buf, size, program_boot);
+	    rv = program_flash(argv[2], buf, size, program_boot);
 	else
-	    program_afpga(argv[2], buf, size);
+	    rv = program_afpga(argv[2], buf, size);
 
 
 
 	free(buf);
-	printf("Programming OK.\n");
-	return 0;
+	return rv;
 }
