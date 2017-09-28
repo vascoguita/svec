@@ -1,0 +1,18 @@
+# add versions of supermodule. It is useful when svec-sw is included as sub-module
+# of a bigger project that we want to track
+ifdef CONFIG_SUPER_REPO
+ifdef CONFIG_SUPER_REPO_VERSION
+SUBMODULE_VERSIONS += MODULE_INFO(version_$(CONFIG_SUPER_REPO),\"$(CONFIG_SUPER_REPO_VERSION)\");
+endif
+endif
+# add versions of used submodules
+SUBMODULE_VERSIONS += MODULE_INFO(version_fmc_bus,\"$(FMC_BUS_VERSION)\");
+
+ccflags-y += -DADDITIONAL_VERSIONS="$(SUBMODULE_VERSIONS)"
+ccflags-y += -DGIT_VERSION=\"$(GIT_VERSION)\"
+
+KBUILD_EXTRA_SYMBOLS += $(obj)/Module.symvers.vmebus
+
+obj-m := svec.o
+
+svec-objs := svec-core.o
