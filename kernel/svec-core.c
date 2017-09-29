@@ -112,7 +112,7 @@ module_exit(svec_exit);
 
 MODULE_AUTHOR("Federico Vaga <federico.vaga@cern.ch>");
 MODULE_AUTHOR("Juan David Gonzalez Cobas <dcobas@cern.ch>");
-MODULE_LICENSE("GPLv2");
+MODULE_LICENSE("GPL v2");
 MODULE_VERSION(GIT_VERSION);
 MODULE_DESCRIPTION("svec driver");
 
