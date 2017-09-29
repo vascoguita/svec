@@ -9,6 +9,7 @@ endif
 
 ccflags-y += -DADDITIONAL_VERSIONS="$(SUBMODULE_VERSIONS)"
 ccflags-y += -DGIT_VERSION=\"$(GIT_VERSION)\"
+ccflags-y += -I$(VMEBUS)/include
 
 KBUILD_EXTRA_SYMBOLS += $(obj)/Module.symvers.vmebus
 
