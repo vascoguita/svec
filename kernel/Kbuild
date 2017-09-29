@@ -6,7 +6,6 @@ SUBMODULE_VERSIONS += MODULE_INFO(version_$(CONFIG_SUPER_REPO),\"$(CONFIG_SUPER_
 endif
 endif
 # add versions of used submodules
-SUBMODULE_VERSIONS += MODULE_INFO(version_fmc_bus,\"$(FMC_BUS_VERSION)\");
 
 ccflags-y += -DADDITIONAL_VERSIONS="$(SUBMODULE_VERSIONS)"
 ccflags-y += -DGIT_VERSION=\"$(GIT_VERSION)\"
