@@ -207,7 +207,7 @@ static int svec_fpga_write_word(struct svec_dev *svec,
 	void *loader_addr = svec->map_cr.kernel_va + SVEC_BASE_LOADER;
 	uint32_t xldr_fifo_r0;	/* Bitstream data input control register */
 	uint32_t xldr_fifo_r1;	/* Bitstream data input register */
-	int rv, try = 100;
+	int rv, try = 10000;
 	static int cnt = 0;
 
 	if (size <= 0 || size >= 5) {
