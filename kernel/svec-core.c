@@ -290,6 +290,11 @@ static int svec_fpga_write_stop(struct svec_dev *svec)
 						      1);
 		if(svec->prog_err == -EINVAL)
 			svec->prog_err = 0;
+	} else {
+		dev_err(&svec->dev,
+			"Failed to program the application FPGA (%d).\n",
+			svec->prog_err);
+		goto out;
 	}
 
 	/* Reset the bitstream programming words */
@@ -314,11 +319,9 @@ static int svec_fpga_write_stop(struct svec_dev *svec)
 		dev_err(&svec->dev, "Bitstream loaded, status ERROR\n");
 		return -EINVAL;
 	}
-
+out:
 	/* give the VME bus control to App FPGA */
 	iowrite32be(XLDR_CSR_EXIT, loader_addr + XLDR_REG_CSR);
-	if (svec->prog_err)
-		dev_err(&svec->dev, "FPGA programming failed (%d)\n", svec->prog_err);
 
 	/* give the VME core a little while to settle up */
 	msleep(10);
