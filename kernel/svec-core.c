@@ -557,7 +557,7 @@ static ssize_t svec_afpga_lock_store(struct device *dev,
 {
 	struct svec_dev *svec = to_svec_dev(dev);
 
-	if (strncmp(buf, "unlock" , min(6, count)) != 0)
+	if (strncmp(buf, "unlock" , min(6, (int)count)) != 0)
 		return -EINVAL;
 
 	spin_lock(&svec->lock);
