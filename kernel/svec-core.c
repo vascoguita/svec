@@ -236,6 +236,7 @@ static int svec_fpga_write_word(struct svec_dev *svec,
  * It starts the programming procedure
  * It is usable only when there is a valid CR/CSR space mapped
  * @svec svec device instance
+ * Return 0 on success, otherwise a negative errno number.
  */
 static int svec_fpga_write_start(struct svec_dev *svec)
 {
@@ -369,7 +370,7 @@ out:
  * @inode file system node
  * @file char device file open instance
  *
- * By just opening this device you mya reset the FPGA
+ * By just opening this device you may reset the FPGA
  * (unless other errors prevent the user from programming).
  * Only one user at time can access the programming procedure.
  * Return: 0 on success, otherwise a negative errno number
@@ -436,6 +437,7 @@ err_mod_get:
  * destroy the instance that asked for FPGA reprogramming
  * @inode file system node
  * @file char device file open instance
+ * Return 0 on success, otherwise a negative errno number.
  */
 static int svec_close(struct inode *inode, struct file *file)
 {
@@ -479,7 +481,7 @@ static int svec_close(struct inode *inode, struct file *file)
  * @buf user space buffer
  * @count user space buffer size
  * @offp offset where to copy the buffer (ignored here)
- * Return: number of byte actually copied
+ * Return: number of byte actually copied, otherwise a negative errno
  */
 static ssize_t svec_write(struct file *file, const char __user *buf,
 			  size_t count, loff_t *offp)
@@ -527,6 +529,10 @@ static void svec_release(struct device *dev)
 	svec_minor_put(minor);
 }
 
+
+/**
+ * It shows the current AFPGA programming locking status
+ */
 static ssize_t svec_afpga_lock_show(struct device *dev,
 				    struct device_attribute *attr,
 				    char *buf)
@@ -538,6 +544,10 @@ static ssize_t svec_afpga_lock_show(struct device *dev,
 			"locked" : "unlocked");
 }
 
+
+/**
+ * It unlocks the AFPGA programming when the user write "unlock"
+ */
 static ssize_t svec_afpga_lock_store(struct device *dev,
 				     struct device_attribute *attr,
 				     const char *buf, size_t count)
@@ -555,6 +565,7 @@ static ssize_t svec_afpga_lock_store(struct device *dev,
 }
 static DEVICE_ATTR(lock, 0644, svec_afpga_lock_show, svec_afpga_lock_store);
 
+
 static struct attribute *svec_dev_attrs[] = {
 	&dev_attr_lock.attr,
 	NULL,
@@ -568,6 +579,7 @@ static const struct attribute_group *svec_dev_groups[] = {
 	&svec_dev_group,
 	NULL,
 };
+
 
 /**
  * It initialize a new SVEC instance
@@ -633,6 +645,12 @@ err:
 }
 
 
+/**
+ * It removes a SVEC device instance
+ * @pdev Linux device pointer
+ * @ndev DEPRECATED Device instance
+ * Return: 0 on success, otherwise a negative errno number
+ */
 static int svec_remove(struct device *pdev, unsigned int ndev)
 {
 	struct svec_dev *svec = dev_get_drvdata(pdev);
