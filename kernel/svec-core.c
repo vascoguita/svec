@@ -542,19 +542,26 @@ static ssize_t svec_afpga_lock_show(struct device *dev,
 
 
 /**
- * It unlocks the AFPGA programming when the user write "unlock"
+ * It unlocks the AFPGA programming when the user write "unlock" or "lock"
  */
 static ssize_t svec_afpga_lock_store(struct device *dev,
 				     struct device_attribute *attr,
 				     const char *buf, size_t count)
 {
 	struct svec_dev *svec = to_svec_dev(dev);
+	unsigned int lock;
 
-	if (strncmp(buf, "unlock" , min(6, (int)count)) != 0)
+	if (strncmp(buf, "unlock" , min(6, (int)count)) != 0 &&
+	    strncmp(buf, "lock" , min(4, (int)count)) != 0)
 		return -EINVAL;
 
+	lock = (strncmp(buf, "lock" , min(4, (int)count)) == 0);
+
 	spin_lock(&svec->lock);
-	clear_bit(SVEC_FLAG_LOCK, svec->flags);
+	if (lock)
+		set_bit(SVEC_FLAG_LOCK, svec->flags);
+	else
+		clear_bit(SVEC_FLAG_LOCK, svec->flags);
 	spin_unlock(&svec->lock);
 
 	return count;
