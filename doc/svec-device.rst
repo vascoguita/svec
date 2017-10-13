@@ -38,11 +38,6 @@ The complete programming procedure is:
 #. unlock the programming procedure by writing "unlock" in ``AFPGA/lock``
 #. write the FPGA bit-stream in the character device ``/dev/svec.<N>``
 
-Once the programming procedure terminates, the SVEC device instance is not
-valid anymore. The new Application FPGA represents a new SVEC device
-instance, so the SVEC device instance used to program the FPGA must be removed
-and the user must load a new SVEC device instance.
-
 Files
 =====
 

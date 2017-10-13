@@ -462,17 +462,6 @@ static int svec_close(struct inode *inode, struct file *file)
 	dev_info(&svec->dev,
 		 "a new application FPGA has been programmed\n");
 
-	/* There are no more user check if we can safely remove the device  */
-
-	/* TODO do some checks */
-
-	/* I'm not 100% sure of this*/
-	device_unregister(svec->dev.parent);
-	dev_info(&svec->dev,
-		 "a new application FPGA has been programmed\n");
-	dev_info(&svec->dev,
-		 "self-destroying this Linux device driver instance\n");
-
 	return err;
 }
 
