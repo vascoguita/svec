@@ -314,12 +314,12 @@ static int svec_fpga_write_stop(struct svec_dev *svec)
 
 	if (!(rval & XLDR_CSR_DONE)) {
 		dev_err(&svec->dev, "error: FPGA program timeout.\n");
-		return -EIO;
+		svec->prog_err = -EIO;
 	}
 
 	if (rval & XLDR_CSR_ERROR) {
 		dev_err(&svec->dev, "Bitstream loaded, status ERROR\n");
-		return -EINVAL;
+		svec->prog_err = -EINVAL;
 	}
 out:
 	/* give the VME bus control to App FPGA */
@@ -402,7 +402,7 @@ static int svec_open(struct inode *inode, struct file *file)
 
 	file->private_data = svec;
 
-	svec->prog_err = 0;
+	svec->prog_err = -EINVAL;
 	/* Reset the bitstream programming words */
 	svec->bitstream_last_word = -1;
 	svec->bitstream_last_word_size = -1;
@@ -458,11 +458,13 @@ static int svec_close(struct inode *inode, struct file *file)
 	spin_unlock(&svec->lock);
 
 	module_put(file->f_op->owner);
+
+	if (!svec->prog_err)
+		dev_info(&svec->dev,
+			 "a new application FPGA has been programmed\n");
+
 	mutex_unlock(&svec->mtx);
 
-
-	dev_info(&svec->dev,
-		 "a new application FPGA has been programmed\n");
 
 	return err;
 }
