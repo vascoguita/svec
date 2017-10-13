@@ -159,9 +159,11 @@ static int svec_fpga_reset(struct svec_dev *svec)
 {
 	int i;
 
-	for (i = 0; i < 8; i++)
+	for (i = 0; i < 8; i++) {
 		iowrite32be(boot_unlock_sequence[i],
 			    svec->map_cr.kernel_va + SVEC_BASE_LOADER + XLDR_REG_BTRIGR);
+		mdelay(1);
+	}
 
 	return 0;
 }
