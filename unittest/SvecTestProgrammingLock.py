@@ -1,3 +1,4 @@
+import os
 import random
 import string
 import unittest
@@ -5,8 +6,9 @@ import unittest
 
 class SvecTestProgrammingLock(unittest.TestCase):
     def setUp(self):
-        self.file_path = "/sys/bus/vme/devices/vme.8/svec/svec.8/AFPGA/lock"
-        self.dev_path = "/dev/svec.8"
+        slot = os.environ["VME_SLOT"]
+        self.file_path = "/sys/bus/vme/devices/vme.{}/svec/svec.{}/AFPGA/lock".format(slot, slot)
+        self.dev_path = "/dev/svec.{}".format(slot)
 
     def test_01(self):
         """It flips the previous lock status"""
