@@ -1,3 +1,5 @@
+.. image:: ./doc/svec-logo.png
+
 SVEC Driver
 ===========
 This is the simplified version of the SVEC driver which only purpose is
