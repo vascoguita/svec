@@ -9,9 +9,9 @@ endif
 
 ccflags-y += -DADDITIONAL_VERSIONS="$(SUBMODULE_VERSIONS)"
 ccflags-y += -DGIT_VERSION=\"$(GIT_VERSION)\"
-ccflags-y += -I$(VMEBUS)/include
+ccflags-y += -I$(VMEBRIDGE_ABS)/include
 
-KBUILD_EXTRA_SYMBOLS += $(obj)/Module.symvers.vmebus
+KBUILD_EXTRA_SYMBOLS += $(VMEBRIDGE_ABS)/driver/Module.symvers
 
 obj-m := svec.o
 
