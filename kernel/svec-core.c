@@ -397,8 +397,10 @@ static int svec_open(struct inode *inode, struct file *file)
 		return -EBUSY;
 
 	err = try_module_get(file->f_op->owner);
-	if (err == 0)
+	if (err == 0) {
+		err = -EBUSY;
 		goto err_mod_get;
+	}
 
 	file->private_data = svec;
 
@@ -602,7 +604,7 @@ static int svec_probe(struct device *dev, unsigned int ndev)
 
 	svec = kzalloc(sizeof(struct svec_dev), GFP_KERNEL);
 	if (!svec) {
-		return -ENOMEM;
+		err = -ENOMEM;
 		goto err;
 	}
 	dev_set_name(&svec->dev, "svec.%d", vdev->slot);
