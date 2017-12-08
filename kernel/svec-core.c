@@ -1,16 +1,18 @@
 /*
-* Copyright (C) 2017 CERN (www.cern.ch)
-* Author: Federico Vaga <federico.vaga@cern.ch>
-*
-* Based on the SVEC version of:
-* Author: Juan David Gonzalez Cobas <dcobas@cern.ch>
-* Author: Luis Fernando Ruiz Gago <lfruiz@cern.ch>
-* Author: Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
-*
-* Released according to the GNU GPL, version 2 or any later version
-*
-* Driver for SVEC (Simple VME FMC carrier) board.
-*/
+ * SPDX-License-Identifier: GPLv2
+ *
+ * Copyright (C) 2017 CERN (www.cern.ch)
+ * Author: Federico Vaga <federico.vaga@cern.ch>
+ *
+ * Based on the SVEC version of:
+ * Author: Juan David Gonzalez Cobas <dcobas@cern.ch>
+ * Author: Luis Fernando Ruiz Gago <lfruiz@cern.ch>
+ * Author: Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
+ *
+ * Released according to the GNU GPL, version 2 or any later version
+ *
+ * Driver for SVEC (Simple VME FMC carrier) board.
+ */
 
 #include <linux/bitmap.h>
 #include <linux/cdev.h>
@@ -26,19 +28,14 @@
 #include <linux/slab.h>
 #include <linux/uaccess.h>
 #include <linux/vmalloc.h>
-
+#include <linux/fpga/fpga-mgr.h>
 #include <vmebus.h>
 
 #include "hw/xloader_regs.h"
 
 
-#define SVEC_MINOR_MAX (64)
 #define SVEC_BASE_LOADER	0x70000
 
-
-static DECLARE_BITMAP(svec_minors, SVEC_MINOR_MAX);
-static dev_t basedev;
-static struct class *svec_class;
 
 /**
  * Mapping template for CR/CSR space
@@ -61,91 +58,28 @@ static const uint32_t boot_unlock_sequence[8] = {
 };
 
 
-#define SVEC_FLAG_BITS (8)
-#define SVEC_FLAG_LOCK BIT(0)
-
-
 /**
  * struct svec_dev - SVEC instance
  * It describes a SVEC device instance.
- * @cdev Char device descriptor
- * @dev Linux device instance descriptor
- * @mtx mutex to protect the FPGA programmation
- * @flags collection of bit flags
  * @map_cr CR/CSR space mapping
- * @bitstream_buf_tmp temporary buffer for the copy_from_user
- * @bitstream_buf_tmp_size temporary buffer size
  * @bitstream_last_word last data to write into the FPGA
  * @bistream_last_word_size last data size to write in the FPGA. This is a dirty
  *                          and ugly hack in order to properly handle a dirty
  *                          and ugly interface. The SVEC bootloader does not
  *                          accept emtpy transfers and neither to declare the
  *                          transmission over without sending data.
- * @prog_err FPGA programming error
- *
- * The user must lock the mutex `mtx` when using the following variables in
- * this data structure: map_cr, bitstream_buf_tmp, bitstream_buf_tmp_size,
- * bitstream_last_word, bitstream_last_word_size, prog_err.
- * When the mutex `mtx` is unlocked, then these variables should not be used.
- *
+ * @fpgA_status state of the Application FPGA
  * The user must lock the spinlock `lock` when using the following variables in
  * this data structure: flags.
  */
 struct svec_dev {
-	struct cdev cdev;
-	struct device dev;
-	struct mutex mtx;
-	struct spinlock lock;
-
-	/* START lock area */
-	DECLARE_BITMAP(flags, SVEC_FLAG_BITS);
-	/* END lock area*/
-
-	/* START mtx area */
+	char name[8];
 	struct vme_mapping map_cr;
 
-	void *bitstream_buf_tmp;
-	size_t bitstream_buf_tmp_size;
 	uint32_t bitstream_last_word;
 	uint32_t bitstream_last_word_size;
-	int prog_err;
-	/* END mtx area */
+	enum fpga_mgr_states fpga_status;
 };
-
-
-/**
- * It gets a SVEC device instance
- * @ptr pointer to a Linux device instance
- * Return: the SVEC device instance correponding to the given Linux device
- */
-static inline struct svec_dev *to_svec_dev(struct device *ptr)
-{
-	return container_of(ptr, struct svec_dev, dev);
-}
-
-
-/**
- * It gets a minor number
- * Return: the first minor number available
- */
-static inline int svec_minor_get(void)
-{
-	int minor;
-
-	minor = find_first_zero_bit(svec_minors, SVEC_MINOR_MAX);
-	set_bit(minor, svec_minors);
-
-	return minor;
-}
-
-/**
- * It releases a minor number
- * @minor minor number to release
- */
-static inline void svec_minor_put(unsigned int minor)
-{
-	clear_bit(minor, svec_minors);
-}
 
 
 /**
@@ -155,8 +89,9 @@ static inline void svec_minor_put(unsigned int minor)
  * @svec a valid SVEC device instance
  * Return: 0 on success, otherwise a negative errno number
  */
-static int svec_fpga_reset(struct svec_dev *svec)
+static int svec_fpga_reset(struct fpga_manager *mgr)
 {
+	struct svec_dev *svec = mgr->priv;
 	int i;
 
 	for (i = 0; i < 8; i++) {
@@ -176,8 +111,9 @@ static int svec_fpga_reset(struct svec_dev *svec)
  * Return: 1 if it is active (unlocked), 0 if it is not active (locked),
  * otherwise a negative errno number
  */
-static int svec_fpga_loader_is_active(struct svec_dev *svec)
+static int svec_fpga_loader_is_active(struct fpga_manager *mgr)
 {
+	struct svec_dev *svec = mgr->priv;
 	char buf[5];
 	uint32_t idc;
 
@@ -194,7 +130,7 @@ static int svec_fpga_loader_is_active(struct svec_dev *svec)
 
 /**
  * It is usable only when there is a valid CR/CSR space mapped
- * @svec svec device instance
+ * @mgr FPGA manager instance
  * @word the bytes to write
  * @size the number of valid bytes in the word
  * @is_last 1 if this is the last word of a bitstream
@@ -202,10 +138,11 @@ static int svec_fpga_loader_is_active(struct svec_dev *svec)
  *   EAGAIN the loader FIFO was temporary full, retry
  *   EINVAL invalid size
  */
-static int svec_fpga_write_word(struct svec_dev *svec,
+static int svec_fpga_write_word(struct fpga_manager *mgr,
 				const uint32_t word, ssize_t size,
 				unsigned int is_last)
 {
+	struct svec_dev *svec = mgr->priv;
 	void *loader_addr = svec->map_cr.kernel_va + SVEC_BASE_LOADER;
 	uint32_t xldr_fifo_r0;	/* Bitstream data input control register */
 	uint32_t xldr_fifo_r1;	/* Bitstream data input register */
@@ -237,24 +174,25 @@ static int svec_fpga_write_word(struct svec_dev *svec,
 /**
  * It starts the programming procedure
  * It is usable only when there is a valid CR/CSR space mapped
- * @svec svec device instance
+ * @mgr FPGA manager instance
  * Return 0 on success, otherwise a negative errno number.
  */
-static int svec_fpga_write_start(struct svec_dev *svec)
+static int svec_fpga_write_start(struct fpga_manager *mgr)
 {
+	struct svec_dev *svec = mgr->priv;
 	void *loader_addr = svec->map_cr.kernel_va + SVEC_BASE_LOADER;
 	int err, succ;
 
 	/* reset the FPGA */
-	err = svec_fpga_reset(svec);
+	err = svec_fpga_reset(mgr);
 	if (err) {
-		dev_err(&svec->dev, "FPGA reset failed\n");
+		dev_err(&mgr->dev, "FPGA reset failed\n");
 		goto err_reset;
 	}
 	/* check if the FPGA loader is active */
-	succ = svec_fpga_loader_is_active(svec);
+	succ = svec_fpga_loader_is_active(mgr);
 	if (!succ) {
-		dev_err(&svec->dev, "FPGA loader unavailable\n");
+		dev_err(&mgr->dev, "FPGA loader unavailable\n");
 		err = -ENXIO;
 		goto err_active;
 	}
@@ -275,36 +213,32 @@ err_reset:
 /**
  * It starts the programming procedure.
  * It is usable only when there is a valid CR/CSR space mapped
- * @svec svec device instance
+ * @mgr FPGA manager instance
  * Return 0 on success, otherwise a negative errno number
  */
-static int svec_fpga_write_stop(struct svec_dev *svec)
+static int svec_fpga_write_stop(struct fpga_manager *mgr,
+				struct fpga_image_info *info)
 {
+	struct svec_dev *svec = mgr->priv;
 	void *loader_addr = svec->map_cr.kernel_va + SVEC_BASE_LOADER;
 	u64 timeout;
-	int rval = 0;
+	int rval = 0, err;
 
-	/* Write the last bytes (HACK) */
-	if(svec->prog_err == 0) {
-		svec->prog_err = svec_fpga_write_word(svec,
-						      svec->bitstream_last_word,
-						      svec->bitstream_last_word_size,
-						      1);
-		if(svec->prog_err == -EINVAL)
-			svec->prog_err = 0;
-	} else {
-		dev_err(&svec->dev,
-			"Failed to program the application FPGA (%d).\n",
-			svec->prog_err);
+	err = svec_fpga_write_word(mgr,
+				   svec->bitstream_last_word,
+				   svec->bitstream_last_word_size,
+				   1);
+	if (err == -EINVAL)
+		err = 0;
+	if (err)
 		goto out;
-	}
 
 	/* Reset the bitstream programming words */
 	svec->bitstream_last_word = -1;
 	svec->bitstream_last_word_size = -1;
 
 	/* Two seconds later */
-	timeout = get_jiffies_64() + 2 * HZ;
+	timeout = get_jiffies_64() + usecs_to_jiffies(info->config_complete_timeout_us);
 	while (time_before64(get_jiffies_64(), timeout)) {
 		rval = ioread32be(loader_addr + XLDR_REG_CSR);
 		if (rval & XLDR_CSR_DONE)
@@ -313,13 +247,13 @@ static int svec_fpga_write_stop(struct svec_dev *svec)
 	}
 
 	if (!(rval & XLDR_CSR_DONE)) {
-		dev_err(&svec->dev, "error: FPGA program timeout.\n");
-		svec->prog_err = -EIO;
+		dev_err(&mgr->dev, "error: FPGA program timeout.\n");
+		err = -EIO;
 	}
 
 	if (rval & XLDR_CSR_ERROR) {
-		dev_err(&svec->dev, "Bitstream loaded, status ERROR\n");
-		svec->prog_err = -EINVAL;
+		dev_err(&mgr->dev, "Bitstream loaded, status ERROR\n");
+		err = -EINVAL;
 	}
 out:
 	/* give the VME bus control to App FPGA */
@@ -328,27 +262,28 @@ out:
 	/* give the VME core a little while to settle up */
 	msleep(10);
 
-	return svec->prog_err;
+	return err;
 }
 
 
 /**
  * It writes the given buffer into the FPGA
- * @svec svec device instance
+ * @mgr FPGA manager instance
  * @buf data buffer to write
  * @size buffer size
  * Return the number of written bytes on success (greater or equal to zero),
  * otherwise a negative errno number
  */
-static size_t svec_fpga_write_buf(struct svec_dev *svec,
+static size_t svec_fpga_write_buf(struct fpga_manager *mgr,
 				  const void *buf, size_t size)
 {
+	struct svec_dev *svec = mgr->priv;
 	const uint32_t *data = buf;
 	int i, err = 0;
 
 	i = 0;
 	while (i < size) {
-		err = svec_fpga_write_word(svec,
+		err = svec_fpga_write_word(mgr,
 					   svec->bitstream_last_word,
 					   svec->bitstream_last_word_size,
 					   0);
@@ -365,224 +300,75 @@ static size_t svec_fpga_write_buf(struct svec_dev *svec,
 		i += svec->bitstream_last_word_size;
 	}
 
+	err = 0;
 out:
-	return err ? err : size;
+	return err;
 }
 
 
-/**
- * It prepares the FPGA to receive a new bitstream.
- * @inode file system node
- * @file char device file open instance
- *
- * By just opening this device you may reset the FPGA
- * (unless other errors prevent the user from programming).
- * Only one user at time can access the programming procedure.
- * Return: 0 on success, otherwise a negative errno number
- */
-static int svec_open(struct inode *inode, struct file *file)
+static enum fpga_mgr_states svec_fpga_state(struct fpga_manager *mgr)
 {
-	struct svec_dev *svec = container_of(inode->i_cdev,
-					     struct svec_dev,
-					     cdev);
-	int err, succ;
+	return mgr->state;
+}
 
-	if (test_bit(SVEC_FLAG_LOCK, svec->flags)) {
-		dev_info(&svec->dev, "Application FPGA programming blocked\n");
-		return -EPERM;
-	}
 
-	succ = mutex_trylock(&svec->mtx);
-	if (!succ)
-		return -EBUSY;
+static int svec_fpga_write_init(struct fpga_manager *mgr,
+				struct fpga_image_info *info,
+				const char *buf, size_t count)
+{
+	struct svec_dev *svec = mgr->priv;
+	int err;
 
-	err = try_module_get(file->f_op->owner);
-	if (err == 0) {
-		err = -EBUSY;
-		goto err_mod_get;
-	}
-
-	file->private_data = svec;
-
-	svec->prog_err = -EINVAL;
 	/* Reset the bitstream programming words */
 	svec->bitstream_last_word = -1;
 	svec->bitstream_last_word_size = -1;
-	/* Allocate 1MiB */
-	svec->bitstream_buf_tmp_size = 1024* 1024;
-	svec->bitstream_buf_tmp = kmalloc(svec->bitstream_buf_tmp_size,
-					  GFP_KERNEL);
-	if (!svec->bitstream_buf_tmp) {
-		err = -ENOMEM;
-		goto out_buf;
-	}
+
 	err = vme_find_mapping(&svec->map_cr, 1);
 	if (err)
-		goto err_map;
-
-	err = svec_fpga_write_start(svec);
+		return err;
+	err = svec_fpga_write_start(mgr);
 	if (err)
-		goto err_start;
-
+		goto err;
 	return 0;
 
-err_start:
+err:
 	vme_release_mapping(&svec->map_cr, 1);
-err_map:
-	kfree(svec->bitstream_buf_tmp);
-out_buf:
-	module_put(file->f_op->owner);
-err_mod_get:
-	mutex_unlock(&svec->mtx);
 	return err;
 }
 
 
-/**
- * It finishes the FPGA programming procedure and let the Application FPGA run
- * In order to have a consistent system, after programming the driver will
- * destroy the instance that asked for FPGA reprogramming
- * @inode file system node
- * @file char device file open instance
- * Return 0 on success, otherwise a negative errno number.
- */
-static int svec_close(struct inode *inode, struct file *file)
+static int svec_fpga_write(struct fpga_manager *mgr, const char *buf, size_t count)
 {
-	struct svec_dev *svec = file->private_data;
-	int err = 0;
-
-	err = svec_fpga_write_stop(svec);
-	vme_release_mapping(&svec->map_cr, 1);
-	kfree(svec->bitstream_buf_tmp);
-
-	spin_lock(&svec->lock);
-	set_bit(SVEC_FLAG_LOCK, svec->flags);
-	spin_unlock(&svec->lock);
-
-	module_put(file->f_op->owner);
-
-	if (!svec->prog_err)
-		dev_info(&svec->dev,
-			 "a new application FPGA has been programmed\n");
-
-	mutex_unlock(&svec->mtx);
-
-
-	return err;
+	return svec_fpga_write_buf(mgr, buf, count);
 }
 
 
-/**
- * It creates a local copy of the user buffer and it start
- * to program the FPGA with it
- * @file char device file open instance
- * @buf user space buffer
- * @count user space buffer size
- * @offp offset where to copy the buffer (ignored here)
- * Return: number of byte actually copied, otherwise a negative errno
- */
-static ssize_t svec_write(struct file *file, const char __user *buf,
-			  size_t count, loff_t *offp)
+static int svec_fpga_write_complete(struct fpga_manager *mgr,
+				    struct fpga_image_info *info)
 {
-	struct svec_dev *svec = file->private_data;
+	struct svec_dev *svec = mgr->priv;
 	int err;
 
-	if (!count)
-		return -EINVAL;
-	if (count > svec->bitstream_buf_tmp_size)
-		count = svec->bitstream_buf_tmp_size;
+	err = svec_fpga_write_stop(mgr, info);
+	vme_release_mapping(&svec->map_cr, 1);
 
-	err = copy_from_user(svec->bitstream_buf_tmp, buf, count);
-	if (err)
-		return err;
-
-	err = svec_fpga_write_buf(svec, svec->bitstream_buf_tmp, count);
-	svec->prog_err = err < 0 ? err : 0;
-	return err ? err : count;
+	return err;
 }
 
 
-/**
- * Char device operation to provide bitstream
- */
-static const struct file_operations svec_fops = {
-	.owner = THIS_MODULE,
-	.open = svec_open,
-	.release = svec_close,
-	.write  = svec_write,
-};
-
-
-/**
- * It releases device resources (`device->release()`)
- * @dev Linux device instance
- */
-static void svec_release(struct device *dev)
+static void svec_fpga_remove(struct fpga_manager *mgr)
 {
-	struct svec_dev *svec = to_svec_dev(dev);
-	int minor = MINOR(dev->devt);
-
-	cdev_del(&svec->cdev);
-	kfree(svec);
-	svec_minor_put(minor);
+	/* do nothing */
 }
 
 
-/**
- * It shows the current AFPGA programming locking status
- */
-static ssize_t svec_afpga_lock_show(struct device *dev,
-				    struct device_attribute *attr,
-				    char *buf)
-{
-	struct svec_dev *svec = to_svec_dev(dev);
-
-	return snprintf(buf, PAGE_SIZE, "%s\n",
-			test_bit(SVEC_FLAG_LOCK, svec->flags) ?
-			"locked" : "unlocked");
-}
-
-
-/**
- * It unlocks the AFPGA programming when the user write "unlock" or "lock"
- */
-static ssize_t svec_afpga_lock_store(struct device *dev,
-				     struct device_attribute *attr,
-				     const char *buf, size_t count)
-{
-	struct svec_dev *svec = to_svec_dev(dev);
-	unsigned int lock;
-
-	if (strncmp(buf, "unlock" , min(6, (int)count)) != 0 &&
-	    strncmp(buf, "lock" , min(4, (int)count)) != 0)
-		return -EINVAL;
-
-	lock = (strncmp(buf, "lock" , min(4, (int)count)) == 0);
-
-	spin_lock(&svec->lock);
-	if (lock)
-		set_bit(SVEC_FLAG_LOCK, svec->flags);
-	else
-		clear_bit(SVEC_FLAG_LOCK, svec->flags);
-	spin_unlock(&svec->lock);
-
-	return count;
-}
-static DEVICE_ATTR(lock, 0644, svec_afpga_lock_show, svec_afpga_lock_store);
-
-
-static struct attribute *svec_dev_attrs[] = {
-	&dev_attr_lock.attr,
-	NULL,
-};
-static const struct attribute_group svec_dev_group = {
-	.name = "AFPGA",
-	.attrs = svec_dev_attrs,
-};
-
-static const struct attribute_group *svec_dev_groups[] = {
-	&svec_dev_group,
-	NULL,
+static const struct fpga_manager_ops svec_fpga_ops = {
+	.initial_header_size = 0,
+	.state = svec_fpga_state,
+	.write_init = svec_fpga_write_init,
+	.write = svec_fpga_write,
+	.write_complete = svec_fpga_write_complete,
+	.fpga_remove = svec_fpga_remove,
 };
 
 
@@ -596,55 +382,30 @@ static int svec_probe(struct device *dev, unsigned int ndev)
 {
 	struct vme_dev *vdev = to_vme_dev(dev);
 	struct svec_dev *svec;
-	int err, minor;
-
-	minor = svec_minor_get();
-	if (minor >= SVEC_MINOR_MAX)
-		return -EINVAL;
+	int err;
 
 	svec = kzalloc(sizeof(struct svec_dev), GFP_KERNEL);
 	if (!svec) {
 		err = -ENOMEM;
 		goto err;
 	}
-	dev_set_name(&svec->dev, "svec.%d", vdev->slot);
-	svec->dev.class = svec_class;
-	svec->dev.devt = basedev + minor;
-	svec->dev.parent = &vdev->dev;
-	svec->dev.release = svec_release;
-	svec->dev.groups = svec_dev_groups;
-	dev_set_drvdata(&svec->dev, svec);
-	dev_set_drvdata(&vdev->dev, svec);
 
 	svec->map_cr = map_tmpl_cr;
 	svec->map_cr.vme_addrl = svec->map_cr.sizel * vdev->slot;
 
-	spin_lock_init(&svec->lock);
-	mutex_init(&svec->mtx);
+	svec->fpga_status = FPGA_MGR_STATE_UNKNOWN;
 
-	spin_lock(&svec->lock);
-	set_bit(SVEC_FLAG_LOCK, svec->flags);
-	spin_unlock(&svec->lock);
-
-	cdev_init(&svec->cdev, &svec_fops);
-	svec->cdev.owner = THIS_MODULE;
-	err = cdev_add(&svec->cdev, svec->dev.devt, 1);
+	snprintf(svec->name, 8, "svec.%d", vdev->slot);
+	err = fpga_mgr_register(&vdev->dev, svec->name,
+				&svec_fpga_ops, svec);
 	if (err)
-		goto err_cdev;
-
-
-	err = device_register(&svec->dev);
-	if (err)
-		goto err_dev_reg;
+		goto err_fpga_reg;
 
 	return 0;
 
-err_dev_reg:
-	cdev_del(&svec->cdev);
-err_cdev:
+err_fpga_reg:
 	kfree(svec);
 err:
-	svec_minor_put(MINOR(svec->dev.devt));
 	dev_err(dev, "Failed to register SVEC device\n");
 	return err;
 }
@@ -652,15 +413,13 @@ err:
 
 /**
  * It removes a SVEC device instance
- * @pdev Linux device pointer
+ * @vdev Linux device pointer
  * @ndev DEPRECATED Device instance
  * Return: 0 on success, otherwise a negative errno number
  */
-static int svec_remove(struct device *pdev, unsigned int ndev)
+static int svec_remove(struct device *vdev, unsigned int ndev)
 {
-	struct svec_dev *svec = dev_get_drvdata(pdev);
-
-	device_unregister(&svec->dev);
+	fpga_mgr_unregister(vdev);
 
 	return 0;
 }
@@ -693,37 +452,12 @@ static struct vme_driver svec_driver = {
 
 static int __init svec_init(void)
 {
-	int err = 0;
-
-	svec_class = class_create(THIS_MODULE, "svec");
-	if (IS_ERR_OR_NULL(svec_class)) {
-		err = PTR_ERR(svec_class);
-		goto err_cls;
-	}
-
-	/* Allocate a char device region for devices, CPUs and slots */
-	err = alloc_chrdev_region(&basedev, 0, SVEC_MINOR_MAX, "svec");
-	if (err)
-		goto err_chrdev_alloc;
-	err = vme_register_driver(&svec_driver, 0);
-	if (err)
-		goto err_drv_reg;
-
-	return 0;
-
-err_drv_reg:
-	unregister_chrdev_region(basedev, SVEC_MINOR_MAX);
-err_chrdev_alloc:
-	class_destroy(svec_class);
-err_cls:
-	return err;
+	return vme_register_driver(&svec_driver, 0);
 }
 
 static void __exit svec_exit(void)
 {
 	vme_unregister_driver(&svec_driver);
-	unregister_chrdev_region(basedev, SVEC_MINOR_MAX);
-	class_destroy(svec_class);
 }
 
 module_init(svec_init);
