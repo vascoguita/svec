@@ -37,18 +37,11 @@
 #define SVEC_BASE_LOADER	0x70000
 
 
-/**
- * Mapping template for CR/CSR space
- */
-static const struct vme_mapping map_tmpl_cr = {
-	.vme_addru = 0,
-	.vme_addrl = 0,
-	.am = VME_CR_CSR,
-	.data_width = VME_D32,
-	.sizeu = 0,
-	.sizel = 0x80000,
-};
-
+static void svec_csr_write(u8 value, void *base, u32 offset)
+{
+	offset -= offset % 4;
+	iowrite32be(value, base + offset);
+}
 
 /**
  * Byte sequence to unlock and clear the Application FPGA
@@ -61,7 +54,7 @@ static const uint32_t boot_unlock_sequence[8] = {
 /**
  * struct svec_dev - SVEC instance
  * It describes a SVEC device instance.
- * @map_cr CR/CSR space mapping
+ * @vdev VME device instance
  * @bitstream_last_word last data to write into the FPGA
  * @bistream_last_word_size last data size to write in the FPGA. This is a dirty
  *                          and ugly hack in order to properly handle a dirty
@@ -73,8 +66,8 @@ static const uint32_t boot_unlock_sequence[8] = {
  * this data structure: flags.
  */
 struct svec_dev {
+	struct vme_dev *vdev;
 	char name[8];
-	struct vme_mapping map_cr;
 
 	uint32_t bitstream_last_word;
 	uint32_t bitstream_last_word_size;
@@ -92,11 +85,12 @@ struct svec_dev {
 static int svec_fpga_reset(struct fpga_manager *mgr)
 {
 	struct svec_dev *svec = mgr->priv;
+	void *loader_addr = svec->vdev->map_cr.kernel_va + SVEC_BASE_LOADER;
 	int i;
 
 	for (i = 0; i < 8; i++) {
 		iowrite32be(boot_unlock_sequence[i],
-			    svec->map_cr.kernel_va + SVEC_BASE_LOADER + XLDR_REG_BTRIGR);
+			loader_addr + XLDR_REG_BTRIGR);
 		mdelay(1);
 	}
 
@@ -114,11 +108,12 @@ static int svec_fpga_reset(struct fpga_manager *mgr)
 static int svec_fpga_loader_is_active(struct fpga_manager *mgr)
 {
 	struct svec_dev *svec = mgr->priv;
+	void *loader_addr = svec->vdev->map_cr.kernel_va + SVEC_BASE_LOADER;
 	char buf[5];
 	uint32_t idc;
 
 
-	idc = ioread32be(svec->map_cr.kernel_va + SVEC_BASE_LOADER + XLDR_REG_IDR);
+	idc = ioread32be(loader_addr + XLDR_REG_IDR);
 	idc = htonl(idc);
 
 	memset(buf, 0, 5);
@@ -143,7 +138,7 @@ static int svec_fpga_write_word(struct fpga_manager *mgr,
 				unsigned int is_last)
 {
 	struct svec_dev *svec = mgr->priv;
-	void *loader_addr = svec->map_cr.kernel_va + SVEC_BASE_LOADER;
+	void *loader_addr = svec->vdev->map_cr.kernel_va + SVEC_BASE_LOADER;
 	uint32_t xldr_fifo_r0;	/* Bitstream data input control register */
 	uint32_t xldr_fifo_r1;	/* Bitstream data input register */
 	int rv, try = 10000;
@@ -180,7 +175,7 @@ static int svec_fpga_write_word(struct fpga_manager *mgr,
 static int svec_fpga_write_start(struct fpga_manager *mgr)
 {
 	struct svec_dev *svec = mgr->priv;
-	void *loader_addr = svec->map_cr.kernel_va + SVEC_BASE_LOADER;
+	void *loader_addr = svec->vdev->map_cr.kernel_va + SVEC_BASE_LOADER;
 	int err, succ;
 
 	/* reset the FPGA */
@@ -220,7 +215,7 @@ static int svec_fpga_write_stop(struct fpga_manager *mgr,
 				struct fpga_image_info *info)
 {
 	struct svec_dev *svec = mgr->priv;
-	void *loader_addr = svec->map_cr.kernel_va + SVEC_BASE_LOADER;
+	void *loader_addr = svec->vdev->map_cr.kernel_va + SVEC_BASE_LOADER;
 	u64 timeout;
 	int rval = 0, err;
 
@@ -317,23 +312,12 @@ static int svec_fpga_write_init(struct fpga_manager *mgr,
 				const char *buf, size_t count)
 {
 	struct svec_dev *svec = mgr->priv;
-	int err;
 
 	/* Reset the bitstream programming words */
 	svec->bitstream_last_word = -1;
 	svec->bitstream_last_word_size = -1;
 
-	err = vme_find_mapping(&svec->map_cr, 1);
-	if (err)
-		return err;
-	err = svec_fpga_write_start(mgr);
-	if (err)
-		goto err;
-	return 0;
-
-err:
-	vme_release_mapping(&svec->map_cr, 1);
-	return err;
+	return svec_fpga_write_start(mgr);
 }
 
 
@@ -346,13 +330,7 @@ static int svec_fpga_write(struct fpga_manager *mgr, const char *buf, size_t cou
 static int svec_fpga_write_complete(struct fpga_manager *mgr,
 				    struct fpga_image_info *info)
 {
-	struct svec_dev *svec = mgr->priv;
-	int err;
-
-	err = svec_fpga_write_stop(mgr, info);
-	vme_release_mapping(&svec->map_cr, 1);
-
-	return err;
+	return svec_fpga_write_stop(mgr, info);
 }
 
 
@@ -371,6 +349,29 @@ static const struct fpga_manager_ops svec_fpga_ops = {
 	.fpga_remove = svec_fpga_remove,
 };
 
+#define SVEC_USER_CSR_INT_LEVEL 0x7FF5B
+#define SVEC_USER_CSR_INT_VECTOR 0x7FF5F
+
+static int svec_vme_init(struct svec_dev *svec)
+{
+	struct vme_dev *vdev = svec->vdev;
+	int err;
+
+	err = vme_csr_enable(vdev, 0);
+	if (err)
+		return err;
+	/* Configure the SVEC VME interface */
+	svec_csr_write(vdev->irq_vector, vdev->map_cr.kernel_va,
+		       SVEC_USER_CSR_INT_VECTOR);
+	svec_csr_write(vdev->irq_level, vdev->map_cr.kernel_va,
+		       SVEC_USER_CSR_INT_LEVEL);
+
+	err = vme_csr_enable(vdev, 1);
+	if (err)
+		return err;
+
+	return 0;
+}
 
 /**
  * It initialize a new SVEC instance
@@ -389,17 +390,16 @@ static int svec_probe(struct device *dev, unsigned int ndev)
 		err = -ENOMEM;
 		goto err;
 	}
-
-	svec->map_cr = map_tmpl_cr;
-	svec->map_cr.vme_addrl = svec->map_cr.sizel * vdev->slot;
-
+	svec->vdev = vdev;
 	svec->fpga_status = FPGA_MGR_STATE_UNKNOWN;
 
 	snprintf(svec->name, 8, "svec.%d", vdev->slot);
-	err = fpga_mgr_register(&vdev->dev, svec->name,
+	err = fpga_mgr_register(&svec->vdev->dev, svec->name,
 				&svec_fpga_ops, svec);
 	if (err)
 		goto err_fpga_reg;
+
+	svec_vme_init(svec);
 
 	return 0;
 
