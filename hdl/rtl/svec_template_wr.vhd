@@ -486,67 +486,22 @@ begin  -- architecture top
   vme_data_dir_o <= vme_data_dir_int;
 
   --  Mini-crossbar from gennum to carrier and application bus.
-  carrier_app_xb: process (clk_sys_62m5)
-  is
-    type t_ca_state is (S_IDLE, S_APP, S_CARRIER);
-    variable ca_state            : t_ca_state;
-    variable can_stall           : std_logic;
-    constant c_IDLE_WB_MASTER_IN : t_wishbone_master_in :=
-      (ack => '0', err => '0', rty => '0', stall => '0', dat => c_DUMMY_WB_DATA);
-  begin
-    if rising_edge(clk_sys_62m5) then
-      if rst_sys_62m5_n = '0' then
-        ca_state      := S_IDLE;
-        vme_wb_in      <= c_IDLE_WB_MASTER_IN;
-        app_wb_o      <= c_DUMMY_WB_MASTER_OUT;
-        carrier_wb_in <= c_DUMMY_WB_MASTER_OUT;
-      else
-        case ca_state is
-          when S_IDLE =>
-            vme_wb_in      <= c_IDLE_WB_MASTER_IN;
-            app_wb_o      <= c_DUMMY_WB_MASTER_OUT;
-            carrier_wb_in <= c_DUMMY_WB_MASTER_OUT;
-            if vme_wb_out.cyc = '1'
-              and vme_wb_out.stb = '1'
-            then
-              -- New transaction.
-              -- Stall so that there is no new requests from the master.
-              vme_wb_in.stall <= '1';
-              can_stall      := '1';
-              if vme_wb_out.adr (31 downto 13) = (31 downto 13 => '0') then
-                ca_state := S_CARRIER;
-                --  Pass to carrier
-                carrier_wb_in <= vme_wb_out;
-              else
-                ca_state := S_APP;
-                app_wb_o <= vme_wb_out;
-              end if;
-            end if;
-          when S_CARRIER =>
-            --  Pass from carrier.
-            --  Maintain stb as long as the carrier stalls.
-            carrier_wb_in.stb <= carrier_wb_out.stall and can_stall;
-            can_stall         := can_stall and carrier_wb_out.stall;
-            vme_wb_in          <= carrier_wb_out;
-            vme_wb_in.stall    <= '1';
-            if carrier_wb_out.ack = '1' then
-              ca_state := S_IDLE;
-            end if;
-          when S_APP =>
-            --  Pass from application
-            app_wb_o.stb   <= app_wb_i.stall and can_stall;
-            can_stall      := can_stall and app_wb_i.stall;
-            vme_wb_in       <= app_wb_i;
-            vme_wb_in.stall <= '1';
-            if app_wb_i.ack = '1' or app_wb_i.err = '1' then
-              ca_state := S_IDLE;
-            end if;
-        end case;
-      end if;
-    end if;
-  end process carrier_app_xb;
+  inst_split: entity work.xwb_split
+    generic map (
+      g_mask => x"ffff_e000"
+    )
+    port map (
+      clk_sys_i => clk_sys_62m5,
+      rst_n_i => rst_sys_62m5_n,
+      slave_i => vme_wb_out,
+      slave_o => vme_wb_in,
+      master_i (0) => carrier_wb_out,
+      master_i (1) => app_wb_i,
+      master_o (0) => carrier_wb_in,
+      master_o (1) => app_wb_o
+    );
 
-  i_devs: entity work.svec_template_regs
+  inst_carrier: entity work.svec_template_regs
     port map (
       rst_n_i    => rst_sys_62m5_n,
       clk_i      => clk_sys_62m5,
@@ -638,17 +593,17 @@ begin  -- architecture top
           if g_WITH_ONEWIRE and not g_WITH_WR then
             metadata_data(1) <= '1';
           end if;
-          if g_WITH_SPI and not g_WITH_WR then
+          if g_WITH_SPI then
             metadata_data(2) <= '1';
           end if;
           if g_WITH_WR then
             metadata_data(3) <= '1';
           end if;
-          if g_WITH_DDR4 then
-            metadata_data(4) <= '1';
-          end if;
           --  Buildinfo
-          metadata_data(5) <= '1';
+          metadata_data(4) <= '1';
+          if g_WITH_DDR4 then
+            metadata_data(5) <= '1';
+          end if;
           if g_WITH_DDR5 then
             metadata_data(6) <= '1';
           end if;
@@ -698,7 +653,7 @@ begin  -- architecture top
   rst_ref_125m_n_o <= rst_ref_125m_n and rst_csr_app_sync_n;
   clk_ref_125m_o   <= clk_ref_125m;
 
-  i_i2c: entity work.xwb_i2c_master
+  inst_i2c: entity work.xwb_i2c_master
     generic map (
       g_interface_mode      => CLASSIC,
       g_address_granularity => BYTE,
@@ -833,11 +788,11 @@ begin  -- architecture top
         -- Uart
         uart_rxd_i          => uart_rxd_i,
         uart_txd_o          => uart_txd_o,
-        -- SPI Flash
-        spi_sclk_o          => spi_sclk_o,
-        spi_ncs_o           => spi_ncs_o,
-        spi_mosi_o          => spi_mosi_o,
-        spi_miso_i          => spi_miso_i,
+        -- SPI Flash (not used)
+        spi_sclk_o          => open,
+        spi_ncs_o           => open,
+        spi_mosi_o          => open,
+        spi_miso_i          => '0',
 
         wb_slave_o          => wrc_in,
         wb_slave_i          => wrc_out_sh,
@@ -895,13 +850,8 @@ begin  -- architecture top
     --  WR means neither onewire nor spi.
     assert not g_WITH_ONEWIRE report "WR is not yet compatible with ONEWIRE"
       severity failure;
-    assert not g_WITH_SPI report "WR is not yet compatible with SPI"
-      severity failure;
     therm_id_in <= (ack => '1', err => '0', rty => '0', stall => '0',
       dat => (others => '0'));
-    flash_spi_in <= (ack => '1', err => '0', rty => '0', stall => '0',
-      dat => (others => '0'));
-    irqs(1) <= '0';
   end generate;
 
   gen_no_wr: if not g_WITH_WR generate
@@ -1015,7 +965,7 @@ begin  -- architecture top
     onewire_b <= 'Z';
   end generate;
 
-  gen_spi: if g_WITH_SPI and not g_WITH_WR generate
+  gen_spi: if g_WITH_SPI generate
     i_spi: entity work.xwb_spi
       generic map (
         g_interface_mode => CLASSIC,
@@ -1038,8 +988,9 @@ begin  -- architecture top
       );
   end generate;
 
-  gen_no_spi: if not g_WITH_SPI and not g_WITH_WR generate
+  gen_no_spi: if not g_WITH_SPI generate
     flash_spi_in <= (ack => '1', err => '0', rty => '0', stall => '0', dat => x"00000000");
+    irqs(1) <= '0';
   end generate;
 
   --  DDR3 controller
@@ -1140,7 +1091,7 @@ begin  -- architecture top
     ddr4_wb_in.rty <= '0';
   end generate gen_with_ddr4;
 
-  gen_without_ddr : if not g_WITH_DDR4 generate
+  gen_without_ddr4 : if not g_WITH_DDR4 generate
     ddr4_calib_done      <= '0';
     ddr4_wb_in           <= c_DUMMY_WB_MASTER_IN;
     ddr4_a_o             <= (others => '0');
@@ -1165,7 +1116,7 @@ begin  -- architecture top
     ddr4_wb_o.ack    <= '1';
     ddr4_wb_o.stall  <= '0';
     ddr4_wr_fifo_empty_o <= '0';
-  end generate gen_without_ddr;
+  end generate gen_without_ddr4;
 
   ddr4_wb_o.err <= '0';
   ddr4_wb_o.rty <= '0';
