@@ -162,46 +162,6 @@ NET "onewire_b" LOC = AC30;
 NET "onewire_b" IOSTANDARD = "LVCMOS33";
 
 #----------------------------------------
-# Front panel LEDs
-#----------------------------------------
-#NET "fp_led_line_oen_o[0]" LOC = AD26;
-#NET "fp_led_line_oen_o[1]" LOC = AD27;
-#NET "fp_led_line_o[0]"     LOC = AC27;
-#NET "fp_led_line_o[1]"     LOC = AC28;
-#NET "fp_led_column_o[0]"   LOC = AE30;
-#NET "fp_led_column_o[1]"   LOC = AE27;
-#NET "fp_led_column_o[2]"   LOC = AE28;
-#NET "fp_led_column_o[3]"   LOC = AF28;
-
-#NET "fp_led_line_oen_o[*]" IOSTANDARD="LVCMOS33";
-#NET "fp_led_line_o[*]"     IOSTANDARD="LVCMOS33";
-#NET "fp_led_column_o[*]"   IOSTANDARD="LVCMOS33";
-
-#----------------------------------------
-# Front panel IOs
-#----------------------------------------
-#NET "fp_gpio1_o"      LOC = R30;
-#NET "fp_gpio2_o"      LOC = T28;
-#NET "fp_gpio3_o"      LOC = U29;
-#NET "fp_gpio4_o"      LOC = V27;
-#NET "fp_gpio1_a2b_o"  LOC = R29;
-#NET "fp_gpio2_a2b_o"  LOC = T30;
-#NET "fp_gpio34_a2b_o" LOC = V28;
-#NET "fp_term_en_o[1]" LOC = AB1;
-#NET "fp_term_en_o[2]" LOC = W5;
-#NET "fp_term_en_o[3]" LOC = W4;
-#NET "fp_term_en_o[4]" LOC = V4;
-
-#NET "fp_gpio1_o"      IOSTANDARD = "LVCMOS33";
-#NET "fp_gpio2_o"      IOSTANDARD = "LVCMOS33";
-#NET "fp_gpio3_o"      IOSTANDARD = "LVCMOS33";
-#NET "fp_gpio4_o"      IOSTANDARD = "LVCMOS33";
-#NET "fp_gpio1_a2b_o"  IOSTANDARD = "LVCMOS33";
-#NET "fp_gpio2_a2b_o"  IOSTANDARD = "LVCMOS33";
-#NET "fp_gpio34_a2b_o" IOSTANDARD = "LVCMOS33";
-#NET "fp_term_en_o[*]" IOSTANDARD = "LVCMOS33";
-
-#----------------------------------------
 # PCB revision
 #----------------------------------------
 NET "pcbrev_i[4]" LOC = AF17;
