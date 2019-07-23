@@ -331,6 +331,23 @@ architecture top of svec_template_wr is
   signal ddr4_calib_done : std_logic;
   signal ddr5_calib_done : std_logic;
 
+  --  Address for ddr4.
+  signal csr_ddr4_addr_out    :    std_logic_vector(31 downto 0);
+  signal csr_ddr4_addr_wr     :    std_logic;
+  signal csr_ddr4_addr        :    std_logic_vector(31 downto 0);
+
+  -- data to read or to write in ddr4
+  signal csr_ddr4_data_in   :    std_logic_vector(31 downto 0);
+  signal csr_ddr4_data_out  :    std_logic_vector(31 downto 0);
+  signal csr_ddr4_data_wr   :    std_logic;
+  signal csr_ddr4_data_rd   :    std_logic;
+  signal csr_ddr4_data_wack :    std_logic;
+  signal csr_ddr4_data_rack :    std_logic;
+
+  -- 
+  signal ddr4_read_ip  : std_logic;
+  signal ddr4_write_ip : std_logic;
+
   signal ddr4_wb_out     : t_wishbone_master_out;
   signal ddr4_wb_in      : t_wishbone_master_in;
 
@@ -534,6 +551,18 @@ begin  -- architecture top
       csr_ddr_status_ddr5_calib_done_i    => ddr5_calib_done,
       csr_pcb_rev_rev_i   => pcbrev_i,
 
+      csr_ddr4_addr_i      => csr_ddr4_addr,
+      csr_ddr4_addr_o      => csr_ddr4_addr_out,
+      csr_ddr4_addr_wr_o   => csr_ddr4_addr_wr,
+  
+      -- data to read or to write in ddr4
+      csr_ddr4_data_i      => csr_ddr4_data_in,
+      csr_ddr4_data_o      => csr_ddr4_data_out,
+      csr_ddr4_data_wr_o   => csr_ddr4_data_wr,
+      csr_ddr4_data_rd_o   => csr_ddr4_data_rd,
+      csr_ddr4_data_wack_i => csr_ddr4_data_wack,
+      csr_ddr4_data_rack_i => csr_ddr4_data_rack,
+  
       -- Thermometer and unique id
       therm_id_i          => therm_id_in,
       therm_id_o          => therm_id_out,
@@ -1089,7 +1118,43 @@ begin  -- architecture top
     -- unused Wishbone signals
     ddr4_wb_in.err <= '0';
     ddr4_wb_in.rty <= '0';
-  end generate gen_with_ddr4;
+
+    p_ddr4_addr: process (clk_sys_62m5)
+    begin
+      if rising_edge(clk_sys_62m5) then
+        if rst_sys_62m5_n = '0' then
+          csr_ddr4_addr <= x"0000_0000";
+        elsif csr_ddr4_addr_wr = '1' then
+          csr_ddr4_addr <= csr_ddr4_addr_out;
+        elsif ddr4_wb_in.ack = '1' then
+          csr_ddr4_addr <= std_logic_vector(unsigned(csr_ddr4_addr) + 4);
+        end if;
+      end if;
+    end process;
+
+    p_ddr4_ack: process (clk_sys_62m5)
+    begin
+      if rising_edge(clk_sys_62m5) then
+        if rst_sys_62m5_n = '0' then
+          ddr4_read_ip <= '0';
+          ddr4_write_ip <= '0';
+        else
+          ddr4_read_ip <= csr_ddr4_data_rd or (ddr4_read_ip and not ddr4_wb_in.ack);
+          ddr4_write_ip <= csr_ddr4_data_wr or (ddr4_write_ip and not ddr4_wb_in.ack);
+        end if;
+      end if;
+    end process;
+
+    ddr4_wb_out <= (adr => csr_ddr4_addr,
+                    cyc => csr_ddr4_data_rd or csr_ddr4_data_wr or ddr4_read_ip or ddr4_write_ip,
+                    stb => csr_ddr4_data_rd or csr_ddr4_data_wr,
+                    sel => x"f",
+                    we => csr_ddr4_data_wr,
+                    dat => csr_ddr4_data_out);
+    csr_ddr4_data_in <= ddr4_wb_in.dat;
+    csr_ddr4_data_rack <= ddr4_read_ip and ddr4_wb_in.ack;
+    csr_ddr4_data_wack <= ddr4_write_ip and ddr4_wb_in.ack;
+ end generate gen_with_ddr4;
 
   gen_without_ddr4 : if not g_WITH_DDR4 generate
     ddr4_calib_done      <= '0';
@@ -1116,14 +1181,19 @@ begin  -- architecture top
     ddr4_wb_o.ack    <= '1';
     ddr4_wb_o.stall  <= '0';
     ddr4_wr_fifo_empty_o <= '0';
+
+    csr_ddr4_addr <= x"0000_0000";
+    ddr4_wb_out <= (adr => (others => 'X'), cyc => '0', stb => '0', sel => x"0", we => '0',
+      dat => (others => 'X'));
+    csr_ddr4_data_in <= x"0000_0000";
+    csr_ddr4_data_rack <= csr_ddr4_data_wr;
+    csr_ddr4_data_wack <= csr_ddr4_data_wr;
   end generate gen_without_ddr4;
 
   ddr4_wb_o.err <= '0';
   ddr4_wb_o.rty <= '0';
 
   --  TODO
-  ddr4_wb_out <= (adr => (others => 'X'), cyc => '0', stb => '0', sel => x"0", we => '0',
-     dat => (others => 'X'));
   ddr5_wb_out <= (adr => (others => 'X'), cyc => '0', stb => '0', sel => x"0", we => '0',
      dat => (others => 'X'));
 end architecture top;
