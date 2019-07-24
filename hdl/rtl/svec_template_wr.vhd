@@ -55,6 +55,8 @@ entity svec_template_wr is
     g_NUM_USER_IRQ  : natural := 1;
     --  WR PTP firmware.
     g_DPRAM_INITF   : string := "../../../../wr-cores/bin/wrpc/wrc_phy8.bram";
+    -- Number of aux clocks syntonized by WRPC to WR timebase
+    g_AUX_CLKS : integer := 0;
     -- Fabric interface selection for WR Core:
     -- plain     = expose WRC fabric interface
     -- streamers = attach WRC streamers to fabric interface
@@ -89,6 +91,9 @@ entity svec_template_wr is
     -- 125 MHz GTP reference
     clk_125m_gtp_n_i : in std_logic := '0';
     clk_125m_gtp_p_i : in std_logic := '0';
+
+    -- Aux clocks, which can be disciplined by the WR Core
+    clk_aux_i : in  std_logic_vector(g_AUX_CLKS-1 downto 0) := (others => '0');
 
     ---------------------------------------------------------------------------
     -- VME interface
@@ -292,6 +297,12 @@ entity svec_template_wr is
     tm_time_valid_o : out std_logic;
     tm_tai_o        : out std_logic_vector(39 downto 0);
     tm_cycles_o     : out std_logic_vector(27 downto 0);
+
+    -- Aux clocks control
+    tm_dac_value_o       : out std_logic_vector(23 downto 0);
+    tm_dac_wr_o          : out std_logic_vector(g_AUX_CLKS-1 downto 0);
+    tm_clk_aux_lock_en_i : in  std_logic_vector(g_AUX_CLKS-1 downto 0) := (others => '0');
+    tm_clk_aux_locked_o  : out std_logic_vector(g_AUX_CLKS-1 downto 0);
 
     -- PPS output
     pps_p_o    : out std_logic;
@@ -766,6 +777,7 @@ begin  -- architecture top
         g_VERBOSE                   => g_VERBOSE,
         g_with_external_clock_input => TRUE,
         g_dpram_initf               => g_DPRAM_INITF,
+        g_AUX_CLKS                  => g_AUX_CLKS,
         g_AUX_PLL_CFG               => c_WRPC_PLL_CONFIG,
         g_STREAMERS_OP_MODE         => g_STREAMERS_OP_MODE,
         g_TX_STREAMER_PARAMS        => g_TX_STREAMER_PARAMS,
@@ -779,6 +791,7 @@ begin  -- architecture top
         clk_125m_gtp_n_i    => clk_125m_gtp_n_i,
         clk_125m_gtp_p_i    => clk_125m_gtp_p_i,
         clk_10m_ext_i       => clk_ext_10m,
+        clk_aux_i           => clk_aux_i,
 
         clk_sys_62m5_o      => clk_sys_62m5,
         clk_ref_125m_o      => clk_ref_125m,
@@ -850,6 +863,11 @@ begin  -- architecture top
         tm_time_valid_o     => tm_time_valid_o,
         tm_tai_o            => tm_tai_o,
         tm_cycles_o         => tm_cycles_o,
+
+        tm_dac_value_o       => tm_dac_value_o,
+        tm_dac_wr_o          => tm_dac_wr_o,
+        tm_clk_aux_lock_en_i => tm_clk_aux_lock_en_i,
+        tm_clk_aux_locked_o  => tm_clk_aux_locked_o,
 
         pps_p_o             => pps_p_o,
         pps_led_o           => pps_led_o,
