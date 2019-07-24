@@ -175,8 +175,6 @@ entity svec_template_wr is
 
     plldac_sclk_o     : out std_logic;
     plldac_din_o      : out std_logic;
-    pll25dac_cs_n_o   : out std_logic; --cs1
-    pll20dac_cs_n_o   : out std_logic; --cs2
     pll20dac_din_o    : out std_logic;
     pll20dac_sclk_o   : out std_logic;
     pll20dac_sync_n_o : out std_logic;
@@ -250,14 +248,14 @@ entity svec_template_wr is
 
     --  Direct access to the DDR-3
     --  Classic wishbone
-    ddr4_clk_i   : in  std_logic;
-    ddr4_rst_n_i : in std_logic;
-    ddr4_wb_i    : in  t_wishbone_slave_data64_in;
+    ddr4_clk_i   : in  std_logic := '0';
+    ddr4_rst_n_i : in  std_logic := '1';
+    ddr4_wb_i    : in  t_wishbone_slave_data64_in := c_DUMMY_WB_SLAVE_D64_IN;
     ddr4_wb_o    : out t_wishbone_slave_data64_out;
 
-    ddr5_clk_i   : in  std_logic;
-    ddr5_rst_n_i : in std_logic;
-    ddr5_wb_i    : in  t_wishbone_slave_data64_in;
+    ddr5_clk_i   : in  std_logic := '0';
+    ddr5_rst_n_i : in  std_logic := '1';
+    ddr5_wb_i    : in  t_wishbone_slave_data64_in := c_DUMMY_WB_SLAVE_D64_IN;
     ddr5_wb_o    : out t_wishbone_slave_data64_out;
 
     -- DDR FIFO empty flag
