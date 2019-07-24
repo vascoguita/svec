@@ -95,6 +95,11 @@ entity svec_template_wr is
     -- Aux clocks, which can be disciplined by the WR Core
     clk_aux_i : in  std_logic_vector(g_AUX_CLKS-1 downto 0) := (others => '0');
 
+    -- 10MHz ext ref clock input
+    clk_10m_ext_i : in std_logic := '0';
+    -- External PPS input
+    pps_ext_i     : in std_logic := '0';
+
     ---------------------------------------------------------------------------
     -- VME interface
     ---------------------------------------------------------------------------
@@ -433,7 +438,6 @@ architecture top of svec_template_wr is
   signal rst_sys_62m5_n : std_logic;
   signal rst_ref_125m_n : std_logic;
   signal clk_ref_125m   : std_logic;
-  signal clk_ext_10m    : std_logic;
 
   -- I2C EEPROM
   signal eeprom_sda_in  : std_logic;
@@ -790,8 +794,9 @@ begin  -- architecture top
         clk_125m_pllref_n_i => clk_125m_pllref_n_i,
         clk_125m_gtp_n_i    => clk_125m_gtp_n_i,
         clk_125m_gtp_p_i    => clk_125m_gtp_p_i,
-        clk_10m_ext_i       => clk_ext_10m,
         clk_aux_i           => clk_aux_i,
+        clk_10m_ext_i       => clk_10m_ext_i,
+        pps_ext_i           => pps_ext_i,
 
         clk_sys_62m5_o      => clk_sys_62m5,
         clk_ref_125m_o      => clk_ref_125m,
@@ -877,7 +882,6 @@ begin  -- architecture top
 
     clk_ddr_333m   <= clk_pll_aux(0);
     rst_ddr_333m_n <= rst_pll_aux_n(0);
-    clk_ext_10m <= '0';
 
     -- Tristates for SFP EEPROM
     sfp_mod_def1_b <= '0' when sfp_scl_out = '0' else 'Z';
