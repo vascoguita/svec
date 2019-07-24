@@ -1,6 +1,6 @@
 [submodule "hdl/ip_cores/general-cores"]
 	path = hdl/ip_cores/general-cores
-	url = git://ohwr.org/hdl-core-lib/general-cores.git
+	url = https://ohwr.org/project/general-cores.git
 [submodule "hdl/ip_cores/vme64x-core"]
 	path = hdl/ip_cores/vme64x-core
-	url = git://ohwr.org/hdl-core-lib/vme64x-core.git
+	url = https://ohwr.org/project/vme64x-core.git
