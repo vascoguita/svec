@@ -451,7 +451,7 @@ begin
               when "11" => 
                 -- csr_ddr4_data
                 reg_rdat_int <= csr_ddr4_data_i;
-                csr_ddr4_data_rd_o <= '1';
+                csr_ddr4_data_rd_o <= rd_int;
                 rd_ack1_int <= csr_ddr4_data_rack_i;
               when others =>
                 rd_ack1_int <= rd_int;
