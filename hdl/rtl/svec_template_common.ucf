@@ -212,17 +212,6 @@ NET "clk_125m_pllref_n_i" TNM_NET = clk_125m_ref;
 TIMESPEC TS_clk_125m_pllref = PERIOD "clk_125m_ref" 8 ns HIGH 50%;
 
 #----------------------------------------
-# Xilinx MCB tweaks
-#----------------------------------------
-
-# These are suggested by the Xilinx-generated MCB.
-# More info in the UCF file found in the "user_design/par" of the generated core.
-NET "inst_svec_template/gen_with_ddr?.cmp_ddr_ctrl_bank/*/c?_pll_lock"                                     TIG;
-NET "inst_svec_template/gen_with_ddr?.cmp_ddr_ctrl_bank/*/memc?_mcb_raw_wrapper_inst/selfrefresh_mcb_mode" TIG;
-NET "inst_svec_template/gen_with_ddr?.cmp_ddr_ctrl_bank/*/mcb_soft_calibration_inst/DONE_SOFTANDHARD_CAL"  TIG;
-#NET "inst_svec_template/gen_with_ddr?.cmp_ddr_ctrl_bank/*/mcb_soft_calibration_inst/SELFREFRESH_MCB_REQ"   TIG;
-
-#----------------------------------------
 # Asynchronous resets
 #----------------------------------------
 
@@ -241,8 +230,6 @@ TIMESPEC TS_ddr_rst_tig = FROM FFS THRU ddr_rst TIG;
 NET "inst_svec_template/clk_sys_62m5"    TNM_NET = sys_clk_62m5;
 NET "inst_svec_template/clk_ref_125m"    TNM_NET = clk_125m_pllref;
 NET "inst_svec_template/clk_ddr_333m"    TNM_NET = ddr_clk;
-NET "inst_svec_template/gen_with_ddr?.cmp_ddr_ctrl_bank/*/memc4_infrastructure_inst/mcb_drp_clk_bufg_in" TNM_NET = ddr_clk;
-NET "inst_svec_template/gen_with_ddr?.cmp_ddr_ctrl_bank/*/memc4_mcb_raw_wrapper_inst/ioi_drp_clk"        TNM_NET = ddr_clk;
 
 #TIMEGRP "sys_clk" = "sys_clk_62m5" "clk_125m_pllref";
 
