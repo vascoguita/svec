@@ -1,5 +1,6 @@
 `include "vme64x_bfm.svh"
 `include "svec_vme_buffers.svh"
+`include "vhd_wishbone64_master.svh"
 //`include "../regs/golden_regs.vh"
 
 import wishbone_pkg::*;
@@ -7,6 +8,8 @@ import wishbone_pkg::*;
 module main;
    reg rst_n = 0;
    reg clk_125m_pllref = 0;
+   wire clk_62m5;
+   wire rst_62m5_n;
    var t_wishbone_master_data64_out ddr4_wb_out =
       '{cyc: 1'b0, stb: 1'b0, we: 1'b0, sel: 4'b0, adr: 32'b0, dat: 64'b0};
 
@@ -18,6 +21,7 @@ module main;
    // 125Mhz
    always #4ns clk_125m_pllref <= ~clk_125m_pllref;
 
+   IVHDWishbone64Master xwb_ddr4(clk_62m5, rst_62m5_n);
    IVME64X VME(rst_n);
 
    `DECLARE_VME_BUFFERS(VME.slave);
@@ -161,10 +165,10 @@ module main;
          .ddr5_we_n_o    (),
 
          .pcbrev_i (5'h2),
-         .ddr4_clk_i (1'b0),
-         .ddr4_rst_n_i (1'b0),
-         .ddr4_wb_i (ddr4_wb_out),
-         .ddr4_wb_o (),
+         .ddr4_clk_i (clk_62m5),
+         .ddr4_rst_n_i (rst_62m5_n),
+         .ddr4_wb_i (xwb_ddr4.out),
+         .ddr4_wb_o (xwb_ddr4.in),
          .ddr5_clk_i (),
          .ddr5_rst_n_i (),
          .ddr5_wb_i (),
@@ -172,8 +176,8 @@ module main;
          .ddr4_wr_fifo_empty_o(),
          .ddr5_wr_fifo_empty_o(),
 
-         .clk_sys_62m5_o (),
-         .rst_sys_62m5_n_o (),
+         .clk_sys_62m5_o (clk_62m5),
+         .rst_sys_62m5_n_o (rst_62m5_n),
          .clk_ref_125m_o (),
          .rst_ref_125m_n_o (),
 
@@ -232,7 +236,8 @@ module main;
       .dq      (ddr_dq),
       .dqs     ({ddr_dqs_p[1],ddr_dqs_p[0]}),
       .dqs_n   ({ddr_dqs_n[1],ddr_dqs_n[0]}),
-      .odt     (ddr_odt)
+      .odt     (ddr_odt),
+      .tdqs_n  ()
 	  );
 
    task automatic init_vme64x_core(ref CBusAccessor_VME64x acc);
@@ -258,24 +263,35 @@ module main;
       int i, result;
       
       automatic CBusAccessor_VME64x acc = new(VME.tb);
+      automatic CWishboneAccessor ddr4_acc = xwb_ddr4.get_accessor();
 
       #1us;
       init_vme64x_core(acc);
 
-
-//      acc.read('h80000000, d, A32|SINGLE|D32);
-  //    $display("Read0: %x\n", d);
+      //  Display meta data
       for (i = 0; i < 8'h20; i += 4)
       begin
          acc.read('h80000000 | i, d, A32|SINGLE|D32);
          $display("Read %x: %x", i, d);
       end
 
-      //  Read DDR3
+      acc.read('h80000050, d, A32|SINGLE|D32);
+      $display("ddr status: %x", d);
+
+      //  Write ddr4
+      ddr4_acc.set_mode(PIPELINED);
+      ddr4_acc.write(0, 64'h1122334455667788, 8);
+
+      //  Read DDR4
       acc.read('h80000000 | 8'h5c, d, A32|SINGLE|D32);
-      $display("Read data %x: %x", i, d);
+      $display("Read data: %08x", d);
       acc.read('h80000000 | 8'h58, d, A32|SINGLE|D32);
-      $display("Read addr %x: %x", i, d);
+      $display("Read addr: %x", d);
+
+      acc.read('h80000000 | 8'h5c, d, A32|SINGLE|D32);
+      $display("Read data: %08x", d);
+      acc.read('h80000000 | 8'h58, d, A32|SINGLE|D32);
+      $display("Read addr: %x", d);
 
 /*
        acc.write('h80010000, d, A24|SINGLE|D32);
