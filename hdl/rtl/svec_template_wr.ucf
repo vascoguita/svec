@@ -8,9 +8,11 @@
 #----------------------------------------
 NET "clk_125m_gtp_p_i"    LOC = B19;
 NET "clk_125m_gtp_n_i"    LOC = A19;
+NET "clk_20m_vcxo_i"      LOC = V26;
 
 NET "clk_125m_gtp_p_i"    IOSTANDARD = "LVDS_25";
 NET "clk_125m_gtp_n_i"    IOSTANDARD = "LVDS_25";
+NET "clk_20m_vcxo_i"      IOSTANDARD = "LVCMOS33";
 
 #----------------------------------------
 # SFP slot
