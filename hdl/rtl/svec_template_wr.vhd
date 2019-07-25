@@ -1038,9 +1038,12 @@ begin  -- architecture top
       );
   end generate;
 
-  gen_no_spi: if not g_WITH_SPI generate
+  gen_no_spi : if not g_WITH_SPI generate
     flash_spi_in <= (ack => '1', err => '0', rty => '0', stall => '0', dat => x"00000000");
-    irqs(1) <= '0';
+    irqs(1)      <= '0';
+    spi_ncs_o    <= '1';
+    spi_sclk_o   <= '0';
+    spi_mosi_o   <= '0';
   end generate;
 
   --  DDR3 controller
