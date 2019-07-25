@@ -1047,17 +1047,19 @@ begin  -- architecture top
   gen_with_ddr4: if g_WITH_DDR4 generate
     cmp_ddr_ctrl_bank : entity work.ddr3_ctrl
       generic map(
-        g_RST_ACT_LOW        => 0, -- active high reset (simpler internal logic)
-        g_BANK_PORT_SELECT   => "SVEC_BANK4_64B_32B",
-        g_MEMCLK_PERIOD      => 3000,
-        g_SIMULATION         => boolean'image(g_SIMULATION /= 0),
-        g_CALIB_SOFT_IP      => boolean'image(g_SIMULATION = 0),
-        g_P0_MASK_SIZE       => 8,
-        g_P0_DATA_PORT_SIZE  => 64,
-        g_P0_BYTE_ADDR_WIDTH => 30,
-        g_P1_MASK_SIZE       => 4,
-        g_P1_DATA_PORT_SIZE  => 32,
-        g_P1_BYTE_ADDR_WIDTH => 30)
+        g_RST_ACT_LOW         => 0, -- active high reset (simpler internal logic)
+        g_BANK_PORT_SELECT    => "SVEC_BANK4_64B_32B",
+        g_MEMCLK_PERIOD       => 3000,
+        g_SIMULATION          => boolean'image(g_SIMULATION /= 0),
+        g_CALIB_SOFT_IP       => boolean'image(g_SIMULATION = 0),
+        g_P0_MASK_SIZE        => 8,
+        g_P0_DATA_PORT_SIZE   => 64,
+        g_P0_BYTE_ADDR_WIDTH  => 30,
+        g_P0_ADDR_GRANULARITY => WORD,
+        g_P1_MASK_SIZE        => 4,
+        g_P1_DATA_PORT_SIZE   => 32,
+        g_P1_BYTE_ADDR_WIDTH  => 30,
+        g_P1_ADDR_GRANULARITY => BYTE)
       port map (
         clk_i   => clk_ddr_333m,
         rst_n_i => ddr_rst,
