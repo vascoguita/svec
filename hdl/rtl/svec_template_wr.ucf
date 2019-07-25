@@ -98,22 +98,22 @@ TIMESPEC TS_dmtd_skew = FROM "skew_limit" TO "FFS" 1 ns DATAPATHONLY;
 #----------------------------------------
 
 # Declaration of domains
-NET "inst_svec_template/gen_wr.cmp_xwrc_board_svec/clk_pll_dmtd"   TNM_NET = clk_dmtd;
+
+NET "inst_svec_template/gen_wr.cmp_xwrc_board_svec/clk_pll_dmtd"       TNM_NET = clk_dmtd;
 NET "inst_svec_template/gen_wr.cmp_xwrc_board_svec/phy8_to_wrc_rx_clk" TNM_NET = phy_clk;
 
-NET "*/gc_sync_ffs_in" TNM = FFS "sync_ffs";
+# Exceptions for crossings via gc_sync_ffs
 
 TIMEGRP "dmtd_sync_ffs" = "sync_ffs" EXCEPT "clk_dmtd";
 TIMEGRP "phy_sync_ffs"  = "sync_ffs" EXCEPT "phy_clk";
 
-TIMESPEC TS_dmtd_sync_ffs = FROM clk_dmtd  TO "dmtd_sync_ffs" TIG;
-TIMESPEC TS_phy_sync_ffs  = FROM phy_clk   TO "phy_sync_ffs"  TIG;
+TIMESPEC TS_dmtd_sync_ffs = FROM clk_dmtd TO "dmtd_sync_ffs" TIG;
+TIMESPEC TS_phy_sync_ffs  = FROM phy_clk  TO "phy_sync_ffs"  TIG;
 
 # Exceptions for crossings via gc_sync_register
-NET "*/gc_sync_register_in[*]" TNM = FFS "sync_reg";
 
-#TIMEGRP "dmtd_sync_reg" = "sync_reg" EXCEPT "clk_dmtd";
+TIMEGRP "dmtd_sync_reg" = "sync_reg" EXCEPT "clk_dmtd";
 TIMEGRP "phy_sync_reg"  = "sync_reg" EXCEPT "phy_clk";
 
-#TIMESPEC TS_dmtd_sync_reg     = FROM clk_dmtd        TO "dmtd_sync_reg" 16ns DATAPATHONLY;
-TIMESPEC TS_phy_sync_reg      = FROM phy_clk         TO "phy_sync_reg"  8ns  DATAPATHONLY;
+TIMESPEC TS_dmtd_sync_reg = FROM clk_dmtd TO "dmtd_sync_reg" 16ns DATAPATHONLY;
+TIMESPEC TS_phy_sync_reg  = FROM phy_clk  TO "phy_sync_reg"  8ns  DATAPATHONLY;
