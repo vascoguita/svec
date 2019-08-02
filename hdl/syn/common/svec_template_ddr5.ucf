@@ -73,23 +73,3 @@ NET "ddr5_ldqs_p_b[*]" IN_TERM = NONE;
 NET "ddr5_ldqs_n_b[*]" IN_TERM = NONE;
 NET "ddr5_udqs_p_b[*]" IN_TERM = NONE;
 NET "ddr5_udqs_n_b[*]" IN_TERM = NONE;
-
-#----------------------------------------
-# Xilinx MCB tweaks
-#----------------------------------------
-
-# These are suggested by the Xilinx-generated MCB.
-# More info in the UCF file found in the "user_design/par" of the generated core.
-NET "inst_svec_template/gen_with_ddr5.cmp_ddr_ctrl_bank/*/c?_pll_lock"                                     TIG;
-NET "inst_svec_template/gen_with_ddr5.cmp_ddr_ctrl_bank/*/memc?_mcb_raw_wrapper_inst/selfrefresh_mcb_mode" TIG;
-NET "inst_svec_template/gen_with_ddr5.cmp_ddr_ctrl_bank/*/mcb_soft_calibration_inst/DONE_SOFTANDHARD_CAL"  TIG;
-#NET "inst_svec_template/gen_with_ddr?.cmp_ddr_ctrl_bank/*/mcb_soft_calibration_inst/SELFREFRESH_MCB_REQ"   TIG;
-
-#----------------------------------------
-# Cross-clock domain sync
-#----------------------------------------
-
-# Declaration of domains
-
-NET "inst_svec_template/gen_with_ddr5.cmp_ddr_ctrl_bank/*/memc?_infrastructure_inst/mcb_drp_clk_bufg_in" TNM_NET = ddr_clk;
-NET "inst_svec_template/gen_with_ddr5.cmp_ddr_ctrl_bank/*/memc?_mcb_raw_wrapper_inst/ioi_drp_clk"        TNM_NET = ddr_clk;
