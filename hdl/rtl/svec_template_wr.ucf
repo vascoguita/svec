@@ -84,14 +84,15 @@ NET "inst_svec_template/gen_wr.cmp_xwrc_board_svec/cmp_xwrc_platform/gen_phy_spa
 
 TIMESPEC TS_wrc_gtp_clk = PERIOD "wrc_gtp_clk" 8 ns HIGH 50%;
 
-#----------------------------------------
-# WR DMTD tweaks
-#----------------------------------------
+#-------------------------------------------------------------
+# Constrain the phase between input and sampling clock in DMTD
+#-------------------------------------------------------------
+
 
 INST "*/U_SOFTPLL/U_Wrapped_Softpll/gen_feedback_dmtds*/clk_in" TNM = skew_limit;
 INST "*/U_SOFTPLL/U_Wrapped_Softpll/gen_ref_dmtds*/clk_in"      TNM = skew_limit;
 
-TIMESPEC TS_dmtd_skew = FROM "skew_limit" TO "FFS" 1 ns DATAPATHONLY;
+TIMESPEC TS_dmtd_skew = FROM "skew_limit" TO "FFS" 1.25 ns DATAPATHONLY;
 
 #----------------------------------------
 # Cross-clock domain sync
