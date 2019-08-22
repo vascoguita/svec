@@ -1,0 +1,37 @@
+#----------------------------------------
+# Xilinx MCB tweaks
+#----------------------------------------
+
+# These are suggested by the Xilinx-generated MCB.
+# More info in the UCF file found in the "user_design/par" of the generated core.
+NET "inst_svec_template/gen_with_ddr?.cmp_ddr_ctrl_bank/*/c?_pll_lock"                                     TIG;
+NET "inst_svec_template/gen_with_ddr?.cmp_ddr_ctrl_bank/*/memc?_mcb_raw_wrapper_inst/selfrefresh_mcb_mode" TIG;
+NET "inst_svec_template/gen_with_ddr?.cmp_ddr_ctrl_bank/*/mcb_soft_calibration_inst/DONE_SOFTANDHARD_CAL"  TIG;
+#NET "inst_svec_template/gen_with_ddr?.cmp_ddr_ctrl_bank/*/mcb_soft_calibration_inst/SELFREFRESH_MCB_REQ"   TIG;
+
+#----------------------------------------
+# Asynchronous resets
+#----------------------------------------
+
+# Ignore async reset to DDR controller
+NET "inst_svec_template/ddr_rst" TPTHRU = ddr_rst;
+TIMESPEC TS_ddr_rst_tig = FROM FFS THRU ddr_rst TIG;
+
+#----------------------------------------
+# Cross-clock domain sync
+#----------------------------------------
+
+NET "inst_svec_template/clk_ddr_333m" TNM_NET = ddr_clk;
+
+NET "inst_svec_template/gen_with_ddr?.cmp_ddr_ctrl_bank/*/memc?_infrastructure_inst/mcb_drp_clk_bufg_in" TNM_NET = ddr_clk;
+NET "inst_svec_template/gen_with_ddr?.cmp_ddr_ctrl_bank/*/memc?_mcb_raw_wrapper_inst/ioi_drp_clk"        TNM_NET = ddr_clk;
+
+# DDR does not use any sync modules
+
+#TIMEGRP "ddr_sync_ffs"  = "sync_ffs" EXCEPT "ddr_clk";
+
+#TIMESPEC TS_ddr_sync_ffs  = FROM ddr_clk TO "ddr_sync_ffs"  TIG;
+
+#TIMEGRP "ddr_sync_reg" = "sync_reg" EXCEPT "ddr_clk";
+
+#TIMESPEC TS_ddr_sync_reg = FROM ddr_clk TO "ddr_sync_reg"  3ns  DATAPATHONLY;

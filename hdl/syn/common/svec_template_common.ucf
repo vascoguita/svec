@@ -1,0 +1,252 @@
+#===============================================================================
+# IO Constraints
+#===============================================================================
+
+#----------------------------------------
+# VME interface
+#----------------------------------------
+NET "vme_write_n_i"   LOC = R1;
+NET "vme_sysreset_n_i" LOC = P4;
+NET "vme_retry_oe_o"  LOC = R4;
+NET "vme_retry_n_o"   LOC = AB2;
+NET "vme_lword_n_b"   LOC = M7;
+NET "vme_iackout_n_o" LOC = N3;
+NET "vme_iackin_n_i"  LOC = P7;
+NET "vme_iack_n_i"    LOC = N1;
+NET "vme_dtack_oe_o"  LOC = T1;
+NET "vme_dtack_n_o"   LOC = R5;
+NET "vme_ds_n_i[1]"   LOC = Y6;
+NET "vme_ds_n_i[0]"   LOC = Y7;
+NET "vme_data_oe_n_o" LOC = P1;
+NET "vme_data_dir_o"  LOC = P2;
+NET "vme_berr_o"      LOC = R3;
+NET "vme_as_n_i"      LOC = P6;
+NET "vme_addr_oe_n_o" LOC = N4;
+NET "vme_addr_dir_o"  LOC = N5;
+NET "vme_irq_o[7]"    LOC = R7;
+NET "vme_irq_o[6]"    LOC = AH2;
+NET "vme_irq_o[5]"    LOC = AF2;
+NET "vme_irq_o[4]"    LOC = N9;
+NET "vme_irq_o[3]"    LOC = N10;
+NET "vme_irq_o[2]"    LOC = AH4;
+NET "vme_irq_o[1]"    LOC = AG4;
+NET "vme_gap_i"       LOC = M6;
+NET "vme_ga_i[4]"     LOC = V9;
+NET "vme_ga_i[3]"     LOC = V10;
+NET "vme_ga_i[2]"     LOC = AJ1;
+NET "vme_ga_i[1]"     LOC = AH1;
+NET "vme_ga_i[0]"     LOC = V7;
+NET "vme_data_b[31]"  LOC = AK3;
+NET "vme_data_b[30]"  LOC = AH3;
+NET "vme_data_b[29]"  LOC = T8;
+NET "vme_data_b[28]"  LOC = T9;
+NET "vme_data_b[27]"  LOC = AK4;
+NET "vme_data_b[26]"  LOC = AJ4;
+NET "vme_data_b[25]"  LOC = W6;
+NET "vme_data_b[24]"  LOC = W7;
+NET "vme_data_b[23]"  LOC = AB6;
+NET "vme_data_b[22]"  LOC = AB7;
+NET "vme_data_b[21]"  LOC = W9;
+NET "vme_data_b[20]"  LOC = W10;
+NET "vme_data_b[19]"  LOC = AK5;
+NET "vme_data_b[18]"  LOC = AH5;
+NET "vme_data_b[17]"  LOC = AD6;
+NET "vme_data_b[16]"  LOC = AC6;
+NET "vme_data_b[15]"  LOC = AA6;
+NET "vme_data_b[14]"  LOC = AA7;
+NET "vme_data_b[13]"  LOC = T6;
+NET "vme_data_b[12]"  LOC = T7;
+NET "vme_data_b[11]"  LOC = AG5;
+NET "vme_data_b[10]"  LOC = AE5;
+NET "vme_data_b[9]"   LOC = Y11;
+NET "vme_data_b[8]"   LOC = W11;
+NET "vme_data_b[7]"   LOC = AF6;
+NET "vme_data_b[6]"   LOC = AE6;
+NET "vme_data_b[5]"   LOC = Y8;
+NET "vme_data_b[4]"   LOC = Y9;
+NET "vme_data_b[3]"   LOC = AE7;
+NET "vme_data_b[2]"   LOC = AD7;
+NET "vme_data_b[1]"   LOC = AA9;
+NET "vme_data_b[0]"   LOC = AA10;
+NET "vme_am_i[5]"     LOC = V8;
+NET "vme_am_i[4]"     LOC = AG3;
+NET "vme_am_i[3]"     LOC = AF3;
+NET "vme_am_i[2]"     LOC = AF4;
+NET "vme_am_i[1]"     LOC = AE4;
+NET "vme_am_i[0]"     LOC = AK2;
+NET "vme_addr_b[31]"  LOC = T2;
+NET "vme_addr_b[30]"  LOC = T3;
+NET "vme_addr_b[29]"  LOC = T4;
+NET "vme_addr_b[28]"  LOC = U1;
+NET "vme_addr_b[27]"  LOC = U3;
+NET "vme_addr_b[26]"  LOC = U4;
+NET "vme_addr_b[25]"  LOC = U5;
+NET "vme_addr_b[24]"  LOC = V1;
+NET "vme_addr_b[23]"  LOC = V2;
+NET "vme_addr_b[22]"  LOC = W1;
+NET "vme_addr_b[21]"  LOC = W3;
+NET "vme_addr_b[20]"  LOC = AA4;
+NET "vme_addr_b[19]"  LOC = AA5;
+NET "vme_addr_b[18]"  LOC = Y1;
+NET "vme_addr_b[17]"  LOC = Y2;
+NET "vme_addr_b[16]"  LOC = Y3;
+NET "vme_addr_b[15]"  LOC = Y4;
+NET "vme_addr_b[14]"  LOC = AC1;
+NET "vme_addr_b[13]"  LOC = AC3;
+NET "vme_addr_b[12]"  LOC = AD1;
+NET "vme_addr_b[11]"  LOC = AD2;
+NET "vme_addr_b[10]"  LOC = AB3;
+NET "vme_addr_b[9]"   LOC = AB4;
+NET "vme_addr_b[8]"   LOC = AD3;
+NET "vme_addr_b[7]"   LOC = AD4;
+NET "vme_addr_b[6]"   LOC = AC4;
+NET "vme_addr_b[5]"   LOC = AC5;
+NET "vme_addr_b[4]"   LOC = N7;
+NET "vme_addr_b[3]"   LOC = N8;
+NET "vme_addr_b[2]"   LOC = AE1;
+NET "vme_addr_b[1]"   LOC = AE3;
+
+NET "vme_write_n_i"   IOSTANDARD = "LVCMOS33";
+NET "vme_sysreset_n_i" IOSTANDARD = "LVCMOS33";
+NET "vme_retry_oe_o"  IOSTANDARD = "LVCMOS33";
+NET "vme_retry_n_o"   IOSTANDARD = "LVCMOS33";
+NET "vme_lword_n_b"   IOSTANDARD = "LVCMOS33";
+NET "vme_iackout_n_o" IOSTANDARD = "LVCMOS33";
+NET "vme_iackin_n_i"  IOSTANDARD = "LVCMOS33";
+NET "vme_iack_n_i"    IOSTANDARD = "LVCMOS33";
+NET "vme_dtack_oe_o"  IOSTANDARD = "LVCMOS33";
+NET "vme_dtack_n_o"   IOSTANDARD = "LVCMOS33";
+NET "vme_ds_n_i[*]"   IOSTANDARD = "LVCMOS33";
+NET "vme_data_oe_n_o" IOSTANDARD = "LVCMOS33";
+NET "vme_data_dir_o"  IOSTANDARD = "LVCMOS33";
+NET "vme_berr_o"      IOSTANDARD = "LVCMOS33";
+NET "vme_as_n_i"      IOSTANDARD = "LVCMOS33";
+NET "vme_addr_oe_n_o" IOSTANDARD = "LVCMOS33";
+NET "vme_addr_dir_o"  IOSTANDARD = "LVCMOS33";
+NET "vme_irq_o[*]"    IOSTANDARD = "LVCMOS33";
+NET "vme_gap_i"       IOSTANDARD = "LVCMOS33";
+NET "vme_ga_i[*]"     IOSTANDARD = "LVCMOS33";
+NET "vme_data_b[*]"   IOSTANDARD = "LVCMOS33";
+NET "vme_am_i[*]"     IOSTANDARD = "LVCMOS33";
+NET "vme_addr_b[*]"   IOSTANDARD = "LVCMOS33";
+
+#----------------------------------------
+# Clock and reset inputs
+#----------------------------------------
+NET "rst_n_i"             LOC = AD28;
+NET "clk_125m_pllref_n_i" LOC = AB30;
+NET "clk_125m_pllref_p_i" LOC = AB28;
+
+NET "rst_n_i"             IOSTANDARD = "LVCMOS33";
+NET "clk_125m_pllref_n_i" IOSTANDARD = "LVDS_25";
+NET "clk_125m_pllref_n_i" IOSTANDARD = "LVDS_25";
+
+#----------------------------------------
+# SPI FLASH
+#----------------------------------------
+NET "spi_ncs_o"  LOC = AG27;
+NET "spi_sclk_o" LOC = AG26;
+NET "spi_mosi_o" LOC = AH26;
+NET "spi_miso_i" LOC = AH27;
+
+NET "spi_ncs_o"  IOSTANDARD = "LVCMOS33";
+NET "spi_sclk_o" IOSTANDARD = "LVCMOS33";
+NET "spi_mosi_o" IOSTANDARD = "LVCMOS33";
+NET "spi_miso_i" IOSTANDARD = "LVCMOS33";
+
+#----------------------------------------
+# 1-wire thermometer + unique ID
+#----------------------------------------
+NET "onewire_b" LOC = AC30;
+
+NET "onewire_b" IOSTANDARD = "LVCMOS33";
+
+#----------------------------------------
+# PCB revision
+#----------------------------------------
+NET "pcbrev_i[4]" LOC = AF17;
+NET "pcbrev_i[3]" LOC = AE17;
+NET "pcbrev_i[2]" LOC = AD18;
+NET "pcbrev_i[1]" LOC = AE20;
+NET "pcbrev_i[0]" LOC = AD20;
+
+NET "pcbrev_i[*]" IOSTANDARD = "LVCMOS25";
+
+#----------------------------------------
+# Carrier I2C EEPROM
+#----------------------------------------
+NET "carrier_scl_b" LOC = AC29;
+NET "carrier_sda_b" LOC = AA30;
+
+NET "carrier_scl_b" IOSTANDARD = "LVCMOS33";
+NET "carrier_sda_b" IOSTANDARD = "LVCMOS33";
+
+#----------------------------------------
+# FMC slots management
+#----------------------------------------
+NET "fmc0_prsnt_m2c_n_i" LOC = N30;
+NET "fmc1_prsnt_m2c_n_i" LOC = AE29;
+NET "fmc0_scl_b"         LOC = P28;
+NET "fmc1_scl_b"         LOC = W29;
+NET "fmc0_sda_b"         LOC = P30;
+NET "fmc1_sda_b"         LOC = V30;
+
+NET "fmc0_prsnt_m2c_n_i" IOSTANDARD = "LVCMOS33";
+NET "fmc1_prsnt_m2c_n_i" IOSTANDARD = "LVCMOS33";
+NET "fmc0_scl_b"         IOSTANDARD = "LVCMOS33";
+NET "fmc1_scl_b"         IOSTANDARD = "LVCMOS33";
+NET "fmc0_sda_b"         IOSTANDARD = "LVCMOS33";
+NET "fmc1_sda_b"         IOSTANDARD = "LVCMOS33";
+
+
+#===============================================================================
+# Timing Constraints
+#===============================================================================
+
+#----------------------------------------
+# Clocks
+#----------------------------------------
+NET "clk_125m_pllref_p_i" TNM_NET = clk_125m_ref;
+NET "clk_125m_pllref_n_i" TNM_NET = clk_125m_ref;
+
+TIMESPEC TS_clk_125m_pllref = PERIOD "clk_125m_ref" 8 ns HIGH 50%;
+
+#----------------------------------------
+# Asynchronous resets
+#----------------------------------------
+
+# Ignore async reset inputs to reset synchronisers
+NET "*/gc_reset_async_in" TIG;
+
+# Ignore async reset to DDR controller
+NET "inst_svec_template/ddr_rst" TPTHRU = ddr_rst;
+TIMESPEC TS_ddr_rst_tig = FROM FFS THRU ddr_rst TIG;
+
+#----------------------------------------
+# Cross-clock domain sync
+#----------------------------------------
+
+# Declaration of domains
+
+NET "inst_svec_template/clk_sys_62m5" TNM_NET = sys_clk;
+NET "inst_svec_template/clk_ref_125m" TNM_NET = ref_clk;
+
+TIMEGRP "ref_sync_ffs"  = "sync_ffs" EXCEPT "ref_clk";
+TIMEGRP "sys_sync_ffs"  = "sync_ffs" EXCEPT "sys_clk";
+
+# Exceptions for crossings via gc_sync_ffs
+
+NET "*/gc_sync_ffs_in" TNM = FFS "sync_ffs";
+
+TIMESPEC TS_ref_sync_ffs  = FROM ref_clk TO "sys_sync_ffs"  TIG;
+TIMESPEC TS_sys_sync_ffs  = FROM sys_clk TO "sys_sync_ffs"  TIG;
+
+# Exceptions for crossings via gc_sync_register
+
+NET "*/gc_sync_register_in[*]" TNM = FFS "sync_reg";
+
+TIMEGRP "ref_sync_reg" = "sync_reg" EXCEPT "ref_clk";
+TIMEGRP "sys_sync_reg" = "sync_reg" EXCEPT "sys_clk";
+
+TIMESPEC TS_ref_sync_reg = FROM ref_clk TO "ref_sync_reg"  8ns  DATAPATHONLY;
+TIMESPEC TS_sys_sync_reg = FROM sys_clk TO "sys_sync_reg"  16ns DATAPATHONLY;

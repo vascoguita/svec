@@ -1,0 +1,132 @@
+memory-map:
+  name: svec_template_regs
+  bus: wb-32-be
+  size: 0x2000
+  children:
+    - submap:
+        name: metadata
+        description: a ROM containing the carrier metadata
+        size: 0x40
+        interface: sram
+    - block:
+       name: csr
+       description: carrier and fmc status and control
+       address: 0x40
+       children:
+       - reg:
+          name: app_offset
+          description: offset to the application metadata
+          access: ro
+          width: 32
+       - reg:
+          name: resets
+          description: global and application resets
+          access: rw
+          width: 32
+          children:
+           - field:
+              name: global
+              range: 0
+           - field:
+              name: appl
+              range: 1
+       - reg:
+          name: fmc_presence
+          description: presence lines for the fmcs
+          access: ro
+          width: 32
+       - reg:
+          name: unused0
+          description: unused (status of gennum)
+          access: ro
+          width: 32
+          preset: 0
+          x-hdl:
+            type: const
+       - reg:
+          name: ddr_status
+          description: status of the ddr controllers
+          access: ro
+          width: 32
+          children:
+           - field:
+               description: Set when ddr4 calibration is done.
+               name: ddr4_calib_done
+               range: 0
+           - field:
+               description: Set when ddr5 calibration is done.
+               name: ddr5_calib_done
+               range: 1
+       - reg:
+          name: pcb_rev
+          description: pcb revision
+          access: ro
+          width: 32
+          children:
+           - field:
+              name: rev
+              range: 4-0
+       - reg:
+          name: ddr4_addr
+          description: address of data to read or to write
+          access: rw
+          width: 32
+          x-hdl:
+            type: wire
+            write-strobe: True
+       - reg:
+          name: ddr4_data
+          description: data to read or to write in ddr4
+          access: rw
+          width: 32
+          x-hdl:
+            type: wire
+            read-strobe: True
+            write-strobe: True
+            read-ack: True
+            write-ack: True
+    - submap:
+        name: therm_id
+        description: Thermometer and unique id
+        address: 0x70
+        size: 0x10
+        interface: wb-32-be
+        x-hdl:
+          busgroup: True
+    - submap:
+        name: fmc_i2c
+        description: i2c controllers to the fmcs
+        address: 0x80
+        size: 0x20
+        interface: wb-32-be
+        x-hdl:
+          busgroup: True
+    - submap:
+        name: flash_spi
+        description: spi controller to the flash
+        address: 0xa0
+        size: 0x20
+        interface: wb-32-be
+        x-hdl:
+          busgroup: True
+    - submap:
+        name: vic
+        description: vector interrupt controller
+        address: 0x100
+        size: 0x100
+        interface: wb-32-be
+        x-hdl:
+          busgroup: True
+    - submap:
+        name: buildinfo
+        description: a ROM containing build information
+        size: 0x100
+        interface: sram
+    - submap:
+        name: wrc_regs
+        address: 0x1000
+        description: white-rabbit core registers
+        size: 0x1000
+        interface: wb-32-be
+        x-hdl:
+          busgroup: True
