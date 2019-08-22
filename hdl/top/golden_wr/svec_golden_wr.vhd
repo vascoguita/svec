@@ -134,8 +134,6 @@ entity svec_golden_wr is
 
     plldac_sclk_o     : out std_logic;
     plldac_din_o      : out std_logic;
-    pll25dac_cs_n_o   : out std_logic; --cs1
-    pll20dac_cs_n_o   : out std_logic; --cs2
     pll20dac_din_o    : out std_logic;
     pll20dac_sclk_o   : out std_logic;
     pll20dac_sync_n_o : out std_logic;
@@ -190,10 +188,10 @@ entity svec_golden_wr is
     fp_led_column_o   : out std_logic_vector(3 downto 0);
 
     -- GPIO
-    fp_gpio1_o      : out std_logic;  -- PPS output
-    fp_gpio2_o      : out std_logic;  -- not used
-    fp_gpio3_o      : out std_logic;  -- not used
-    fp_gpio4_o      : out std_logic;  -- not used
+    fp_gpio1_b      : out std_logic;  -- PPS output
+    fp_gpio2_b      : out std_logic;  -- not used
+    fp_gpio3_b      : out std_logic;  -- not used
+    fp_gpio4_b      : out std_logic;  -- not used
     fp_term_en_o    : out std_logic_vector(4 downto 1);
     fp_gpio1_a2b_o  : out std_logic;
     fp_gpio2_a2b_o  : out std_logic;
@@ -284,8 +282,6 @@ begin
       uart_txd_o => uart_txd_o,
       plldac_sclk_o => plldac_sclk_o,
       plldac_din_o => plldac_din_o,
-      pll25dac_cs_n_o => pll25dac_cs_n_o,
-      pll20dac_cs_n_o => pll20dac_cs_n_o,
       pll20dac_din_o => pll20dac_din_o,
       pll20dac_sclk_o => pll20dac_sclk_o,
       pll20dac_sync_n_o => pll20dac_sync_n_o,
@@ -441,10 +437,10 @@ begin
   led_state(15 downto 14) <= c_led_red_green when wr_led_act = '1'    else c_led_off;
 
   -- Front panel IO configuration
-  fp_gpio1_o      <= pps_p;
-  fp_gpio2_o      <= '0';
-  fp_gpio3_o      <= '0';
-  fp_gpio4_o      <= '0';
+  fp_gpio1_b      <= pps_p;
+  fp_gpio2_b      <= '0';
+  fp_gpio3_b      <= '0';
+  fp_gpio4_b      <= '0';
   fp_term_en_o    <= (others => '0');
   fp_gpio1_a2b_o  <= '1';
   fp_gpio2_a2b_o  <= '1';
