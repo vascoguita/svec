@@ -4,6 +4,9 @@
 REPO_PARENT ?= $(shell /bin/pwd)/../..
 -include $(REPO_PARENT)/parent_common.mk
 
+TOP_DIR ?= $(shell pwd)/../..
+HDL_DIR ?= $(TOP_DIR)/hdl
+
 KVERSION ?= $(shell uname -r)
 LINUX ?= /lib/modules/$(KVERSION)/build
 
@@ -16,11 +19,16 @@ I2C_ABS ?= $(abspath $(I2C))
 
 VERSION = $(shell git describe --dirty --long --tags)
 
+CHEBY ?= /usr/bin/cheby
+
 all: modules
 
-.PHONY: all modules clean help install modules_install
+.PHONY: all modules clean help install modules_install svec-core-fpga.h
 
-modules help install modules_install:
+svec-core-fpga.h:
+	$(CHEBY) --gen-c -i $(HDL_DIR)/rtl/svec_template_regs.cheby > $@
+
+modules help install modules_install: svec-core-fpga.h
 	$(MAKE) -C $(LINUX) M=$(shell pwd) \
 		VERSION=$(VERSION) \
 		VMEBRIDGE_ABS=$(VMEBRIDGE_ABS) \
@@ -33,4 +41,4 @@ modules help install modules_install:
 # be able to run the "clean" rule even if $(LINUX) is not valid
 clean:
 	rm -rf *.o *~  .*.cmd *.ko *.mod.c .tmp_versions Module.symvers \
-                         Module.markers modules.order
+                         Module.markers modules.order svec-core-fpga.h
