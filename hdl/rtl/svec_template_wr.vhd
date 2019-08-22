@@ -380,7 +380,6 @@ architecture top of svec_template_wr is
   signal vme_ga            : std_logic_vector(5 downto 0);
   signal vme_berr_n        : std_logic;
   signal vme_irq_n         : std_logic_vector(7 downto 1);
-  signal irq_to_vme        : std_logic;
   
   --  The wishbone bus to the carrier part.
   signal carrier_wb_out : t_wishbone_slave_out;
@@ -502,7 +501,7 @@ begin  -- architecture top
       vme_o.addr_oe_n => vme_addr_oe_n_o,
       wb_o            => vme_wb_out,
       wb_i            => vme_wb_in,
-      int_i           => irq_to_vme);
+      int_i           => irq_master);
 
   vme_ga     <= vme_gap_i & vme_ga_i;
   vme_berr_o <= not vme_berr_n;
@@ -516,7 +515,7 @@ begin  -- architecture top
   vme_addr_dir_o <= vme_addr_dir_int;
   vme_data_dir_o <= vme_data_dir_int;
 
-  --  Mini-crossbar from gennum to carrier and application bus.
+  --  Mini-crossbar from vme to carrier and application bus.
   inst_split: entity work.xwb_split
     generic map (
       g_mask => x"ffff_e000"
@@ -538,7 +537,7 @@ begin  -- architecture top
       clk_i      => clk_sys_62m5,
       wb_cyc_i   => carrier_wb_in.cyc,
       wb_stb_i   => carrier_wb_in.stb,
-      wb_adr_i   => carrier_wb_in.adr (12 downto 2),  -- Bytes address from gennum
+      wb_adr_i   => carrier_wb_in.adr (12 downto 2),  -- Bytes address from vme64x core
       wb_sel_i   => carrier_wb_in.sel,
       wb_we_i    => carrier_wb_in.we,
       wb_dat_i   => carrier_wb_in.dat,
@@ -613,10 +612,10 @@ begin  -- architecture top
     if rising_edge(clk_sys_62m5) then
       case metadata_addr is
         when x"0" =>
-          --  Vendor ID
+          -- Vendor ID
           metadata_data <= x"000010dc";
         when x"1" =>
-          --  Device ID
+          -- Device ID
           metadata_data <= x"53564543";
         when x"2" =>
           -- Version

@@ -23,7 +23,8 @@ files = [ "buildinfo_pkg.vhd" ]
 modules = {
   "local" : [
       "../../top/golden_wr",
-      ],
+      "../../syn/common",
+  ],
   "git" : [
       "https://ohwr.org/project/wr-cores.git",
       "https://ohwr.org/project/general-cores.git",
