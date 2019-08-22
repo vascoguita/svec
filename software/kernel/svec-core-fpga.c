@@ -74,12 +74,17 @@ static int svec_fpga_dbg_bld_info(struct seq_file *s, void *offset)
 
 	for (off = SVEC_TEMPLATE_REGS_BUILDINFO;
 	     off < SVEC_TEMPLATE_REGS_BUILDINFO + SVEC_TEMPLATE_REGS_BUILDINFO_SIZE -1;
-	     off++) {
-		char tmp = ioread8(svec_fpga->fpga + off);
+	     off += 4) {
+		uint32_t tmp = ioread32be(svec_fpga->fpga + off);
+		int k;
 
-		if (!tmp)
-			return 0;
-		seq_putc(s, tmp);
+		for (k = 0; k < 4; ++k) {
+			char c = ((char *)&tmp)[k];
+
+			if (!c)
+				return 0;
+			seq_putc(s, c);
+		}
 	}
 
 	return 0;
