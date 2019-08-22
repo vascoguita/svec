@@ -19,6 +19,7 @@
 #include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/firmware.h>
+#include <linux/fmc.h>
 #include <linux/fs.h>
 #include <linux/io.h>
 #include <linux/jhash.h>
@@ -31,11 +32,9 @@
 #include <linux/fpga/fpga-mgr.h>
 #include <vmebus.h>
 
+#include "svec.h"
+#include "svec-compat.h"
 #include "hw/xloader_regs.h"
-
-
-#define SVEC_BASE_LOADER	0x70000
-
 
 static void svec_csr_write(u8 value, void *base, u32 offset)
 {
@@ -44,35 +43,146 @@ static void svec_csr_write(u8 value, void *base, u32 offset)
 }
 
 /**
- * Byte sequence to unlock and clear the Application FPGA
+ * Load FPGA code
+ * @svec: SVEC device
+ * @name: FPGA bitstream file name
+ *
+ * Return: 0 on success, otherwise a negative error number
  */
-static const uint32_t boot_unlock_sequence[8] = {
-	0xde, 0xad, 0xbe, 0xef, 0xca, 0xfe, 0xba, 0xbe
+static int svec_fw_load(struct svec_dev *svec_dev, const char *name)
+{
+	int err;
+
+	err = svec_fpga_exit(svec_dev);
+	if (err) {
+		dev_err(&svec_dev->vdev->dev,
+			"Cannot remove FPGA device instances. Try to remove them manually and to reload this device instance\n");
+		return err;
+	}
+
+
+	mutex_lock(&svec_dev->mtx);
+	err = compat_svec_fw_load(svec_dev, name);
+	if (err)
+		goto out;
+
+	err = svec_fpga_init(svec_dev, SVEC_FUNC_NR);
+	if (err)
+		dev_warn(&svec_dev->vdev->dev,
+			 "FPGA incorrectly programmed %d\n", err);
+out:
+	mutex_unlock(&svec_dev->mtx);
+
+	return err;
+}
+
+static ssize_t svec_dbg_fw_write(struct file *file,
+				 const char __user *buf,
+				 size_t count, loff_t *ppos)
+{
+	struct svec_dev *svec_dev = file->private_data;
+	int err;
+
+	err = svec_fw_load(svec_dev, buf);
+	if (err)
+		return err;
+	return count;
+}
+
+static int svec_dbg_fw_open(struct inode *inode, struct file *file)
+{
+	file->private_data = inode->i_private;
+
+	return 0;
+}
+
+static const struct file_operations svec_dbg_fw_ops = {
+	.owner = THIS_MODULE,
+	.open  = svec_dbg_fw_open,
+	.write = svec_dbg_fw_write,
 };
 
+static int svec_dbg_meta(struct seq_file *s, void *offset)
+{
+	struct svec_dev *svec_dev = s->private;
+	struct svec_meta_id *meta;
 
-/**
- * struct svec_dev - SVEC instance
- * It describes a SVEC device instance.
- * @vdev VME device instance
- * @bitstream_last_word last data to write into the FPGA
- * @bistream_last_word_size last data size to write in the FPGA. This is a dirty
- *                          and ugly hack in order to properly handle a dirty
- *                          and ugly interface. The SVEC bootloader does not
- *                          accept emtpy transfers and neither to declare the
- *                          transmission over without sending data.
- * @fpgA_status state of the Application FPGA
- * The user must lock the spinlock `lock` when using the following variables in
- * this data structure: flags.
- */
-struct svec_dev {
-	struct vme_dev *vdev;
-	char name[8];
+	meta = &svec_dev->meta;
 
-	uint32_t bitstream_last_word;
-	uint32_t bitstream_last_word_size;
-	enum fpga_mgr_states fpga_status;
+	seq_printf(s, "'%s':\n", dev_name(&svec_dev->vdev->dev));
+	seq_puts(s, "Metadata:\n");
+	seq_printf(s, "  - Vendor: 0x%08x\n", meta->vendor);
+	seq_printf(s, "  - Device: 0x%08x\n", meta->device);
+	seq_printf(s, "  - Version: 0x%08x\n", meta->version);
+	seq_printf(s, "  - BOM: 0x%08x\n", meta->bom);
+	seq_printf(s, "  - SourceID: 0x%08x%08x%08x%08x\n",
+		   meta->src[0],
+		   meta->src[1],
+		   meta->src[2],
+		   meta->src[3]);
+	seq_printf(s, "  - CapabilityMask: 0x%08x\n", meta->cap);
+	seq_printf(s, "  - VendorUUID: 0x%08x%08x%08x%08x\n",
+		   meta->uuid[0],
+		   meta->uuid[1],
+		   meta->uuid[2],
+		   meta->uuid[3]);
+
+	return 0;
+}
+
+static int svec_dbg_meta_open(struct inode *inode, struct file *file)
+{
+	struct svec_dev *svec = inode->i_private;
+
+	return single_open(file, svec_dbg_meta, svec);
+}
+
+static const struct file_operations svec_dbg_meta_ops = {
+	.owner = THIS_MODULE,
+	.open  = svec_dbg_meta_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
 };
+
+static int svec_dbg_init(struct svec_dev *svec_dev)
+{
+	struct device *dev = &svec_dev->vdev->dev;
+
+	svec_dev->dbg_dir = debugfs_create_dir(dev_name(dev), NULL);
+	if (IS_ERR_OR_NULL(svec_dev->dbg_dir)) {
+		dev_err(dev, "Cannot create debugfs directory (%ld)\n",
+			PTR_ERR(svec_dev->dbg_dir));
+		return PTR_ERR(svec_dev->dbg_dir);
+	}
+
+	svec_dev->dbg_fw = debugfs_create_file(SVEC_DBG_FW_NAME, 0200,
+					       svec_dev->dbg_dir,
+					       svec_dev,
+					       &svec_dbg_fw_ops);
+	if (IS_ERR_OR_NULL(svec_dev->dbg_fw)) {
+		dev_err(dev, "Cannot create debugfs file \"%s\" (%ld)\n",
+			SVEC_DBG_FW_NAME, PTR_ERR(svec_dev->dbg_fw));
+		return PTR_ERR(svec_dev->dbg_fw);
+	}
+
+	svec_dev->dbg_meta = debugfs_create_file(SVEC_DBG_META_NAME, 0200,
+						 svec_dev->dbg_dir,
+						 svec_dev,
+						 &svec_dbg_meta_ops);
+	if (IS_ERR_OR_NULL(svec_dev->dbg_meta)) {
+		dev_err(dev, "Cannot create debugfs file \"%s\" (%ld)\n",
+			SVEC_DBG_META_NAME, PTR_ERR(svec_dev->dbg_meta));
+		return PTR_ERR(svec_dev->dbg_meta);
+	}
+
+	return 0;
+}
+
+static void svec_dbg_exit(struct svec_dev *svec_dev)
+{
+	debugfs_remove_recursive(svec_dev->dbg_dir);
+}
 
 
 /**
@@ -167,7 +277,7 @@ static int svec_fpga_write_word(struct fpga_manager *mgr,
 
 
 /**
- * It starts the programming procedure
+ * Start programming procedure
  * It is usable only when there is a valid CR/CSR space mapped
  * @mgr FPGA manager instance
  * Return 0 on success, otherwise a negative errno number.
@@ -206,7 +316,7 @@ err_reset:
 
 
 /**
- * It starts the programming procedure.
+ * Stop programming procedure.
  * It is usable only when there is a valid CR/CSR space mapped
  * @mgr FPGA manager instance
  * Return 0 on success, otherwise a negative errno number
@@ -233,7 +343,11 @@ static int svec_fpga_write_stop(struct fpga_manager *mgr,
 	svec->bitstream_last_word_size = -1;
 
 	/* Two seconds later */
-	timeout = get_jiffies_64() + usecs_to_jiffies(info->config_complete_timeout_us);
+	timeout = get_jiffies_64();
+	if (info->config_complete_timeout_us)
+		timeout += usecs_to_jiffies(info->config_complete_timeout_us);
+	else
+		timeout += usecs_to_jiffies(100);
 	while (time_before64(get_jiffies_64(), timeout)) {
 		rval = ioread32be(loader_addr + XLDR_REG_CSR);
 		if (rval & XLDR_CSR_DONE)
@@ -357,7 +471,7 @@ static int svec_vme_init(struct svec_dev *svec)
 	struct vme_dev *vdev = svec->vdev;
 	int err;
 
-	err = vme_csr_enable(vdev, 0);
+	err = vme_disable_device(vdev);
 	if (err)
 		return err;
 	/* Configure the SVEC VME interface */
@@ -366,17 +480,14 @@ static int svec_vme_init(struct svec_dev *svec)
 	svec_csr_write(vdev->irq_level, vdev->map_cr.kernel_va,
 		       SVEC_USER_CSR_INT_LEVEL);
 
-	err = vme_csr_enable(vdev, 1);
-	if (err)
-		return err;
-
-	return 0;
+	return vme_enable_device(vdev);
 }
 
 /**
  * It initialize a new SVEC instance
  * @pdev correspondend Linux device instance
  * @ndev (Deprecated) device number
+ *
  * Return: 0 on success, otherwise a negative number correspondent to an errno
  */
 static int svec_probe(struct device *dev, unsigned int ndev)
@@ -390,26 +501,42 @@ static int svec_probe(struct device *dev, unsigned int ndev)
 		err = -ENOMEM;
 		goto err;
 	}
-	svec->vdev = vdev;
-	svec->fpga_status = FPGA_MGR_STATE_UNKNOWN;
 
-	snprintf(svec->name, 8, "svec.%d", vdev->slot);
-	err = fpga_mgr_register(&svec->vdev->dev, svec->name,
-				&svec_fpga_ops, svec);
+	mutex_init(&svec->mtx);
+	svec->vdev = vdev;
+	dev_set_drvdata(dev, svec);
+
+	svec_vme_init(svec);
+
+	svec->fpga_status = FPGA_MGR_STATE_UNKNOWN;
+	svec->mgr = fpga_mgr_create(dev, dev_name(dev),
+				    &svec_fpga_ops, svec);
+	if (!svec->mgr) {
+		err = -EPERM;
+		goto err_fpga_new;
+	}
+
+	err = fpga_mgr_register(svec->mgr);
 	if (err)
 		goto err_fpga_reg;
 
-	svec_vme_init(svec);
+	svec_dbg_init(svec);
+
+	err = svec_fpga_init(svec, SVEC_FUNC_NR);
+	if (err)
+		dev_warn(&vdev->dev,
+			 "FPGA incorrectly programmed or empty (%d)\n", err);
 
 	return 0;
 
 err_fpga_reg:
+	fpga_mgr_free(svec->mgr);
+err_fpga_new:
+	dev_set_drvdata(dev, NULL);
 	kfree(svec);
 err:
-	dev_err(dev, "Failed to register SVEC device\n");
 	return err;
 }
-
 
 /**
  * It removes a SVEC device instance
@@ -417,9 +544,18 @@ err:
  * @ndev DEPRECATED Device instance
  * Return: 0 on success, otherwise a negative errno number
  */
-static int svec_remove(struct device *vdev, unsigned int ndev)
+static int svec_remove(struct device *dev, unsigned int ndev)
 {
-	fpga_mgr_unregister(vdev);
+	struct svec_dev *svec = dev_get_drvdata(dev);
+
+	svec_fpga_exit(svec);
+	svec_dbg_exit(svec);
+	fpga_mgr_unregister(svec->mgr);
+	fpga_mgr_free(svec->mgr);
+	dev_set_drvdata(dev, NULL);
+
+	vme_disable_device(svec->vdev);
+	kfree(svec);
 
 	return 0;
 }
@@ -444,7 +580,8 @@ static struct vme_driver svec_driver = {
 	.probe = svec_probe,
 	.remove = svec_remove,
 	.driver = {
-		.name = KBUILD_MODNAME,
+		.owner = THIS_MODULE,
+		.name = "svec-fmc-carrier",
 	},
 	.id_table = svec_id_table,
 };
@@ -464,9 +601,10 @@ module_init(svec_init);
 module_exit(svec_exit);
 
 MODULE_AUTHOR("Federico Vaga <federico.vaga@cern.ch>");
-MODULE_AUTHOR("Juan David Gonzalez Cobas <dcobas@cern.ch>");
 MODULE_LICENSE("GPL v2");
-MODULE_VERSION(GIT_VERSION);
-MODULE_DESCRIPTION("svec driver");
+MODULE_VERSION(VERSION);
+MODULE_DESCRIPTION("Driver for the 'Simple VME FMC Carrier' a.k.a. SVEC");
+
+MODULE_SOFTDEP("pre: htvic i2c_mux i2c_ohwr spi-ocores");
 
 ADDITIONAL_VERSIONS;
