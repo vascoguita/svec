@@ -53,6 +53,7 @@ static int svec_fw_load(struct svec_dev *svec_dev, const char *name)
 {
 	int err;
 
+	dev_dbg(&svec_dev->vdev->dev, "Writing firmware '%s'\n", name);
 	err = svec_fpga_exit(svec_dev);
 	if (err) {
 		dev_err(&svec_dev->vdev->dev,
