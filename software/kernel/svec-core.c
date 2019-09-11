@@ -84,6 +84,11 @@ static ssize_t svec_dbg_fw_write(struct file *file,
 	struct svec_dev *svec_dev = file->private_data;
 	int err;
 
+	if (!buf || !count) {
+		dev_err(&svec_dev->vdev->dev, "Invalid input\n");
+		return -EINVAL;
+	}
+
 	err = svec_fw_load(svec_dev, buf);
 	if (err)
 		return err;
