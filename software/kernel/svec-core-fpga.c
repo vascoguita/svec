@@ -629,7 +629,7 @@ static int svec_fpga_app_init(struct svec_fpga *svec_fpga)
 	struct irq_domain *vic_domain;
 	char app_name[SVEC_FPGA_APP_NAME_MAX];
 	unsigned long app_offset;
-	int err;
+	int err, fn = svec_fpga->function_nr;
 
 	app_offset = svec_fpga_csr_app_offset(svec_fpga);
 	if (!app_offset) {
@@ -637,8 +637,8 @@ static int svec_fpga_app_init(struct svec_fpga *svec_fpga)
 		return 0;
 	}
 
-	res[0].start = vme_resource_start(vdev, 0) + app_offset;
-	res[0].end = vme_resource_end(vdev, 0);
+	res[0].start = vme_resource_start(vdev, fn) + app_offset;
+	res[0].end = vme_resource_end(vdev, fn);
 
 	if (svec_fpga->vic_pdev)
 		vic_domain = irq_find_host((void *)&svec_fpga->vic_pdev->dev);
