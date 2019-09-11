@@ -590,16 +590,16 @@ static int svec_fmc_exit(struct svec_fpga *svec_fpga)
 /**
  * Build the platform_device_id->name from metadata
  *
- * The byte order on SVEC is little endian, but we want to convert it
- * in string. Use big-endian read to swap word and get the string order
+ * The byte order on SVEC is big endian, but we want to convert it
+ * in string. Use little-endian read to keep the string order
  * from MSB to LSB
  */
 static int svec_fpga_app_id_build(struct svec_fpga *svec_fpga,
 				  unsigned long app_off,
 				  char *id, unsigned int size)
 {
-	uint32_t vendor = ioread32be(svec_fpga->fpga + app_off + FPGA_META_VENDOR);
-	uint32_t device = ioread32be(svec_fpga->fpga + app_off + FPGA_META_DEVICE);
+	uint32_t vendor = ioread32(svec_fpga->fpga + app_off + FPGA_META_VENDOR);
+	uint32_t device = ioread32(svec_fpga->fpga + app_off + FPGA_META_DEVICE);
 
 	memset(id, 0, size);
 	if (vendor == 0xFF000000) {
