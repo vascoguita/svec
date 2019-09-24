@@ -21,17 +21,17 @@ enum svec_fpga_irq_lines {
 };
 
 enum svec_fpga_csr_offsets {
-	SVEC_FPGA_CSR_APP_OFF = SVEC_TEMPLATE_REGS_CSR + 0x00,
-	SVEC_FPGA_CSR_RESETS = SVEC_TEMPLATE_REGS_CSR + 0x04,
-	SVEC_FPGA_CSR_FMC_PRESENT = SVEC_TEMPLATE_REGS_CSR + 0x08,
-	SVEC_FPGA_CSR_DDR_STATUS = SVEC_TEMPLATE_REGS_CSR + 0x10,
-	SVEC_FPGA_CSR_PCB_REV = SVEC_TEMPLATE_REGS_CSR + 0x14,
+	SVEC_FPGA_CSR_APP_OFF = SVEC_BASE_REGS_CSR + 0x00,
+	SVEC_FPGA_CSR_RESETS = SVEC_BASE_REGS_CSR + 0x04,
+	SVEC_FPGA_CSR_FMC_PRESENT = SVEC_BASE_REGS_CSR + 0x08,
+	SVEC_FPGA_CSR_DDR_STATUS = SVEC_BASE_REGS_CSR + 0x10,
+	SVEC_FPGA_CSR_PCB_REV = SVEC_BASE_REGS_CSR + 0x14,
 };
 
 enum svec_fpga_therm_offsets {
-	SVEC_FPGA_THERM_SERID_MSB = SVEC_TEMPLATE_REGS_THERM_ID + 0x0,
-	SVEC_FPGA_THERM_SERID_LSB = SVEC_TEMPLATE_REGS_THERM_ID + 0x4,
-	SVEC_FPGA_THERM_TEMP = SVEC_TEMPLATE_REGS_THERM_ID + 0x8,
+	SVEC_FPGA_THERM_SERID_MSB = SVEC_BASE_REGS_THERM_ID + 0x0,
+	SVEC_FPGA_THERM_SERID_LSB = SVEC_BASE_REGS_THERM_ID + 0x4,
+	SVEC_FPGA_THERM_TEMP = SVEC_BASE_REGS_THERM_ID + 0x8,
 };
 
 enum svec_fpga_meta_cap_mask {
@@ -72,8 +72,8 @@ static int svec_fpga_dbg_bld_info(struct seq_file *s, void *offset)
 		return 0;
 	}
 
-	for (off = SVEC_TEMPLATE_REGS_BUILDINFO;
-	     off < SVEC_TEMPLATE_REGS_BUILDINFO + SVEC_TEMPLATE_REGS_BUILDINFO_SIZE -1;
+	for (off = SVEC_BASE_REGS_BUILDINFO;
+	     off < SVEC_BASE_REGS_BUILDINFO + SVEC_BASE_REGS_BUILDINFO_SIZE -1;
 	     off += 4) {
 		uint32_t tmp = ioread32be(svec_fpga->fpga + off);
 		int k;
@@ -173,8 +173,8 @@ static struct resource svec_fpga_vic_res[] = {
 	{
 		.name = "htvic-mem",
 		.flags = IORESOURCE_MEM,
-		.start = SVEC_TEMPLATE_REGS_VIC,
-		.end = SVEC_TEMPLATE_REGS_VIC,
+		.start = SVEC_BASE_REGS_VIC,
+		.end = SVEC_BASE_REGS_VIC,
 	}, {
 		.name = "htvic-irq",
 		.flags = IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHLEVEL,
@@ -230,8 +230,8 @@ static struct resource svec_fpga_fmc_i2c_res[] = {
 	{
 		.name = "i2c-ocores-mem",
 		.flags = IORESOURCE_MEM,
-		.start = SVEC_TEMPLATE_REGS_FMC_I2C,
-		.end = SVEC_TEMPLATE_REGS_FMC_I2C + SVEC_TEMPLATE_REGS_FMC_I2C_SIZE -1,
+		.start = SVEC_BASE_REGS_FMC_I2C,
+		.end = SVEC_BASE_REGS_FMC_I2C + SVEC_BASE_REGS_FMC_I2C_SIZE -1,
 	}, {
 		.name = "i2c-ocores-irq",
 		.flags = IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHLEVEL,
@@ -253,8 +253,8 @@ static struct resource svec_fpga_spi_res[] = {
 	{
 		.name = "spi-ocores-mem",
 		.flags = IORESOURCE_MEM,
-		.start = SVEC_TEMPLATE_REGS_FLASH_SPI,
-		.end = SVEC_TEMPLATE_REGS_FLASH_SPI + SVEC_TEMPLATE_REGS_FLASH_SPI_SIZE - 1,
+		.start = SVEC_BASE_REGS_FLASH_SPI,
+		.end = SVEC_BASE_REGS_FLASH_SPI + SVEC_BASE_REGS_FLASH_SPI_SIZE - 1,
 	}, {
 		.name = "spi-ocores-irq",
 		.flags = IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHLEVEL,

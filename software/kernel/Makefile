@@ -26,7 +26,7 @@ all: modules
 .PHONY: all modules clean help install modules_install svec-core-fpga.h
 
 svec-core-fpga.h:
-	$(CHEBY) --gen-c -i $(HDL_DIR)/rtl/svec_template_regs.cheby > $@
+	$(CHEBY) --gen-c -i $(HDL_DIR)/rtl/svec_base_regs.cheby > $@
 
 modules help install modules_install: svec-core-fpga.h
 	$(MAKE) -C $(LINUX) M=$(shell pwd) \
