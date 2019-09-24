@@ -4,9 +4,9 @@
 -- https://ohwr.org/projects/svec
 --------------------------------------------------------------------------------
 --
--- unit name:   svec_template_wr
+-- unit name:   svec_base_wr
 --
--- description: SVEC carrier template, with WR.
+-- description: SVEC carrier base, with WR.
 --
 --------------------------------------------------------------------------------
 -- Copyright CERN 2019
@@ -40,7 +40,7 @@ use work.streamers_pkg.all;
 library unisim;
 use unisim.vcomponents.all;
 
-entity svec_template_wr is
+entity svec_base_wr is
   generic (
     --  If true, instantiate a VIC/ONEWIRE/SPI/WR/DDRAM+DMA.
     g_WITH_VIC      : boolean := True;
@@ -324,9 +324,9 @@ entity svec_template_wr is
     app_wb_o           : out t_wishbone_master_out;
     app_wb_i           : in  t_wishbone_master_in
   );
-end entity svec_template_wr;
+end entity svec_base_wr;
 
-architecture top of svec_template_wr is
+architecture top of svec_base_wr is
   -- WRPC Xilinx platform auxiliary clock configuration, used for DDR clock
   constant c_WRPC_PLL_CONFIG : t_auxpll_cfg_array := (
     0      => (enabled => TRUE, bufg_en => TRUE, divide => 3),
@@ -531,7 +531,7 @@ begin  -- architecture top
       master_o (1) => app_wb_o
     );
 
-  inst_carrier: entity work.svec_template_regs
+  inst_carrier: entity work.svec_base_regs
     port map (
       rst_n_i    => rst_sys_62m5_n,
       clk_i      => clk_sys_62m5,

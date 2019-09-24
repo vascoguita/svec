@@ -80,7 +80,7 @@ NET "clk_20m_vcxo_i" TNM_NET = "clk_20m_vcxo";
 
 TIMESPEC TS_clk_20m_vcxo = PERIOD "clk_20m_vcxo" 50 ns HIGH 50%;
 
-NET "inst_svec_template/gen_wr.cmp_xwrc_board_svec/cmp_xwrc_platform/gen_phy_spartan6.cmp_gtp/ch1_gtp_clkout_int<1>" TNM_NET = wrc_gtp_clk;
+NET "inst_svec_base/gen_wr.cmp_xwrc_board_svec/cmp_xwrc_platform/gen_phy_spartan6.cmp_gtp/ch1_gtp_clkout_int<1>" TNM_NET = wrc_gtp_clk;
 
 TIMESPEC TS_wrc_gtp_clk = PERIOD "wrc_gtp_clk" 8 ns HIGH 50%;
 
@@ -100,8 +100,8 @@ TIMESPEC TS_dmtd_skew = FROM "skew_limit" TO "FFS" 1.25 ns DATAPATHONLY;
 
 # Declaration of domains
 
-NET "inst_svec_template/gen_wr.cmp_xwrc_board_svec/clk_pll_dmtd"       TNM_NET = clk_dmtd;
-NET "inst_svec_template/gen_wr.cmp_xwrc_board_svec/phy8_to_wrc_rx_clk" TNM_NET = phy_clk;
+NET "inst_svec_base/gen_wr.cmp_xwrc_board_svec/clk_pll_dmtd"       TNM_NET = clk_dmtd;
+NET "inst_svec_base/gen_wr.cmp_xwrc_board_svec/phy8_to_wrc_rx_clk" TNM_NET = phy_clk;
 
 # Exceptions for crossings via gc_sync_ffs
 

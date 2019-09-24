@@ -1,4 +1,4 @@
 files = [
-    "svec_template_regs.vhd",
-    "svec_template_wr.vhd",
+    "svec_base_regs.vhd",
+    "svec_base_wr.vhd",
 ]
