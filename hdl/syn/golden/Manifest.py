@@ -16,13 +16,13 @@ syn_top = "svec_golden"
 board = "svec"
 ctrls = ["bank4_64b_32b"]
 
-svec_template_ucf = ['ddr4']
+svec_base_ucf = []
 
 files = [ "buildinfo_pkg.vhd" ]
 
 modules = {
   "local" : [
-      "../../top/golden",
+      "../../top/golden", "../common",
       ],
   "git" : [
       "https://ohwr.org/project/wr-cores.git",

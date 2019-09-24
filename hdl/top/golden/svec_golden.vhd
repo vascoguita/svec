@@ -148,13 +148,13 @@ architecture top of svec_golden is
   signal app_wb_out         : t_wishbone_master_out;
   signal app_wb_in          : t_wishbone_master_in;
 begin
-  inst_svec_template: entity work.svec_template_wr
+  inst_svec_base: entity work.svec_base_wr
     generic map (
       g_with_vic => True,
       g_with_onewire => True,
       g_with_spi => True,
       g_with_wr => False,
-      g_with_ddr4 => True,
+      g_with_ddr4 => False,
       g_with_ddr5 => False,
       g_app_offset => x"0000_0000",
       g_num_user_irq => 0,
@@ -213,8 +213,6 @@ begin
       uart_txd_o => open,
       plldac_sclk_o => open,
       plldac_din_o => open,
-      pll25dac_cs_n_o => open,
-      pll20dac_cs_n_o => open,
       pll20dac_din_o => open,
       pll20dac_sclk_o => open,
       pll20dac_sync_n_o => open,
