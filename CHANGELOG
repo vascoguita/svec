@@ -1,18 +1,17 @@
-# Change Log
+==========
+Change Log
+==========
 
-## [0.9.0] - 2017-10-13
-### Added
-- unittest
-### Fixes
-- add missing header in the repository
-- add delay in the unlocking sequence
+[1.4.0] 2019-09-11
+==================
+Added
+-----
+- [hdl] svec-base IP-core to support SVEC based designs
+- [sw] Support for svec-base IP-core
+- [sw] Support for FMC
 
-## [0.8.0] - 2017-10-12
-### Added
-- char device to program the Application FPGA
-- sysfs attribute to unlock programming
-- documentation!
-
-## [0.0.0] - 2017-09-28
-### Added
-- basic Linux device driver
+[0.0.0] - 2017-09-28
+====================
+Added
+-----
+- [sw] basic Linux device driver
