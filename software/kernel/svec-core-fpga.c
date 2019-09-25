@@ -516,9 +516,15 @@ static const struct fmc_carrier_operations svec_fmc_ops = {
 	.is_present = svec_fmc_is_present,
 };
 
+struct svec_i2c_filter {
+	struct svec_fpga *svec_fpga;
+	unsigned int slot_nr;
+};
+
 static int svec_i2c_find_adapter(struct device *dev, void *data)
 {
-	struct svec_fpga *svec_fpga = data;
+	struct svec_i2c_filter *flt = data;
+	struct svec_fpga *svec_fpga = flt->svec_fpga;
 	struct i2c_adapter *adap, *adap_parent;
 
 	if (dev->type != &i2c_adapter_type)
@@ -533,7 +539,11 @@ static int svec_i2c_find_adapter(struct device *dev, void *data)
 	if (&svec_fpga->dev != adap_parent->dev.parent->parent)
 		return 0;
 
-	/* Found! Return the bus ID */
+	if (flt->slot_nr > 0) {
+		/* We want the following one */
+		flt->slot_nr--;
+		return 0;
+	}
 	return i2c_adapter_id(adap);
 }
 
@@ -544,9 +554,9 @@ static int svec_i2c_find_adapter(struct device *dev, void *data)
  *
  * Return: the I2C bus to be used
  */
-static int svec_i2c_get_bus(struct svec_fpga *svec_fpga)
+static int svec_i2c_get_bus(struct svec_i2c_filter *flt)
 {
-	return i2c_for_each_dev(svec_fpga, svec_i2c_find_adapter);
+	return i2c_for_each_dev(flt, svec_i2c_find_adapter);
 }
 
 /**
@@ -557,7 +567,9 @@ static int svec_fmc_init(struct svec_fpga *svec_fpga)
 	int err, i;
 
 	for (i = 0; i < SVEC_FMC_SLOTS; ++i) {
-		svec_fpga->slot_info[i].i2c_bus_nr = svec_i2c_get_bus(svec_fpga);
+		struct svec_i2c_filter flt = {svec_fpga, i};
+
+		svec_fpga->slot_info[i].i2c_bus_nr = svec_i2c_get_bus(&flt);
 		if (svec_fpga->slot_info[i].i2c_bus_nr <= 0)
 			return -ENODEV;
 		svec_fpga->slot_info[i].ga = i;
