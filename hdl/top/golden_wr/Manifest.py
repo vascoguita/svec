@@ -1,2 +1,2 @@
-files = ["svec_golden.vhd" ]
+files = ["svec_golden_wr.vhd" ]
 modules = {'local': ["../../rtl"]}
