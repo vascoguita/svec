@@ -23,12 +23,17 @@ CHEBY ?= /usr/bin/cheby
 
 all: modules
 
-.PHONY: all modules clean help install modules_install svec-core-fpga.h
+.PHONY: all modules clean help install modules_install coccicheck svec-core-fpga.h
 
 svec-core-fpga.h:
 	$(CHEBY) --gen-c -i $(HDL_DIR)/rtl/svec_base_regs.cheby > $@
 
-modules help install modules_install: svec-core-fpga.h
+clean-spec-core-fpga.h:
+	rm -f spec-core-fpga.h
+
+install: modules_install
+clean: clean-spec-core-fpga.h
+modules help coccichek modules_install: svec-core-fpga.h
 	$(MAKE) -C $(LINUX) M=$(shell pwd) \
 		VERSION=$(VERSION) \
 		VMEBRIDGE_ABS=$(VMEBRIDGE_ABS) \
@@ -37,8 +42,3 @@ modules help install modules_install: svec-core-fpga.h
 		FMC_ABS=$(FMC_ABS) \
 		I2C_ABS=$(I2C_ABS) \
 		$@
-
-# be able to run the "clean" rule even if $(LINUX) is not valid
-clean:
-	rm -rf *.o *~  .*.cmd *.ko *.mod.c .tmp_versions Module.symvers \
-                         Module.markers modules.order svec-core-fpga.h
