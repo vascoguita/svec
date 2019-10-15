@@ -4,14 +4,16 @@
 REPO_PARENT ?= $(shell /bin/pwd)/..
 -include $(REPO_PARENT)/parent_common.mk
 
-DIRS = kernel doc
+DIRS = kernel
 
-.PHONY: all clean modules install modules_install $(DIRS)
+.PHONY: all clean modules install modules_install coccicheck $(DIRS)
 
-all clean modules install modules_install: $(DIRS)
+all clean : $(DIRS)
+install modules_install coccicheck modules: kernel
 
 clean: TARGET = clean
 modules: TARGET = modules
+coccicheck: TARGET = coccicheck
 install: TARGET = install
 modules_install: TARGET = modules_install
 
