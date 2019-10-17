@@ -2,6 +2,12 @@
 Change Log
 ==========
 
+[1.4.2] 2019-10-17
+==================
+Changed
+-----
+- [sw] show application metadata in debugfs
+
 [1.4.1] 2019-10-15
 ==================
 Fixed

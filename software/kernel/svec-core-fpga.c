@@ -42,6 +42,16 @@ enum svec_fpga_meta_cap_mask {
 	SVEC_META_CAP_BLD = BIT(4),
 };
 
+static void svec_fpga_metadata_get(struct svec_meta_id *meta,
+				   void __iomem *fpga)
+{
+	uint32_t *meta_tmp = (uint32_t *)meta;
+	int i;
+
+	for (i = 0; i < sizeof(*meta) / 4; ++i)
+		meta_tmp[i] = ioread32be(fpga + (i * 4));
+}
+
 static const struct debugfs_reg32 svec_fpga_debugfs_reg32[] = {
 	{
 		.name = "Application offset",
@@ -649,6 +659,9 @@ static int svec_fpga_app_init(struct svec_fpga *svec_fpga)
 		return 0;
 	}
 
+	svec_fpga_metadata_get(&svec_fpga->meta_app,
+			       svec_fpga->fpga + app_offset);
+
 	res[0].start = vme_resource_start(vdev, fn) + app_offset;
 	res[0].end = vme_resource_end(vdev, fn);
 
@@ -695,16 +708,6 @@ static void svec_fpga_app_exit(struct svec_fpga *svec_fpga)
 		platform_device_unregister(svec_fpga->app_pdev);
 		svec_fpga->app_pdev = NULL;
 	}
-}
-
-static void svec_fpga_metadata_get(struct svec_meta_id *meta,
-				   void __iomem *fpga)
-{
-	uint32_t *meta_tmp = (uint32_t *)meta;
-	int i;
-
-	for (i = 0; i < sizeof(*meta) / 4; ++i)
-		meta_tmp[i] = ioread32be(fpga + SVEC_META_BASE + (i * 4));
 }
 
 static bool svec_fpga_is_valid(struct svec_dev *svec_dev,
@@ -781,7 +784,8 @@ int svec_fpga_init(struct svec_dev *svec_dev, unsigned int function_nr)
 		goto err_map;
 	}
 
-	svec_fpga_metadata_get(&svec_dev->meta, svec_fpga->fpga);
+	svec_fpga_metadata_get(&svec_dev->meta,
+			       svec_fpga->fpga + SVEC_META_BASE);
 	if (!svec_fpga_is_valid(svec_dev, &svec_dev->meta)) {
 		err =  -EINVAL;
 		goto err_valid;
