@@ -108,31 +108,40 @@ static const struct file_operations svec_dbg_fw_ops = {
 	.write = svec_dbg_fw_write,
 };
 
-static int svec_dbg_meta(struct seq_file *s, void *offset)
+static void seq_printf_meta(struct seq_file *s, const char *indent,
+			    struct svec_meta_id *meta)
 {
-	struct svec_dev *svec_dev = s->private;
-	struct svec_meta_id *meta;
-
-	meta = &svec_dev->meta;
-
-	seq_printf(s, "'%s':\n", dev_name(&svec_dev->vdev->dev));
-	seq_puts(s, "Metadata:\n");
-	seq_printf(s, "  - Vendor: 0x%08x\n", meta->vendor);
-	seq_printf(s, "  - Device: 0x%08x\n", meta->device);
-	seq_printf(s, "  - Version: 0x%08x\n", meta->version);
-	seq_printf(s, "  - BOM: 0x%08x\n", meta->bom);
-	seq_printf(s, "  - SourceID: 0x%08x%08x%08x%08x\n",
+	seq_printf(s, "%sMetadata:\n", indent);
+	seq_printf(s, "%s  - Vendor: 0x%08x\n", indent, meta->vendor);
+	seq_printf(s, "%s  - Device: 0x%08x\n", indent, meta->device);
+	seq_printf(s, "%s  - Version: 0x%08x\n", indent, meta->version);
+	seq_printf(s, "%s  - BOM: 0x%08x\n", indent, meta->bom);
+	seq_printf(s, "%s  - SourceID: 0x%08x%08x%08x%08x\n",
+		   indent,
 		   meta->src[0],
 		   meta->src[1],
 		   meta->src[2],
 		   meta->src[3]);
-	seq_printf(s, "  - CapabilityMask: 0x%08x\n", meta->cap);
-	seq_printf(s, "  - VendorUUID: 0x%08x%08x%08x%08x\n",
+	seq_printf(s, "%s  - CapabilityMask: 0x%08x\n", indent, meta->cap);
+	seq_printf(s, "%s  - VendorUUID: 0x%08x%08x%08x%08x\n",
+		   indent,
 		   meta->uuid[0],
 		   meta->uuid[1],
 		   meta->uuid[2],
 		   meta->uuid[3]);
+}
 
+static int svec_dbg_meta(struct seq_file *s, void *offset)
+{
+	struct svec_dev *svec_dev = s->private;
+
+	seq_printf_meta(s, "", &svec_dev->meta);
+	if (!svec_dev->svec_fpga || !svec_dev->svec_fpga->app_pdev)
+		goto out;
+
+	seq_puts(s, "Application:\n");
+	seq_printf_meta(s, "  ", &svec_dev->svec_fpga->meta_app);
+out:
 	return 0;
 }
 

@@ -86,6 +86,7 @@ struct svec_meta_id {
 
 struct svec_fpga {
 	struct device dev;
+	struct svec_meta_id meta_app;
 	unsigned int function_nr;
 	void __iomem *fpga;
 	struct platform_device *vic_pdev;
