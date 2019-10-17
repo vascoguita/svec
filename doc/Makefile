@@ -1,19 +1,19 @@
-MANUAL=svec-device
+# Minimal makefile for Sphinx documentation
+#
 
-all: img doc
+# You can set these variables from the command line.
+SPHINXOPTS    =
+SPHINXBUILD   = sphinx-build
+SOURCEDIR     = .
+BUILDDIR      = _build
 
-doc: html man
+# Put it first so that "make" without argument is like "make help".
+help:
+	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-html:
-	rst2html $(MANUAL).rst > $(MANUAL).html
+.PHONY: help Makefile
 
-man:
-	rst2man --syntax-highlight=none $(MANUAL).rst > $(MANUAL).man
-
-img: svec-logo.png
-
-svec-logo.png: svec-logo.svg
-	inkscape -f $< -e  $@
-
-clean:
-	rm -f *.html *.man *.png
+# Catch-all target: route all unknown targets to Sphinx using the new
+# "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
+%: Makefile
+	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
