@@ -2,6 +2,12 @@
 Change Log
 ==========
 
+[1.4.4] 2019-12-13
+==================
+Fixed
+-----
+- [sw] soft dependency from i2c_ohwr to i2c-ocores
+
 [1.4.3] 2019-10-17
 ==================
 Added
