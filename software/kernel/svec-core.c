@@ -620,6 +620,6 @@ MODULE_LICENSE("GPL v2");
 MODULE_VERSION(VERSION);
 MODULE_DESCRIPTION("Driver for the 'Simple VME FMC Carrier' a.k.a. SVEC");
 
-MODULE_SOFTDEP("pre: htvic i2c_mux i2c_ohwr spi-ocores");
+MODULE_SOFTDEP("pre: htvic i2c_mux i2c-ocores spi-ocores");
 
 ADDITIONAL_VERSIONS;
