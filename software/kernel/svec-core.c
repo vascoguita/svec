@@ -1,5 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * SPDX-License-Identifier: GPLv2
  *
  * Copyright (C) 2017 CERN (www.cern.ch)
  * Author: Federico Vaga <federico.vaga@cern.ch>
@@ -95,16 +95,9 @@ static ssize_t svec_dbg_fw_write(struct file *file,
 	return count;
 }
 
-static int svec_dbg_fw_open(struct inode *inode, struct file *file)
-{
-	file->private_data = inode->i_private;
-
-	return 0;
-}
-
 static const struct file_operations svec_dbg_fw_ops = {
 	.owner = THIS_MODULE,
-	.open  = svec_dbg_fw_open,
+	.open  = simple_open,
 	.write = svec_dbg_fw_write,
 };
 
@@ -267,11 +260,9 @@ static int svec_fpga_write_word(struct fpga_manager *mgr,
 	uint32_t xldr_fifo_r0;	/* Bitstream data input control register */
 	uint32_t xldr_fifo_r1;	/* Bitstream data input register */
 	int rv, try = 10000;
-	static int cnt = 0;
 
-	if (size <= 0 || size >= 5) {
+	if (size <= 0 || size >= 5)
 		return -EINVAL;
-	}
 
 	xldr_fifo_r0 = ((size - 1) & 0x3) | (is_last ? XLDR_FIFO_R0_XLAST : 0);
 	xldr_fifo_r1 = htonl(word);
@@ -279,13 +270,11 @@ static int svec_fpga_write_word(struct fpga_manager *mgr,
 		rv = ioread32be(loader_addr + XLDR_REG_FIFO_CSR);
 	} while (rv & XLDR_FIFO_CSR_FULL && --try >= 0);
 
-	if(rv & XLDR_FIFO_CSR_FULL)
+	if (rv & XLDR_FIFO_CSR_FULL)
 		return -EBUSY; /* bootloader busy */
 
 	iowrite32be(xldr_fifo_r0, loader_addr + XLDR_REG_FIFO_R0);
 	iowrite32be(xldr_fifo_r1, loader_addr + XLDR_REG_FIFO_R1);
-
-	cnt++;
 
 	return 0;
 }
@@ -367,7 +356,8 @@ static int svec_fpga_write_stop(struct fpga_manager *mgr,
 		rval = ioread32be(loader_addr + XLDR_REG_CSR);
 		if (rval & XLDR_CSR_DONE)
 			break;
-		msleep(1);
+		usleep_range(900, 1100);
+
 	}
 
 	if (!(rval & XLDR_CSR_DONE)) {
@@ -384,7 +374,7 @@ out:
 	iowrite32be(XLDR_CSR_EXIT, loader_addr + XLDR_REG_CSR);
 
 	/* give the VME core a little while to settle up */
-	msleep(10);
+	usleep_range(10000, 20000);
 
 	return err;
 }
@@ -450,7 +440,8 @@ static int svec_fpga_write_init(struct fpga_manager *mgr,
 }
 
 
-static int svec_fpga_write(struct fpga_manager *mgr, const char *buf, size_t count)
+static int svec_fpga_write(struct fpga_manager *mgr, const char *buf,
+			   size_t count)
 {
 	return svec_fpga_write_buf(mgr, buf, count);
 }

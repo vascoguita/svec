@@ -83,7 +83,7 @@ static int svec_fpga_dbg_bld_info(struct seq_file *s, void *offset)
 	}
 
 	for (off = SVEC_BASE_REGS_BUILDINFO;
-	     off < SVEC_BASE_REGS_BUILDINFO + SVEC_BASE_REGS_BUILDINFO_SIZE -1;
+	     off < SVEC_BASE_REGS_BUILDINFO + SVEC_BASE_REGS_BUILDINFO_SIZE - 1;
 	     off += 4) {
 		uint32_t tmp = ioread32be(svec_fpga->fpga + off);
 		int k;
@@ -145,7 +145,8 @@ static int svec_fpga_dbg_init(struct svec_fpga *svec_fpga)
 		goto err;
 	}
 
-	svec_fpga->dbg_bld_info = debugfs_create_file(SVEC_DBG_BLD_INFO_NAME, 0444,
+	svec_fpga->dbg_bld_info = debugfs_create_file(SVEC_DBG_BLD_INFO_NAME,
+						      0444,
 						      svec_fpga->dbg_dir,
 						      svec_fpga,
 						      &svec_fpga_dbg_bld_info_ops);
@@ -241,7 +242,8 @@ static struct resource svec_fpga_fmc_i2c_res[] = {
 		.name = "i2c-ocores-mem",
 		.flags = IORESOURCE_MEM,
 		.start = SVEC_BASE_REGS_FMC_I2C,
-		.end = SVEC_BASE_REGS_FMC_I2C + SVEC_BASE_REGS_FMC_I2C_SIZE -1,
+		.end = SVEC_BASE_REGS_FMC_I2C
+		       + SVEC_BASE_REGS_FMC_I2C_SIZE - 1,
 	}, {
 		.name = "i2c-ocores-irq",
 		.flags = IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHLEVEL,
@@ -264,7 +266,8 @@ static struct resource svec_fpga_spi_res[] = {
 		.name = "spi-ocores-mem",
 		.flags = IORESOURCE_MEM,
 		.start = SVEC_BASE_REGS_FLASH_SPI,
-		.end = SVEC_BASE_REGS_FLASH_SPI + SVEC_BASE_REGS_FLASH_SPI_SIZE - 1,
+		.end = SVEC_BASE_REGS_FLASH_SPI
+		       + SVEC_BASE_REGS_FLASH_SPI_SIZE - 1,
 	}, {
 		.name = "spi-ocores-irq",
 		.flags = IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHLEVEL,
@@ -376,7 +379,8 @@ static ssize_t temperature_show(struct device *dev,
 	struct svec_dev *svec_dev = dev_get_drvdata(svec_fpga->dev.parent);
 
 	if (svec_dev->meta.cap & SVEC_META_CAP_THERM) {
-		uint32_t temp = ioread32be(svec_fpga->fpga + SVEC_FPGA_THERM_TEMP);
+		uint32_t temp = ioread32be(svec_fpga->fpga
+					   + SVEC_FPGA_THERM_TEMP);
 
 		return snprintf(buf, PAGE_SIZE, "%d.%d C\n",
 			temp / 16, (temp & 0xF) * 1000 / 16);
@@ -395,8 +399,10 @@ static ssize_t serial_number_show(struct device *dev,
 	struct svec_dev *svec_dev = dev_get_drvdata(svec_fpga->dev.parent);
 
 	if (svec_dev->meta.cap & SVEC_META_CAP_THERM) {
-		uint32_t msb = ioread32be(svec_fpga->fpga + SVEC_FPGA_THERM_SERID_MSB);
-		uint32_t lsb = ioread32be(svec_fpga->fpga + SVEC_FPGA_THERM_SERID_LSB);
+		uint32_t msb = ioread32be(svec_fpga->fpga
+					  + SVEC_FPGA_THERM_SERID_MSB);
+		uint32_t lsb = ioread32be(svec_fpga->fpga
+					  + SVEC_FPGA_THERM_SERID_LSB);
 
 		return snprintf(buf, PAGE_SIZE, "0x%08x%08x\n", msb, lsb);
 	} else {
@@ -491,7 +497,7 @@ static ssize_t reset_app_store(struct device *dev,
 
 	return count;
 }
-static DEVICE_ATTR(reset_app, 0644, reset_app_show, reset_app_store);
+static DEVICE_ATTR_RW(reset_app);
 
 static struct attribute *svec_fpga_csr_attrs[] = {
 	&dev_attr_pcb_rev.attr,
@@ -620,16 +626,17 @@ static int svec_fpga_app_id_build(struct svec_fpga *svec_fpga,
 				  unsigned long app_off,
 				  char *id, unsigned int size)
 {
-	uint32_t vendor = ioread32(svec_fpga->fpga + app_off + FPGA_META_VENDOR);
-	uint32_t device = ioread32(svec_fpga->fpga + app_off + FPGA_META_DEVICE);
+	uint32_t vendor = ioread32(svec_fpga->fpga + app_off
+				   + FPGA_META_VENDOR);
+	uint32_t device = ioread32(svec_fpga->fpga + app_off
+				   + FPGA_META_DEVICE);
 
 	memset(id, 0, size);
 	if (vendor == 0xFF000000) {
 		dev_warn(&svec_fpga->dev, "Vendor UUID not supported yet\n");
 		return -ENODEV;
-	} else {
-		snprintf(id, size, "id:%4phN%4phN", &vendor, &device);
 	}
+	snprintf(id, size, "id:%4phN%4phN", &vendor, &device);
 
 	return 0;
 }
