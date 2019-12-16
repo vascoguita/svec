@@ -4,6 +4,10 @@ Change Log
 
 [unreleased]
 ============
+Added
+-----
+- [hdl] Add support for DDR5 bank to SVEC base
+
 Fixed
 -----
 - [hdl] DDR constraints
