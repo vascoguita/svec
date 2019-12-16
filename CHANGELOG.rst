@@ -2,6 +2,12 @@
 Change Log
 ==========
 
+[unreleased]
+============
+Fixed
+-----
+- [hdl] DDR constraints
+
 [1.4.5] 2019-12-16
 ==================
 Fixed

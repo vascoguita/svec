@@ -218,10 +218,6 @@ TIMESPEC TS_clk_125m_pllref = PERIOD "clk_125m_ref" 8 ns HIGH 50%;
 # Ignore async reset inputs to reset synchronisers
 NET "*/gc_reset_async_in" TIG;
 
-# Ignore async reset to DDR controller
-NET "inst_svec_base/ddr_rst" TPTHRU = ddr_rst;
-TIMESPEC TS_ddr_rst_tig = FROM FFS THRU ddr_rst TIG;
-
 #----------------------------------------
 # Cross-clock domain sync
 #----------------------------------------

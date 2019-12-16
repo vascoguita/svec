@@ -14,5 +14,6 @@ for p in svec_base_ucf:
     f = ucf_dict.get(p, None)
     assert f is not None, "unknown name {} in 'svec_base_ucf'".format(p)
     if p == 'ddr4' or p == 'ddr5':
-        files.append('svec_base_ddr_common.ucf')
+        if 'svec_base_ddr_common.ucf' not in files:
+            files.append('svec_base_ddr_common.ucf')
     files.append(f)
