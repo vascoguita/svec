@@ -95,16 +95,9 @@ static ssize_t svec_dbg_fw_write(struct file *file,
 	return count;
 }
 
-static int svec_dbg_fw_open(struct inode *inode, struct file *file)
-{
-	file->private_data = inode->i_private;
-
-	return 0;
-}
-
 static const struct file_operations svec_dbg_fw_ops = {
 	.owner = THIS_MODULE,
-	.open  = svec_dbg_fw_open,
+	.open  = simple_open,
 	.write = svec_dbg_fw_write,
 };
 
