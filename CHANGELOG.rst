@@ -2,6 +2,12 @@
 Change Log
 ==========
 
+[1.4.5] 2019-12-16
+==================
+Fixed
+-----
+- [sw] suggested fixed reported by checkpatch and coccicheck
+
 [1.4.4] 2019-12-13
 ==================
 Fixed
