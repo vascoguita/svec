@@ -1052,8 +1052,8 @@ begin  -- architecture top
         g_RST_ACT_LOW         => 0, -- active high reset (simpler internal logic)
         g_BANK_PORT_SELECT    => "SVEC_BANK4_64B_32B",
         g_MEMCLK_PERIOD       => 3000,
-        g_SIMULATION          => boolean'image(g_SIMULATION /= 0),
-        g_CALIB_SOFT_IP       => boolean'image(g_SIMULATION = 0),
+        g_SIMULATION          => to_upper(boolean'image(g_SIMULATION /= 0)),
+        g_CALIB_SOFT_IP       => to_upper(boolean'image(g_SIMULATION = 0)),
         g_P0_MASK_SIZE        => 8,
         g_P0_DATA_PORT_SIZE   => 64,
         g_P0_BYTE_ADDR_WIDTH  => 30,

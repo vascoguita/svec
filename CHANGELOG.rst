@@ -7,6 +7,7 @@ Change Log
 Fixed
 -----
 - [hdl] DDR constraints
+- [hdl] DDR controller generic values are now properly capitalised
 
 [1.4.5] 2019-12-16
 ==================
