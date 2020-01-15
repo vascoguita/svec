@@ -40,7 +40,7 @@
 \global\def\urlcolor{0.5 0.09 0.12}
 @end tex
 
-@set update-month November 2014
+@set update-month January 2020
 @include git_revision.in
 
 @finalout
@@ -244,7 +244,7 @@ Certain older SVEC cards have been shipped with the first version of the bootloa
 @item Open the right-click menu in the main work area and select ``Initialize chain'' or press Ctrl+I.
 @item Right click on the ``SPI/BPI ?'' box above the ``xc6slx9'' FPGA and select ``Add SPI/BPI Flash''.
 @item Pick the @code{svec-bootloader-[latest release].mcs} file.
-@item Select flash type: SPI PROM, M25P128 (or N25P128 if you have a newer SVEC with a MT25QL128 Flash memory chip), data width: 1.
+@item Select flash type: SPI PROM, M25P128 (or N25Q128 if you have a newer SVEC with a MT25QL128 Flash memory chip), data width: 1.
 @item Right click on the ``FLASH'' chip above the ``xc6slx9'' and select ``Program''. Select the ``Verify'' option and click OK.
 @item If everything went fine, ``Programming succeeded'' message will appear.
 @item Reboot the VME crate to use the new bootloader.
