@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 #include <arpa/inet.h>
 #include <libvmebus.h>
 //#include <libsdbfs.h>
@@ -26,9 +27,11 @@
 #define BOOTLOADER_SDB_BASE 0x600000
 
 #define ID_M25P128 0x202018
+#define ID_MT25QL128 0x20BA18
 
 #define FLASH_PAGE_SIZE 256
-#define FLASH_SECTOR_SIZE 0x40000
+#define FLASH_SECTOR_SIZE_M25P128 0x40000
+#define FLASH_SECTOR_SIZE_MT25QL128 0x10000
 #define FLASH_SIZE 0x1000000
 
 /* M25Pxxx SPI flash commands */
@@ -228,16 +231,32 @@ void flash_program_page(uint32_t addr, const uint8_t * data, int size)
 	flash_wait_completion();
 }
 
-void flash_program(uint32_t addr, const uint8_t * data, int size)
+int flash_program(uint32_t addr, const uint8_t * data, int size, uint32_t flash_id)
 {
 	int n = 0;
-	int sector_map[FLASH_SIZE / FLASH_SECTOR_SIZE];
+	int ret = 0;
+	int sector_size;
+	int *sector_map;
+
+	if (flash_id == ID_M25P128)
+		sector_size = FLASH_SECTOR_SIZE_M25P128;
+	else if (flash_id == ID_MT25QL128)
+		sector_size = FLASH_SECTOR_SIZE_MT25QL128;
+	else
+		return -ENODEV;
+
+	sector_map = (int *)malloc(sizeof(int) * FLASH_SIZE / sector_size);
+
+	if (sector_map == NULL)
+		return -ENOMEM;
+
 	memset(sector_map, 0, sizeof(sector_map));
+
 	const uint8_t *p = data;
 
 	while (n < size) {
 		int plen = (size > FLASH_PAGE_SIZE ? FLASH_PAGE_SIZE : size);
-		int sector = ((addr + n) / FLASH_SECTOR_SIZE);
+		int sector = ((addr + n) / sector_size);
 
 		if (!sector_map[sector]) {
 			flash_write_enable();
@@ -270,17 +289,20 @@ void flash_program(uint32_t addr, const uint8_t * data, int size)
 			fprintf(stderr,
 				"Verification failed at offset 0x%06x (is: 0x%02x, should be: 0x%02x)\n.",
 				addr + n, d, *p);
-			spi_cs(0);
-			exit(-1);
+			ret = -EINVAL;
+			goto flash_program_exit;
 		}
 	}
+flash_program_exit:
 	spi_cs(0);
-
-
+	free(sector_map);
+	return ret;
 }
 
 int program_flash(char *name, uint8_t *buf, size_t size, int program_boot)
 {
+	int ret = 0;
+
 	printf("Programming the Application FPGA flash with bitstream %s.\n",
 	       name);
 
@@ -291,11 +313,14 @@ int program_flash(char *name, uint8_t *buf, size_t size, int program_boot)
 		return -1;
 	}
 
-	if (flash_read_id() != ID_M25P128) {
-		fprintf(stderr,
-			"Flash memory ID invalid. You are probably be running an old version\nof the bootloader that doesn't support flash programming via VME.\n");
-		return -1;
+	uint32_t flash_id = flash_read_id();
+	if ((flash_id != ID_M25P128) && (flash_id != ID_MT25QL128)) {
+		fprintf(stderr, "Flash memory ID invalid (0x%.8x). ", flash_id);
+		fprintf(stderr, "You are probably running an old version of the bootloader\n");
+		fprintf(stderr, "that doesn't support flash programming via VME.\n");
+		return -ENODEV;
 	}
+	printf("Flash ID: 0x%.7x, OK\n", flash_id);
 
 	if(program_boot)
 	{
@@ -310,14 +335,19 @@ int program_flash(char *name, uint8_t *buf, size_t size, int program_boot)
 		    printf("Bootloader update aborted.\n");
 		    return -1;
 	    }
-	    flash_program(0, buf, size);
+	    ret = flash_program(0, buf, size, flash_id);
 	} else {
-	    flash_program(BOOTLOADER_SDB_BASE, sdb_header, sizeof(sdb_header));
-	    flash_program(BOOTLOADER_BITSTREAM_BASE, buf, size);
-    	    printf("Programming OK.\n");
+		ret = flash_program(BOOTLOADER_SDB_BASE, sdb_header, sizeof(sdb_header), flash_id);
+		if (ret == 0)
+			ret = flash_program(BOOTLOADER_BITSTREAM_BASE, buf, size, flash_id);
 
 	}
-	return 0;
+	if (ret == 0)
+		printf("Programming OK.\n");
+	else
+		printf("Flash programming failed with error %s\n", strerror(ret));
+
+	return ret;
 }
 
 int program_afpga(char *name, uint8_t *buf, size_t size)

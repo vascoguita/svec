@@ -85,10 +85,29 @@ memory-map:
             write-strobe: True
             read-ack: True
             write-ack: True
+       - reg:
+          name: ddr5_addr
+          description: address of data to read or to write
+          access: rw
+          width: 32
+          x-hdl:
+            type: wire
+            write-strobe: True
+       - reg:
+          name: ddr5_data
+          description: data to read or to write in ddr5
+          access: rw
+          width: 32
+          x-hdl:
+            type: wire
+            read-strobe: True
+            write-strobe: True
+            read-ack: True
+            write-ack: True
     - submap:
         name: therm_id
         description: Thermometer and unique id
-        address: 0x70
+        address: 0x80
         size: 0x10
         interface: wb-32-be
         x-hdl:
@@ -96,7 +115,7 @@ memory-map:
     - submap:
         name: fmc_i2c
         description: i2c controllers to the fmcs
-        address: 0x80
+        address: 0xa0
         size: 0x20
         interface: wb-32-be
         x-hdl:
@@ -104,7 +123,7 @@ memory-map:
     - submap:
         name: flash_spi
         description: spi controller to the flash
-        address: 0xa0
+        address: 0xc0
         size: 0x20
         interface: wb-32-be
         x-hdl:
