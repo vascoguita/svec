@@ -13,6 +13,12 @@ Fixed
 - [hdl] DDR constraints
 - [hdl] DDR controller generic values are now properly capitalised
 
+[1.4.6] 2019-12-16
+==================
+Changed
+-----
+- [sw] better integration in coht, rename environment variable to FPGA_MGR
+
 [1.4.5] 2019-12-16
 ==================
 Fixed
