@@ -12,6 +12,7 @@ Fixed
 -----
 - [hdl] DDR constraints
 - [hdl] DDR controller generic values are now properly capitalised
+- [sw] Update svec-flasher to work with new type of flash memory used in newer SVEC boards
 
 [1.4.6] 2019-12-16
 ==================
