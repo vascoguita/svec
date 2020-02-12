@@ -77,22 +77,29 @@ out:
 	return err;
 }
 
+#define VBRIDGE_DBG_FW_BUF_LEN 128
 static ssize_t svec_dbg_fw_write(struct file *file,
 				 const char __user *buf,
 				 size_t count, loff_t *ppos)
 {
 	struct svec_dev *svec_dev = file->private_data;
+	char buf_l[VBRIDGE_DBG_FW_BUF_LEN];
 	int err;
 
-	if (!buf || !count) {
-		dev_err(&svec_dev->vdev->dev, "Invalid input\n");
+	if (VBRIDGE_DBG_FW_BUF_LEN < count) {
+		dev_err(&svec_dev->vdev->dev,
+			 "Firmware name too long max %u\n",
+			VBRIDGE_DBG_FW_BUF_LEN);
+
 		return -EINVAL;
 	}
-
-	err = svec_fw_load(svec_dev, buf);
+	err = copy_from_user(buf_l, buf, VBRIDGE_DBG_FW_BUF_LEN);
 	if (err)
-		return err;
-	return count;
+		return -EFAULT;
+
+	err = svec_fw_load(svec_dev, buf_l);
+
+	return err ? err : count;
 }
 
 static const struct file_operations svec_dbg_fw_ops = {
