@@ -56,6 +56,19 @@ entity svec_base_regs is
     csr_ddr4_data_wack_i : in    std_logic;
     csr_ddr4_data_rack_i : in    std_logic;
 
+    -- address of data to read or to write
+    csr_ddr5_addr_i      : in    std_logic_vector(31 downto 0);
+    csr_ddr5_addr_o      : out   std_logic_vector(31 downto 0);
+    csr_ddr5_addr_wr_o   : out   std_logic;
+
+    -- data to read or to write in ddr5
+    csr_ddr5_data_i      : in    std_logic_vector(31 downto 0);
+    csr_ddr5_data_o      : out   std_logic_vector(31 downto 0);
+    csr_ddr5_data_wr_o   : out   std_logic;
+    csr_ddr5_data_rd_o   : out   std_logic;
+    csr_ddr5_data_wack_i : in    std_logic;
+    csr_ddr5_data_rack_i : in    std_logic;
+
     -- Thermometer and unique id
     therm_id_i           : in    t_wishbone_master_in;
     therm_id_o           : out   t_wishbone_master_out;
@@ -85,8 +98,8 @@ entity svec_base_regs is
 end svec_base_regs;
 
 architecture syn of svec_base_regs is
-  signal rd_req_int                     : std_logic;
-  signal wr_req_int                     : std_logic;
+  signal rd_int                         : std_logic;
+  signal wr_int                         : std_logic;
   signal rd_ack_int                     : std_logic;
   signal wr_ack_int                     : std_logic;
   signal wb_en                          : std_logic;
@@ -97,37 +110,25 @@ architecture syn of svec_base_regs is
   signal metadata_re                    : std_logic;
   signal csr_resets_global_reg          : std_logic;
   signal csr_resets_appl_reg            : std_logic;
-  signal csr_resets_wreq                : std_logic;
-  signal csr_resets_wack                : std_logic;
-  signal csr_resets_rint                : std_logic_vector(31 downto 0);
-  signal csr_unused0_rint               : std_logic_vector(31 downto 0);
-  signal csr_ddr_status_rint            : std_logic_vector(31 downto 0);
-  signal csr_pcb_rev_rint               : std_logic_vector(31 downto 0);
-  signal csr_ddr4_addr_wreq             : std_logic;
-  signal csr_ddr4_data_wreq             : std_logic;
   signal therm_id_re                    : std_logic;
-  signal therm_id_we                    : std_logic;
   signal therm_id_wt                    : std_logic;
   signal therm_id_rt                    : std_logic;
   signal therm_id_tr                    : std_logic;
   signal therm_id_wack                  : std_logic;
   signal therm_id_rack                  : std_logic;
   signal fmc_i2c_re                     : std_logic;
-  signal fmc_i2c_we                     : std_logic;
   signal fmc_i2c_wt                     : std_logic;
   signal fmc_i2c_rt                     : std_logic;
   signal fmc_i2c_tr                     : std_logic;
   signal fmc_i2c_wack                   : std_logic;
   signal fmc_i2c_rack                   : std_logic;
   signal flash_spi_re                   : std_logic;
-  signal flash_spi_we                   : std_logic;
   signal flash_spi_wt                   : std_logic;
   signal flash_spi_rt                   : std_logic;
   signal flash_spi_tr                   : std_logic;
   signal flash_spi_wack                 : std_logic;
   signal flash_spi_rack                 : std_logic;
   signal vic_re                         : std_logic;
-  signal vic_we                         : std_logic;
   signal vic_wt                         : std_logic;
   signal vic_rt                         : std_logic;
   signal vic_tr                         : std_logic;
@@ -136,17 +137,13 @@ architecture syn of svec_base_regs is
   signal buildinfo_rack                 : std_logic;
   signal buildinfo_re                   : std_logic;
   signal wrc_regs_re                    : std_logic;
-  signal wrc_regs_we                    : std_logic;
   signal wrc_regs_wt                    : std_logic;
   signal wrc_regs_rt                    : std_logic;
   signal wrc_regs_tr                    : std_logic;
   signal wrc_regs_wack                  : std_logic;
   signal wrc_regs_rack                  : std_logic;
-  signal rd_ack_d0                      : std_logic;
-  signal rd_dat_d0                      : std_logic_vector(31 downto 0);
-  signal wr_req_d0                      : std_logic;
-  signal wr_adr_d0                      : std_logic_vector(12 downto 2);
-  signal wr_dat_d0                      : std_logic_vector(31 downto 0);
+  signal reg_rdat_int                   : std_logic_vector(31 downto 0);
+  signal rd_ack1_int                    : std_logic;
 begin
 
   -- WB decode signals
@@ -161,7 +158,7 @@ begin
       end if;
     end if;
   end process;
-  rd_req_int <= (wb_en and not wb_we_i) and not wb_rip;
+  rd_int <= (wb_en and not wb_we_i) and not wb_rip;
 
   process (clk_i) begin
     if rising_edge(clk_i) then
@@ -172,7 +169,7 @@ begin
       end if;
     end if;
   end process;
-  wr_req_int <= (wb_en and wb_we_i) and not wb_wip;
+  wr_int <= (wb_en and wb_we_i) and not wb_wip;
 
   ack_int <= rd_ack_int or wr_ack_int;
   wb_ack_o <= ack_int;
@@ -180,21 +177,7 @@ begin
   wb_rty_o <= '0';
   wb_err_o <= '0';
 
-  -- pipelining for wr-in+rd-out
-  process (clk_i) begin
-    if rising_edge(clk_i) then
-      if rst_n_i = '0' then
-        rd_ack_int <= '0';
-        wr_req_d0 <= '0';
-      else
-        rd_ack_int <= rd_ack_d0;
-        wb_dat_o <= rd_dat_d0;
-        wr_req_d0 <= wr_req_int;
-        wr_adr_d0 <= wb_adr_i;
-        wr_dat_d0 <= wb_dat_i;
-      end if;
-    end if;
-  end process;
+  -- Assign outputs
   process (clk_i) begin
     if rising_edge(clk_i) then
       if rst_n_i = '0' then
@@ -204,54 +187,10 @@ begin
       end if;
     end if;
   end process;
-  metadata_data_o <= wr_dat_d0;
-  metadata_addr_o <= wr_adr_d0(5 downto 2);
-
-  -- Register csr_app_offset
-
-  -- Register csr_resets
+  metadata_data_o <= wb_dat_i;
+  metadata_addr_o <= wb_adr_i(5 downto 2);
   csr_resets_global_o <= csr_resets_global_reg;
   csr_resets_appl_o <= csr_resets_appl_reg;
-  process (clk_i) begin
-    if rising_edge(clk_i) then
-      if rst_n_i = '0' then
-        csr_resets_global_reg <= '0';
-        csr_resets_appl_reg <= '0';
-        csr_resets_wack <= '0';
-      else
-        if csr_resets_wreq = '1' then
-          csr_resets_global_reg <= wr_dat_d0(0);
-          csr_resets_appl_reg <= wr_dat_d0(1);
-        end if;
-        csr_resets_wack <= csr_resets_wreq;
-      end if;
-    end if;
-  end process;
-  csr_resets_rint(0) <= csr_resets_global_reg;
-  csr_resets_rint(1) <= csr_resets_appl_reg;
-  csr_resets_rint(31 downto 2) <= (others => '0');
-
-  -- Register csr_fmc_presence
-
-  -- Register csr_unused0
-  csr_unused0_rint(31 downto 0) <= "00000000000000000000000000000000";
-
-  -- Register csr_ddr_status
-  csr_ddr_status_rint(0) <= csr_ddr_status_ddr4_calib_done_i;
-  csr_ddr_status_rint(1) <= csr_ddr_status_ddr5_calib_done_i;
-  csr_ddr_status_rint(31 downto 2) <= (others => '0');
-
-  -- Register csr_pcb_rev
-  csr_pcb_rev_rint(4 downto 0) <= csr_pcb_rev_rev_i;
-  csr_pcb_rev_rint(31 downto 5) <= (others => '0');
-
-  -- Register csr_ddr4_addr
-  csr_ddr4_addr_o <= wr_dat_d0;
-  csr_ddr4_addr_wr_o <= csr_ddr4_addr_wreq;
-
-  -- Register csr_ddr4_data
-  csr_ddr4_data_o <= wr_dat_d0;
-  csr_ddr4_data_wr_o <= csr_ddr4_data_wreq;
 
   -- Assignments for submap therm_id
   therm_id_tr <= therm_id_wt or therm_id_rt;
@@ -259,10 +198,8 @@ begin
     if rising_edge(clk_i) then
       if rst_n_i = '0' then
         therm_id_rt <= '0';
-        therm_id_wt <= '0';
       else
         therm_id_rt <= (therm_id_rt or therm_id_re) and not therm_id_rack;
-        therm_id_wt <= (therm_id_wt or therm_id_we) and not therm_id_wack;
       end if;
     end if;
   end process;
@@ -273,7 +210,7 @@ begin
   therm_id_o.adr <= ((27 downto 0 => '0') & wb_adr_i(3 downto 2)) & (1 downto 0 => '0');
   therm_id_o.sel <= (others => '1');
   therm_id_o.we <= therm_id_wt;
-  therm_id_o.dat <= wr_dat_d0;
+  therm_id_o.dat <= wb_dat_i;
 
   -- Assignments for submap fmc_i2c
   fmc_i2c_tr <= fmc_i2c_wt or fmc_i2c_rt;
@@ -281,10 +218,8 @@ begin
     if rising_edge(clk_i) then
       if rst_n_i = '0' then
         fmc_i2c_rt <= '0';
-        fmc_i2c_wt <= '0';
       else
         fmc_i2c_rt <= (fmc_i2c_rt or fmc_i2c_re) and not fmc_i2c_rack;
-        fmc_i2c_wt <= (fmc_i2c_wt or fmc_i2c_we) and not fmc_i2c_wack;
       end if;
     end if;
   end process;
@@ -295,7 +230,7 @@ begin
   fmc_i2c_o.adr <= ((26 downto 0 => '0') & wb_adr_i(4 downto 2)) & (1 downto 0 => '0');
   fmc_i2c_o.sel <= (others => '1');
   fmc_i2c_o.we <= fmc_i2c_wt;
-  fmc_i2c_o.dat <= wr_dat_d0;
+  fmc_i2c_o.dat <= wb_dat_i;
 
   -- Assignments for submap flash_spi
   flash_spi_tr <= flash_spi_wt or flash_spi_rt;
@@ -303,10 +238,8 @@ begin
     if rising_edge(clk_i) then
       if rst_n_i = '0' then
         flash_spi_rt <= '0';
-        flash_spi_wt <= '0';
       else
         flash_spi_rt <= (flash_spi_rt or flash_spi_re) and not flash_spi_rack;
-        flash_spi_wt <= (flash_spi_wt or flash_spi_we) and not flash_spi_wack;
       end if;
     end if;
   end process;
@@ -317,7 +250,7 @@ begin
   flash_spi_o.adr <= ((26 downto 0 => '0') & wb_adr_i(4 downto 2)) & (1 downto 0 => '0');
   flash_spi_o.sel <= (others => '1');
   flash_spi_o.we <= flash_spi_wt;
-  flash_spi_o.dat <= wr_dat_d0;
+  flash_spi_o.dat <= wb_dat_i;
 
   -- Assignments for submap vic
   vic_tr <= vic_wt or vic_rt;
@@ -325,10 +258,8 @@ begin
     if rising_edge(clk_i) then
       if rst_n_i = '0' then
         vic_rt <= '0';
-        vic_wt <= '0';
       else
         vic_rt <= (vic_rt or vic_re) and not vic_rack;
-        vic_wt <= (vic_wt or vic_we) and not vic_wack;
       end if;
     end if;
   end process;
@@ -339,7 +270,7 @@ begin
   vic_o.adr <= ((23 downto 0 => '0') & wb_adr_i(7 downto 2)) & (1 downto 0 => '0');
   vic_o.sel <= (others => '1');
   vic_o.we <= vic_wt;
-  vic_o.dat <= wr_dat_d0;
+  vic_o.dat <= wb_dat_i;
   process (clk_i) begin
     if rising_edge(clk_i) then
       if rst_n_i = '0' then
@@ -349,8 +280,8 @@ begin
       end if;
     end if;
   end process;
-  buildinfo_data_o <= wr_dat_d0;
-  buildinfo_addr_o <= wr_adr_d0(7 downto 2);
+  buildinfo_data_o <= wb_dat_i;
+  buildinfo_addr_o <= wb_adr_i(7 downto 2);
 
   -- Assignments for submap wrc_regs
   wrc_regs_tr <= wrc_regs_wt or wrc_regs_rt;
@@ -358,10 +289,8 @@ begin
     if rising_edge(clk_i) then
       if rst_n_i = '0' then
         wrc_regs_rt <= '0';
-        wrc_regs_wt <= '0';
       else
         wrc_regs_rt <= (wrc_regs_rt or wrc_regs_re) and not wrc_regs_rack;
-        wrc_regs_wt <= (wrc_regs_wt or wrc_regs_we) and not wrc_regs_wack;
       end if;
     end if;
   end process;
@@ -372,117 +301,240 @@ begin
   wrc_regs_o.adr <= ((19 downto 0 => '0') & wb_adr_i(11 downto 2)) & (1 downto 0 => '0');
   wrc_regs_o.sel <= (others => '1');
   wrc_regs_o.we <= wrc_regs_wt;
-  wrc_regs_o.dat <= wr_dat_d0;
+  wrc_regs_o.dat <= wb_dat_i;
 
   -- Process for write requests.
-  process (wr_adr_d0, wr_req_d0, csr_resets_wack, csr_ddr4_data_wack_i, therm_id_wack, fmc_i2c_wack, flash_spi_wack, vic_wack, wrc_regs_wack) begin
-    metadata_wr_o <= '0';
-    csr_resets_wreq <= '0';
-    csr_ddr4_addr_wreq <= '0';
-    csr_ddr4_data_wreq <= '0';
-    therm_id_we <= '0';
-    fmc_i2c_we <= '0';
-    flash_spi_we <= '0';
-    vic_we <= '0';
-    buildinfo_wr_o <= '0';
-    wrc_regs_we <= '0';
-    case wr_adr_d0(12 downto 12) is
-    when "0" => 
-      case wr_adr_d0(11 downto 8) is
-      when "0000" => 
-        case wr_adr_d0(7 downto 6) is
-        when "00" => 
-          -- Submap metadata
-          metadata_wr_o <= wr_req_d0;
-          wr_ack_int <= wr_req_d0;
-        when "01" => 
-          case wr_adr_d0(5 downto 4) is
-          when "00" => 
-            case wr_adr_d0(3 downto 2) is
+  process (clk_i) begin
+    if rising_edge(clk_i) then
+      if rst_n_i = '0' then
+        wr_ack_int <= '0';
+        metadata_wr_o <= '0';
+        csr_resets_global_reg <= '0';
+        csr_resets_appl_reg <= '0';
+        csr_ddr4_addr_wr_o <= '0';
+        csr_ddr4_data_wr_o <= '0';
+        csr_ddr5_addr_wr_o <= '0';
+        csr_ddr5_data_wr_o <= '0';
+        therm_id_wt <= '0';
+        fmc_i2c_wt <= '0';
+        flash_spi_wt <= '0';
+        vic_wt <= '0';
+        buildinfo_wr_o <= '0';
+        wrc_regs_wt <= '0';
+      else
+        wr_ack_int <= '0';
+        metadata_wr_o <= '0';
+        csr_ddr4_addr_wr_o <= '0';
+        csr_ddr4_data_wr_o <= '0';
+        csr_ddr5_addr_wr_o <= '0';
+        csr_ddr5_data_wr_o <= '0';
+        therm_id_wt <= '0';
+        fmc_i2c_wt <= '0';
+        flash_spi_wt <= '0';
+        vic_wt <= '0';
+        buildinfo_wr_o <= '0';
+        wrc_regs_wt <= '0';
+        case wb_adr_i(12 downto 12) is
+        when "0" => 
+          case wb_adr_i(11 downto 8) is
+          when "0000" => 
+            case wb_adr_i(7 downto 6) is
             when "00" => 
-              -- csr_app_offset
-              wr_ack_int <= wr_req_d0;
+              -- Submap metadata
+              metadata_wr_o <= wr_int;
+              wr_ack_int <= wr_int;
             when "01" => 
-              -- csr_resets
-              csr_resets_wreq <= wr_req_d0;
-              wr_ack_int <= csr_resets_wack;
+              case wb_adr_i(5 downto 2) is
+              when "0000" => 
+                -- Register csr_app_offset
+              when "0001" => 
+                -- Register csr_resets
+                if wr_int = '1' then
+                  csr_resets_global_reg <= wb_dat_i(0);
+                  csr_resets_appl_reg <= wb_dat_i(1);
+                end if;
+                wr_ack_int <= wr_int;
+              when "0010" => 
+                -- Register csr_fmc_presence
+              when "0011" => 
+                -- Register csr_unused0
+              when "0100" => 
+                -- Register csr_ddr_status
+              when "0101" => 
+                -- Register csr_pcb_rev
+              when "0110" => 
+                -- Register csr_ddr4_addr
+                csr_ddr4_addr_wr_o <= wr_int;
+                if wr_int = '1' then
+                  csr_ddr4_addr_o <= wb_dat_i;
+                end if;
+                wr_ack_int <= wr_int;
+              when "0111" => 
+                -- Register csr_ddr4_data
+                csr_ddr4_data_wr_o <= wr_int;
+                if wr_int = '1' then
+                  csr_ddr4_data_o <= wb_dat_i;
+                end if;
+                wr_ack_int <= csr_ddr4_data_wack_i;
+              when "1000" => 
+                -- Register csr_ddr5_addr
+                csr_ddr5_addr_wr_o <= wr_int;
+                if wr_int = '1' then
+                  csr_ddr5_addr_o <= wb_dat_i;
+                end if;
+                wr_ack_int <= wr_int;
+              when "1001" => 
+                -- Register csr_ddr5_data
+                csr_ddr5_data_wr_o <= wr_int;
+                if wr_int = '1' then
+                  csr_ddr5_data_o <= wb_dat_i;
+                end if;
+                wr_ack_int <= csr_ddr5_data_wack_i;
+              when others =>
+                wr_ack_int <= wr_int;
+              end case;
             when "10" => 
-              -- csr_fmc_presence
-              wr_ack_int <= wr_req_d0;
+              case wb_adr_i(5 downto 5) is
+              when "0" => 
+                -- Submap therm_id
+                therm_id_wt <= (therm_id_wt or wr_int) and not therm_id_wack;
+                wr_ack_int <= therm_id_wack;
+              when "1" => 
+                -- Submap fmc_i2c
+                fmc_i2c_wt <= (fmc_i2c_wt or wr_int) and not fmc_i2c_wack;
+                wr_ack_int <= fmc_i2c_wack;
+              when others =>
+                wr_ack_int <= wr_int;
+              end case;
             when "11" => 
-              -- csr_unused0
-              wr_ack_int <= wr_req_d0;
+              -- Submap flash_spi
+              flash_spi_wt <= (flash_spi_wt or wr_int) and not flash_spi_wack;
+              wr_ack_int <= flash_spi_wack;
             when others =>
-              wr_ack_int <= wr_req_d0;
+              wr_ack_int <= wr_int;
             end case;
-          when "01" => 
-            case wr_adr_d0(3 downto 2) is
-            when "00" => 
-              -- csr_ddr_status
-              wr_ack_int <= wr_req_d0;
-            when "01" => 
-              -- csr_pcb_rev
-              wr_ack_int <= wr_req_d0;
-            when "10" => 
-              -- csr_ddr4_addr
-              csr_ddr4_addr_wreq <= wr_req_d0;
-              wr_ack_int <= wr_req_d0;
-            when "11" => 
-              -- csr_ddr4_data
-              csr_ddr4_data_wreq <= wr_req_d0;
-              wr_ack_int <= csr_ddr4_data_wack_i;
-            when others =>
-              wr_ack_int <= wr_req_d0;
-            end case;
-          when "11" => 
-            -- Submap therm_id
-            therm_id_we <= wr_req_d0;
-            wr_ack_int <= therm_id_wack;
+          when "0001" => 
+            -- Submap vic
+            vic_wt <= (vic_wt or wr_int) and not vic_wack;
+            wr_ack_int <= vic_wack;
+          when "0010" => 
+            -- Submap buildinfo
+            buildinfo_wr_o <= wr_int;
+            wr_ack_int <= wr_int;
           when others =>
-            wr_ack_int <= wr_req_d0;
+            wr_ack_int <= wr_int;
           end case;
-        when "10" => 
-          case wr_adr_d0(5 downto 5) is
-          when "0" => 
-            -- Submap fmc_i2c
-            fmc_i2c_we <= wr_req_d0;
-            wr_ack_int <= fmc_i2c_wack;
-          when "1" => 
-            -- Submap flash_spi
-            flash_spi_we <= wr_req_d0;
-            wr_ack_int <= flash_spi_wack;
-          when others =>
-            wr_ack_int <= wr_req_d0;
-          end case;
+        when "1" => 
+          -- Submap wrc_regs
+          wrc_regs_wt <= (wrc_regs_wt or wr_int) and not wrc_regs_wack;
+          wr_ack_int <= wrc_regs_wack;
         when others =>
-          wr_ack_int <= wr_req_d0;
+          wr_ack_int <= wr_int;
         end case;
-      when "0001" => 
-        -- Submap vic
-        vic_we <= wr_req_d0;
-        wr_ack_int <= vic_wack;
-      when "0010" => 
-        -- Submap buildinfo
-        buildinfo_wr_o <= wr_req_d0;
-        wr_ack_int <= wr_req_d0;
-      when others =>
-        wr_ack_int <= wr_req_d0;
-      end case;
-    when "1" => 
-      -- Submap wrc_regs
-      wrc_regs_we <= wr_req_d0;
-      wr_ack_int <= wrc_regs_wack;
-    when others =>
-      wr_ack_int <= wr_req_d0;
-    end case;
+      end if;
+    end if;
+  end process;
+
+  -- Process for registers read.
+  process (clk_i) begin
+    if rising_edge(clk_i) then
+      if rst_n_i = '0' then
+        rd_ack1_int <= '0';
+        csr_ddr4_data_rd_o <= '0';
+        csr_ddr5_data_rd_o <= '0';
+      else
+        csr_ddr5_data_rd_o <= '0';
+        csr_ddr4_data_rd_o <= '0';
+        reg_rdat_int <= (others => '0');
+        case wb_adr_i(12 downto 12) is
+        when "0" => 
+          case wb_adr_i(11 downto 8) is
+          when "0000" => 
+            case wb_adr_i(7 downto 6) is
+            when "00" => 
+            when "01" => 
+              case wb_adr_i(5 downto 2) is
+              when "0000" => 
+                -- csr_app_offset
+                reg_rdat_int <= csr_app_offset_i;
+                rd_ack1_int <= rd_int;
+              when "0001" => 
+                -- csr_resets
+                reg_rdat_int(0) <= csr_resets_global_reg;
+                reg_rdat_int(1) <= csr_resets_appl_reg;
+                rd_ack1_int <= rd_int;
+              when "0010" => 
+                -- csr_fmc_presence
+                reg_rdat_int <= csr_fmc_presence_i;
+                rd_ack1_int <= rd_int;
+              when "0011" => 
+                -- csr_unused0
+                reg_rdat_int <= "00000000000000000000000000000000";
+                rd_ack1_int <= rd_int;
+              when "0100" => 
+                -- csr_ddr_status
+                reg_rdat_int(0) <= csr_ddr_status_ddr4_calib_done_i;
+                reg_rdat_int(1) <= csr_ddr_status_ddr5_calib_done_i;
+                rd_ack1_int <= rd_int;
+              when "0101" => 
+                -- csr_pcb_rev
+                reg_rdat_int(4 downto 0) <= csr_pcb_rev_rev_i;
+                rd_ack1_int <= rd_int;
+              when "0110" => 
+                -- csr_ddr4_addr
+                reg_rdat_int <= csr_ddr4_addr_i;
+                rd_ack1_int <= rd_int;
+              when "0111" => 
+                -- csr_ddr4_data
+                reg_rdat_int <= csr_ddr4_data_i;
+                csr_ddr4_data_rd_o <= rd_int;
+                rd_ack1_int <= csr_ddr4_data_rack_i;
+              when "1000" => 
+                -- csr_ddr5_addr
+                reg_rdat_int <= csr_ddr5_addr_i;
+                rd_ack1_int <= rd_int;
+              when "1001" => 
+                -- csr_ddr5_data
+                reg_rdat_int <= csr_ddr5_data_i;
+                csr_ddr5_data_rd_o <= rd_int;
+                rd_ack1_int <= csr_ddr5_data_rack_i;
+              when others =>
+                reg_rdat_int <= (others => 'X');
+                rd_ack1_int <= rd_int;
+              end case;
+            when "10" => 
+              case wb_adr_i(5 downto 5) is
+              when "0" => 
+              when "1" => 
+              when others =>
+                reg_rdat_int <= (others => 'X');
+                rd_ack1_int <= rd_int;
+              end case;
+            when "11" => 
+            when others =>
+              reg_rdat_int <= (others => 'X');
+              rd_ack1_int <= rd_int;
+            end case;
+          when "0001" => 
+          when "0010" => 
+          when others =>
+            reg_rdat_int <= (others => 'X');
+            rd_ack1_int <= rd_int;
+          end case;
+        when "1" => 
+        when others =>
+          reg_rdat_int <= (others => 'X');
+          rd_ack1_int <= rd_int;
+        end case;
+      end if;
+    end if;
   end process;
 
   -- Process for read requests.
-  process (wb_adr_i, rd_req_int, rd_req_int, metadata_data_i, metadata_rack, csr_app_offset_i, csr_resets_rint, csr_fmc_presence_i, csr_unused0_rint, csr_ddr_status_rint, csr_pcb_rev_rint, csr_ddr4_addr_i, csr_ddr4_data_rack_i, csr_ddr4_data_i, therm_id_i.dat, therm_id_rack, fmc_i2c_i.dat, fmc_i2c_rack, flash_spi_i.dat, flash_spi_rack, vic_i.dat, vic_rack, rd_req_int, buildinfo_data_i, buildinfo_rack, wrc_regs_i.dat, wrc_regs_rack) begin
+  process (wb_adr_i, reg_rdat_int, rd_ack1_int, rd_int, rd_int, metadata_data_i, metadata_rack, rd_int, therm_id_i.dat, therm_id_rack, therm_id_rt, rd_int, fmc_i2c_i.dat, fmc_i2c_rack, fmc_i2c_rt, rd_int, flash_spi_i.dat, flash_spi_rack, flash_spi_rt, rd_int, vic_i.dat, vic_rack, vic_rt, rd_int, buildinfo_data_i, buildinfo_rack, rd_int, wrc_regs_i.dat, wrc_regs_rack, wrc_regs_rt) begin
     -- By default ack read requests
-    rd_dat_d0 <= (others => 'X');
+    wb_dat_o <= (others => '0');
     metadata_re <= '0';
-    csr_ddr4_data_rd_o <= '0';
     therm_id_re <= '0';
     fmc_i2c_re <= '0';
     flash_spi_re <= '0';
@@ -496,100 +548,97 @@ begin
         case wb_adr_i(7 downto 6) is
         when "00" => 
           -- Submap metadata
-          rd_dat_d0 <= metadata_data_i;
-          rd_ack_d0 <= metadata_rack;
-          metadata_re <= rd_req_int;
+          wb_dat_o <= metadata_data_i;
+          rd_ack_int <= metadata_rack;
+          metadata_re <= rd_int;
         when "01" => 
-          case wb_adr_i(5 downto 4) is
-          when "00" => 
-            case wb_adr_i(3 downto 2) is
-            when "00" => 
-              -- csr_app_offset
-              rd_ack_d0 <= rd_req_int;
-              rd_dat_d0 <= csr_app_offset_i;
-            when "01" => 
-              -- csr_resets
-              rd_ack_d0 <= rd_req_int;
-              rd_dat_d0 <= csr_resets_rint;
-            when "10" => 
-              -- csr_fmc_presence
-              rd_ack_d0 <= rd_req_int;
-              rd_dat_d0 <= csr_fmc_presence_i;
-            when "11" => 
-              -- csr_unused0
-              rd_ack_d0 <= rd_req_int;
-              rd_dat_d0 <= csr_unused0_rint;
-            when others =>
-              rd_ack_d0 <= rd_req_int;
-            end case;
-          when "01" => 
-            case wb_adr_i(3 downto 2) is
-            when "00" => 
-              -- csr_ddr_status
-              rd_ack_d0 <= rd_req_int;
-              rd_dat_d0 <= csr_ddr_status_rint;
-            when "01" => 
-              -- csr_pcb_rev
-              rd_ack_d0 <= rd_req_int;
-              rd_dat_d0 <= csr_pcb_rev_rint;
-            when "10" => 
-              -- csr_ddr4_addr
-              rd_ack_d0 <= rd_req_int;
-              rd_dat_d0 <= csr_ddr4_addr_i;
-            when "11" => 
-              -- csr_ddr4_data
-              csr_ddr4_data_rd_o <= rd_req_int;
-              rd_ack_d0 <= csr_ddr4_data_rack_i;
-              rd_dat_d0 <= csr_ddr4_data_i;
-            when others =>
-              rd_ack_d0 <= rd_req_int;
-            end case;
-          when "11" => 
-            -- Submap therm_id
-            therm_id_re <= rd_req_int;
-            rd_dat_d0 <= therm_id_i.dat;
-            rd_ack_d0 <= therm_id_rack;
+          case wb_adr_i(5 downto 2) is
+          when "0000" => 
+            -- csr_app_offset
+            wb_dat_o <= reg_rdat_int;
+            rd_ack_int <= rd_ack1_int;
+          when "0001" => 
+            -- csr_resets
+            wb_dat_o <= reg_rdat_int;
+            rd_ack_int <= rd_ack1_int;
+          when "0010" => 
+            -- csr_fmc_presence
+            wb_dat_o <= reg_rdat_int;
+            rd_ack_int <= rd_ack1_int;
+          when "0011" => 
+            -- csr_unused0
+            wb_dat_o <= reg_rdat_int;
+            rd_ack_int <= rd_ack1_int;
+          when "0100" => 
+            -- csr_ddr_status
+            wb_dat_o <= reg_rdat_int;
+            rd_ack_int <= rd_ack1_int;
+          when "0101" => 
+            -- csr_pcb_rev
+            wb_dat_o <= reg_rdat_int;
+            rd_ack_int <= rd_ack1_int;
+          when "0110" => 
+            -- csr_ddr4_addr
+            wb_dat_o <= reg_rdat_int;
+            rd_ack_int <= rd_ack1_int;
+          when "0111" => 
+            -- csr_ddr4_data
+            wb_dat_o <= reg_rdat_int;
+            rd_ack_int <= rd_ack1_int;
+          when "1000" => 
+            -- csr_ddr5_addr
+            wb_dat_o <= reg_rdat_int;
+            rd_ack_int <= rd_ack1_int;
+          when "1001" => 
+            -- csr_ddr5_data
+            wb_dat_o <= reg_rdat_int;
+            rd_ack_int <= rd_ack1_int;
           when others =>
-            rd_ack_d0 <= rd_req_int;
+            rd_ack_int <= rd_int;
           end case;
         when "10" => 
           case wb_adr_i(5 downto 5) is
           when "0" => 
-            -- Submap fmc_i2c
-            fmc_i2c_re <= rd_req_int;
-            rd_dat_d0 <= fmc_i2c_i.dat;
-            rd_ack_d0 <= fmc_i2c_rack;
+            -- Submap therm_id
+            therm_id_re <= rd_int;
+            wb_dat_o <= therm_id_i.dat;
+            rd_ack_int <= therm_id_rack;
           when "1" => 
-            -- Submap flash_spi
-            flash_spi_re <= rd_req_int;
-            rd_dat_d0 <= flash_spi_i.dat;
-            rd_ack_d0 <= flash_spi_rack;
+            -- Submap fmc_i2c
+            fmc_i2c_re <= rd_int;
+            wb_dat_o <= fmc_i2c_i.dat;
+            rd_ack_int <= fmc_i2c_rack;
           when others =>
-            rd_ack_d0 <= rd_req_int;
+            rd_ack_int <= rd_int;
           end case;
+        when "11" => 
+          -- Submap flash_spi
+          flash_spi_re <= rd_int;
+          wb_dat_o <= flash_spi_i.dat;
+          rd_ack_int <= flash_spi_rack;
         when others =>
-          rd_ack_d0 <= rd_req_int;
+          rd_ack_int <= rd_int;
         end case;
       when "0001" => 
         -- Submap vic
-        vic_re <= rd_req_int;
-        rd_dat_d0 <= vic_i.dat;
-        rd_ack_d0 <= vic_rack;
+        vic_re <= rd_int;
+        wb_dat_o <= vic_i.dat;
+        rd_ack_int <= vic_rack;
       when "0010" => 
         -- Submap buildinfo
-        rd_dat_d0 <= buildinfo_data_i;
-        rd_ack_d0 <= buildinfo_rack;
-        buildinfo_re <= rd_req_int;
+        wb_dat_o <= buildinfo_data_i;
+        rd_ack_int <= buildinfo_rack;
+        buildinfo_re <= rd_int;
       when others =>
-        rd_ack_d0 <= rd_req_int;
+        rd_ack_int <= rd_int;
       end case;
     when "1" => 
       -- Submap wrc_regs
-      wrc_regs_re <= rd_req_int;
-      rd_dat_d0 <= wrc_regs_i.dat;
-      rd_ack_d0 <= wrc_regs_rack;
+      wrc_regs_re <= rd_int;
+      wb_dat_o <= wrc_regs_i.dat;
+      rd_ack_int <= wrc_regs_rack;
     when others =>
-      rd_ack_d0 <= rd_req_int;
+      rd_ack_int <= rd_int;
     end case;
   end process;
 end syn;

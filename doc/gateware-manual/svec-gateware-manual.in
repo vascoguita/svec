@@ -35,7 +35,12 @@
 
 @setchapternewpage off
 
-@set update-month November 2014
+@tex
+\global\def\linkcolor{0.5 0.09 0.12}
+\global\def\urlcolor{0.5 0.09 0.12}
+@end tex
+
+@set update-month January 2020
 @include git_revision.in
 
 @finalout
@@ -52,7 +57,6 @@
 @end iftex
 
 @c ##########################################################################
-@node Top
 @chapter Introduction
 
 This document describes the default bitstreams that come preloaded with every SVEC card. As there are two FPGAs on the SVEC, there are two default bitstreams:
@@ -114,14 +118,14 @@ Programming the Application FPGA directly via VME involves the following steps:
 @item Exit bootloader mode by writing 1 to @code{CSR.EXIT} bit.
 @end itemize
 
-A code example is available in the repository (@pxref{repo_link,,2}). Successful gateware download to the Application FPGA is indicated by turning on the ``AFPGA DONE'' LED in the middle of the PCB.
+A code example is available in the repository (@pxref{repo_link,,3}). Successful gateware download to the Application FPGA is indicated by turning on the ``AFPGA DONE'' LED in the middle of the PCB.
 
 @section Programming the Flash
-The SFPGA also allows raw access to the Flash memory (M25P128) via the @code{FAR} register. The code below shows how to execute a single SPI transaction (command + N data bytes). 
+The SFPGA also allows raw access to the Flash memory (M25P128 or MT25QL128 in newer SVEC cards) via the @code{FAR} register. The code below shows how to execute a single SPI transaction (command + N data bytes). 
 
-Low-level details about programming M25Pxxx series Flash memories can be found in their datasheets (@pxref{m25p_datasheet,,1}). A simple VME flasher is provided in @code{software/vme-flasher} directory.
+Low-level details about programming the Flash memories can be found in their datasheets (@pxref{m25p_datasheet,,1} and @pxref{mt25_datasheet,,2}). A simple VME flasher is provided in @code{software/vme-flasher} directory.
 
-@b{Note 1:} It is advised to protect the region of the flash containing the system FPGA bitstream from being accidentally overwritten, as this will result in rendering the card unusable and will require re-programming the flash via JTAG. Details on memory protection can be found in the M25P series datasheet.
+@b{Note 1:} It is advised to protect the region of the flash containing the system FPGA bitstream from being accidentally overwritten, as this will result in rendering the card unusable and will require re-programming the flash via JTAG. Details on memory protection can be found in the Flash memory datasheet.
 
 @b{Note 2:} The freshly-programmed bitstreams will be loaded into the FPGAs after power-cycling the card. In order to avoid the power cycle, one can boot the Application FPGA directly using the same bitstream.
 
@@ -134,7 +138,7 @@ The flash memory of the SVEC contains 16 Megabytes of data, that is 65536 pages 
 @item @code{0x601000 - 0xffffff}: Free space, foreseen for the AFPGA's private data storage.
 @end itemize
 
-An example script for building the default flash filesystem (containg the bootloader and golden bitstreams) is located in the @code{software/sdb-flash} subdirectory in the SVEC project's repository(@pxref{repo_link,,2}). Presence of the SDB descriptor table at @code{0x600000} is checked by the bootloader to prevent booting up from a corrupted or unprogrammed flash. 
+An example script for building the default flash filesystem (containg the bootloader and golden bitstreams) is located in the @code{software/sdb-flash} subdirectory in the SVEC project's repository(@pxref{repo_link,,3}). Presence of the SDB descriptor table at @code{0x600000} is checked by the bootloader to prevent booting up from a corrupted or unprogrammed flash. 
 
 @b{Note:} Both bitstreams must be in raw (@code{.bin} file extension) format. @code{.bit}, @code{.mcs}, @code{.xsvf} and other formats will not work. 
 
@@ -240,7 +244,7 @@ Certain older SVEC cards have been shipped with the first version of the bootloa
 @item Open the right-click menu in the main work area and select ``Initialize chain'' or press Ctrl+I.
 @item Right click on the ``SPI/BPI ?'' box above the ``xc6slx9'' FPGA and select ``Add SPI/BPI Flash''.
 @item Pick the @code{svec-bootloader-[latest release].mcs} file.
-@item Select flash type: SPI PROM, M25P128, data width: 1.
+@item Select flash type: SPI PROM, M25P128 (or N25Q128 if you have a newer SVEC with a MT25QL128 Flash memory chip), data width: 1.
 @item Right click on the ``FLASH'' chip above the ``xc6slx9'' and select ``Program''. Select the ``Verify'' option and click OK.
 @item If everything went fine, ``Programming succeeded'' message will appear.
 @item Reboot the VME crate to use the new bootloader.
@@ -307,6 +311,8 @@ NET "flash_miso_i" IOSTANDARD = "LVCMOS33";
 @enumerate
 @anchor{m25p_datasheet}
 @item @uref{http://www.micron.com/parts/nor-flash/serial-nor-flash/m25p128-vme6gb} - M25P series SPI Flash memory datasheet
+@anchor{mt25_datasheet}
+@item @uref{https://www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/mt25q/die-rev-a/mt25q_qlhs_l_128_aba_0.pdf} - MT25QL128ABA series SPI Flash memory datasheet
 @anchor{repo_link}
 @item @uref{http://www.ohwr.org/projects/svec/repository/} - Git repository containing this document's sources and revision history (@code{doc} subdirectory) and bootloading code examples (@code{software/sveclib} subdirectory).
 @end enumerate
