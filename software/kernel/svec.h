@@ -9,6 +9,7 @@
 #include <linux/debugfs.h>
 #include <linux/platform_device.h>
 #include <linux/fmc.h>
+#include <linux/spinlock.h>
 #include <vmebus.h>
 
 #include "svec-core-fpga.h"
@@ -105,6 +106,7 @@ static inline struct svec_fpga *to_svec_fpga(struct device *_dev)
 }
 
 
+#define SVEC_DEV_FLAGS_REPROGRAMMED BIT(0)
 /**
  * struct svec_dev - SVEC instance
  * It describes a SVEC device instance.
@@ -129,6 +131,7 @@ struct svec_dev {
 	unsigned long flags;
 	struct svec_meta_id meta;
 	struct mutex mtx;
+	spinlock_t lock;
 	struct fpga_manager *mgr;
 
 	uint32_t bitstream_last_word;
