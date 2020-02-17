@@ -93,7 +93,8 @@ static ssize_t svec_dbg_fw_write(struct file *file,
 
 		return -EINVAL;
 	}
-	err = copy_from_user(buf_l, buf, VBRIDGE_DBG_FW_BUF_LEN);
+	memset(buf_l, 0, VBRIDGE_DBG_FW_BUF_LEN);
+	err = copy_from_user(buf_l, buf, count);
 	if (err)
 		return -EFAULT;
 
