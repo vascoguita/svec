@@ -9,6 +9,7 @@
 #include <linux/debugfs.h>
 #include <linux/platform_device.h>
 #include <linux/fmc.h>
+#include <linux/spinlock.h>
 #include <vmebus.h>
 
 #include "svec-core-fpga.h"
@@ -61,8 +62,7 @@ enum {
 
 #define SVEC_META_VENDOR_ID PCI_VENDOR_ID_CERN
 #define SVEC_META_DEVICE_ID 0x53564543
-//#define SVEC_META_BOM_BE 0xFEFF0000
-#define SVEC_META_BOM_BE 0xFFFE0000 /* FIXME */
+#define SVEC_META_BOM_BE 0xFFFE0000
 #define SVEC_META_BOM_END_MASK 0xFFFF0000
 #define SVEC_META_BOM_VER_MASK 0x0000FFFF
 #define SVEC_META_VERSION_MASK 0xFFFF0000
@@ -106,6 +106,7 @@ static inline struct svec_fpga *to_svec_fpga(struct device *_dev)
 }
 
 
+#define SVEC_DEV_FLAGS_REPROGRAMMED BIT(0)
 /**
  * struct svec_dev - SVEC instance
  * It describes a SVEC device instance.
@@ -130,6 +131,7 @@ struct svec_dev {
 	unsigned long flags;
 	struct svec_meta_id meta;
 	struct mutex mtx;
+	spinlock_t lock;
 	struct fpga_manager *mgr;
 
 	uint32_t bitstream_last_word;

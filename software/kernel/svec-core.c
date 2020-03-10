@@ -64,17 +64,14 @@ static int svec_fw_load(struct svec_dev *svec_dev, const char *name)
 
 	mutex_lock(&svec_dev->mtx);
 	err = compat_svec_fw_load(svec_dev, name);
-	if (err)
-		goto out;
-
-	err = svec_fpga_init(svec_dev, SVEC_FUNC_NR);
-	if (err)
-		dev_warn(&svec_dev->vdev->dev,
-			 "FPGA incorrectly programmed %d\n", err);
-out:
 	mutex_unlock(&svec_dev->mtx);
 
 	return err;
+}
+
+static void remove_callback(struct device *dev)
+{
+	vme_unregister_device(to_vme_dev(dev));
 }
 
 #define VBRIDGE_DBG_FW_BUF_LEN 128
@@ -84,7 +81,7 @@ static ssize_t svec_dbg_fw_write(struct file *file,
 {
 	struct svec_dev *svec_dev = file->private_data;
 	char buf_l[VBRIDGE_DBG_FW_BUF_LEN];
-	int err;
+	int err, ret;
 
 	if (VBRIDGE_DBG_FW_BUF_LEN < count) {
 		dev_err(&svec_dev->vdev->dev,
@@ -93,11 +90,33 @@ static ssize_t svec_dbg_fw_write(struct file *file,
 
 		return -EINVAL;
 	}
-	err = copy_from_user(buf_l, buf, VBRIDGE_DBG_FW_BUF_LEN);
+	memset(buf_l, 0, VBRIDGE_DBG_FW_BUF_LEN);
+	err = copy_from_user(buf_l, buf, count);
 	if (err)
 		return -EFAULT;
 
+	spin_lock(&svec_dev->lock);
+	svec_dev->flags |= SVEC_DEV_FLAGS_REPROGRAMMED;
+	spin_unlock(&svec_dev->lock);
+
 	err = svec_fw_load(svec_dev, buf_l);
+	if (err)
+		dev_err(&svec_dev->vdev->dev,
+			"FPGA Configuration failure %d\n", err);
+
+	/*
+	 * Reprogramming the FPGA means replacing the VME slave. In other words
+	 * the SVEC device that we used to re-flash the FPGA disappeard and so
+	 * this driver instance must disapear as well.
+	 */
+	dev_warn(&svec_dev->vdev->dev, "VME Slave removed\n");
+	dev_warn(&svec_dev->vdev->dev, "Remove this device driver instance\n");
+	ret = device_schedule_callback(&svec_dev->vdev->dev, remove_callback);
+	if (ret) {
+		dev_err(&svec_dev->vdev->dev,
+			"Can't remove device driver instance %d\n", ret);
+		return ret;
+	}
 
 	return err ? err : count;
 }
@@ -515,6 +534,7 @@ static int svec_probe(struct device *dev, unsigned int ndev)
 		goto err;
 	}
 
+	spin_lock_init(&svec->lock);
 	mutex_init(&svec->mtx);
 	svec->vdev = vdev;
 	dev_set_drvdata(dev, svec);
@@ -567,7 +587,13 @@ static int svec_remove(struct device *dev, unsigned int ndev)
 	fpga_mgr_free(svec->mgr);
 	dev_set_drvdata(dev, NULL);
 
-	vme_disable_device(svec->vdev);
+	if ((svec->flags & SVEC_DEV_FLAGS_REPROGRAMMED) == 0) {
+		/*
+		 * If FPGA is REPROGRAMMED then there is
+		 * no device to disable
+		 */
+		vme_disable_device(svec->vdev);
+	}
 	kfree(svec);
 
 	return 0;

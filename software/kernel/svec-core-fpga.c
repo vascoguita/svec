@@ -648,22 +648,25 @@ static int svec_fpga_app_init(struct svec_fpga *svec_fpga)
 #define SVEC_FPGA_APP_RES_N (32 - SVEC_FPGA_APP_IRQ_BASE + 1)
 	struct vme_dev *vdev = to_vme_dev(svec_fpga->dev.parent);
 	unsigned int res_n = SVEC_FPGA_APP_RES_N;
-	struct resource res[SVEC_FPGA_APP_RES_N] = {
-		[0] = {
-			.name = "app-mem",
-			.flags = IORESOURCE_MEM,
-		},
-	};
+	struct resource *res;
 	struct platform_device *pdev;
 	struct irq_domain *vic_domain;
 	char app_name[SVEC_FPGA_APP_NAME_MAX];
 	unsigned long app_offset;
-	int err, fn = svec_fpga->function_nr;
+	int err = 0, fn = svec_fpga->function_nr;
+
+	res = kcalloc(SVEC_FPGA_APP_RES_N, sizeof(*res), GFP_KERNEL);
+	if (!res)
+		return -ENOMEM;
+
+	res[0].name  = "app-mem";
+	res[0].flags = IORESOURCE_MEM;
 
 	app_offset = svec_fpga_csr_app_offset(svec_fpga);
 	if (!app_offset) {
 		dev_warn(&svec_fpga->dev, "Application not found\n");
-		return 0;
+		err = 0;
+		goto err_free;
 	}
 
 	svec_fpga_metadata_get(&svec_fpga->meta_app,
@@ -695,18 +698,21 @@ static int svec_fpga_app_init(struct svec_fpga *svec_fpga)
 	err = svec_fpga_app_id_build(svec_fpga, app_offset,
 				     app_name, SVEC_FPGA_APP_NAME_MAX);
 	if (err)
-		return err;
+		goto err_free;
 	svec_fpga_app_restart(svec_fpga);
 	pdev = platform_device_register_resndata(&svec_fpga->dev,
 						 app_name, PLATFORM_DEVID_AUTO,
 						 res, res_n,
 						 NULL, 0);
-	if (IS_ERR(pdev))
-		return PTR_ERR(pdev);
+	err = IS_ERR(pdev);
+	if (err)
+		goto err_free;
 
 	svec_fpga->app_pdev = pdev;
 
-	return 0;
+err_free:
+	kfree(res);
+	return err;
 }
 
 static void svec_fpga_app_exit(struct svec_fpga *svec_fpga)
@@ -869,6 +875,8 @@ int svec_fpga_exit(struct svec_dev *svec_dev)
 	if (!svec_fpga)
 		return 0;
 
+	/* this function must run before re-flashing */
+	BUG_ON(svec_dev->flags & SVEC_DEV_FLAGS_REPROGRAMMED);
 	svec_fpga_app_exit(svec_fpga);
 	svec_fmc_exit(svec_fpga);
 	svec_fpga_devices_exit(svec_fpga);
