@@ -655,10 +655,9 @@ static int svec_fpga_app_init(struct svec_fpga *svec_fpga)
 	unsigned long app_offset;
 	int err = 0, fn = svec_fpga->function_nr;
 
-	res = kzalloc(SVEC_FPGA_APP_RES_N * sizeof(struct resource), GFP_KERNEL);
-	if (!res) {
+	res = kcalloc(SVEC_FPGA_APP_RES_N, sizeof(*res), GFP_KERNEL);
+	if (!res)
 		return -ENOMEM;
-	}
 
 	res[0].name  = "app-mem";
 	res[0].flags = IORESOURCE_MEM;
