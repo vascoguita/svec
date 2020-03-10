@@ -2,6 +2,12 @@
 Change Log
 ==========
 
+[1.4.9] 2020-03-10
+==================
+Fixed
+-----
+- [sw] reduce allocation on stack
+- [sw] automatically remove device after FPGA reprogram (otherwise unusable)
 
 [1.4.8] 2020-02-12
 ==================
