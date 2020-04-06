@@ -43,6 +43,8 @@ use unisim.vcomponents.all;
 
 entity svec_base_wr is
   generic (
+    --  For the VME64x interface: if true, also consider AM in the decoder.
+    g_DECODE_AM     : boolean := TRUE;
     --  If true, instantiate a VIC/ONEWIRE/SPI/WR/DDRAM+DMA.
     g_WITH_VIC      : boolean := True;
     g_WITH_ONEWIRE  : boolean := True;
@@ -482,7 +484,7 @@ begin  -- architecture top
   cmp_vme_core : entity work.xvme64x_core
     generic map (
       g_CLOCK_PERIOD    => 16,
-      g_DECODE_AM       => TRUE,
+      g_DECODE_AM       => g_DECODE_AM,
       g_USER_CSR_EXT    => FALSE,
       g_WB_GRANULARITY  => BYTE,
       g_WB_MODE         => PIPELINED,
