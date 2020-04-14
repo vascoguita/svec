@@ -74,7 +74,7 @@ static const struct debugfs_reg32 svec_fpga_debugfs_reg32[] = {
 static int svec_fpga_dbg_bld_info(struct seq_file *s, void *offset)
 {
 	struct svec_fpga *svec_fpga = s->private;
-	struct svec_dev *svec_dev = dev_get_drvdata(svec_fpga->dev.parent);
+	struct svec_dev *svec_dev = to_svec_dev(svec_fpga->dev.parent);
 	int off;
 
 	if (!(svec_dev->meta.cap & SVEC_META_CAP_BLD)) {
@@ -118,7 +118,7 @@ static const struct file_operations svec_fpga_dbg_bld_info_ops = {
 
 static int svec_fpga_dbg_init(struct svec_fpga *svec_fpga)
 {
-	struct svec_dev *svec_dev = dev_get_drvdata(svec_fpga->dev.parent);
+	struct svec_dev *svec_dev = to_svec_dev(svec_fpga->dev.parent);
 	int err;
 
 	svec_fpga->dbg_dir = debugfs_create_dir(dev_name(&svec_fpga->dev),
@@ -196,9 +196,9 @@ static struct resource svec_fpga_vic_res[] = {
 
 static int svec_fpga_vic_init(struct svec_fpga *svec_fpga)
 {
-	struct svec_dev *svec_dev = dev_get_drvdata(svec_fpga->dev.parent);
-	unsigned long vme_start = vme_resource_start(svec_dev->vdev,
-						     svec_fpga->function_nr);
+	struct svec_dev *svec_dev = to_svec_dev(svec_fpga->dev.parent);
+	struct vme_dev *vdev = to_vme_dev(svec_dev->dev.parent);
+	unsigned long vme_start = vme_resource_start(vdev, svec_fpga->function_nr);
 	const unsigned int res_n = ARRAY_SIZE(svec_fpga_vic_res);
 	struct resource res[ARRAY_SIZE(svec_fpga_vic_res)];
 	struct platform_device *pdev;
@@ -209,7 +209,7 @@ static int svec_fpga_vic_init(struct svec_fpga *svec_fpga)
 	memcpy(&res, svec_fpga_vic_res, sizeof(svec_fpga_vic_res));
 	res[0].start += vme_start;
 	res[0].end += vme_start;
-	res[1].start = svec_dev->vdev->irq;
+	res[1].start = vdev->irq;
 	res[1].end = res[1].start;
 	pdev = platform_device_register_resndata(&svec_fpga->dev,
 						 "htvic-svec",
@@ -327,7 +327,7 @@ static inline size_t __fpga_mfd_devs_size(void)
 
 static int svec_fpga_devices_init(struct svec_fpga *svec_fpga)
 {
-	struct vme_dev *vdev = to_vme_dev(svec_fpga->dev.parent);
+	struct vme_dev *vdev = to_vme_dev(svec_fpga->dev.parent->parent);
 	struct mfd_cell *fpga_mfd_devs;
 	struct irq_domain *vic_domain;
 	unsigned int n_mfd = 0;
@@ -376,7 +376,7 @@ static ssize_t temperature_show(struct device *dev,
 				char *buf)
 {
 	struct svec_fpga *svec_fpga = to_svec_fpga(dev);
-	struct svec_dev *svec_dev = dev_get_drvdata(svec_fpga->dev.parent);
+	struct svec_dev *svec_dev = to_svec_dev(svec_fpga->dev.parent);
 
 	if (svec_dev->meta.cap & SVEC_META_CAP_THERM) {
 		uint32_t temp = ioread32be(svec_fpga->fpga
@@ -396,7 +396,7 @@ static ssize_t serial_number_show(struct device *dev,
 				  char *buf)
 {
 	struct svec_fpga *svec_fpga = to_svec_fpga(dev);
-	struct svec_dev *svec_dev = dev_get_drvdata(svec_fpga->dev.parent);
+	struct svec_dev *svec_dev = to_svec_dev(svec_fpga->dev.parent);
 
 	if (svec_dev->meta.cap & SVEC_META_CAP_THERM) {
 		uint32_t msb = ioread32be(svec_fpga->fpga
@@ -727,14 +727,14 @@ static bool svec_fpga_is_valid(struct svec_dev *svec_dev,
 			       struct svec_meta_id *meta)
 {
 	if ((meta->bom & SVEC_META_BOM_END_MASK) != SVEC_META_BOM_BE) {
-		dev_err(&svec_dev->vdev->dev,
+		dev_err(&svec_dev->dev,
 			"Expected Big Endian devices BOM: 0x%x\n",
 			meta->bom);
 		return false;
 	}
 
 	if ((meta->bom & SVEC_META_BOM_VER_MASK) != 0) {
-		dev_err(&svec_dev->vdev->dev,
+		dev_err(&svec_dev->dev,
 			"Unknow Metadata svecification version BOM: 0x%x\n",
 			meta->bom);
 		return false;
@@ -742,14 +742,14 @@ static bool svec_fpga_is_valid(struct svec_dev *svec_dev,
 
 	if (meta->vendor != SVEC_META_VENDOR_ID ||
 	    meta->device != SVEC_META_DEVICE_ID) {
-		dev_err(&svec_dev->vdev->dev,
+		dev_err(&svec_dev->dev,
 			"Unknow vendor/device ID: %08x:%08x\n",
 			meta->vendor, meta->device);
 		return false;
 	}
 
 	if ((meta->version & SVEC_META_VERSION_MASK) != SVEC_META_VERSION_1_4) {
-		dev_err(&svec_dev->vdev->dev,
+		dev_err(&svec_dev->dev,
 			"Unknow version: %08x\n", meta->version);
 		return false;
 	}
@@ -757,33 +757,34 @@ static bool svec_fpga_is_valid(struct svec_dev *svec_dev,
 	return true;
 }
 
-static void svec_release(struct device *dev)
+static void svec_fpga_release(struct device *dev)
 {
 
 }
 
-static int svec_uevent(struct device *dev, struct kobj_uevent_env *env)
+static int svec_fpga_uevent(struct device *dev, struct kobj_uevent_env *env)
 {
 	return 0;
 }
 
-static const struct attribute_group *svec_groups[] = {
+static const struct attribute_group *svec_fpga_groups[] = {
 	&svec_fpga_therm_group,
 	&svec_fpga_csr_group,
 	NULL
 };
 
 static const struct device_type svec_fpga_type = {
-	.name = "svec",
-	.release = svec_release,
-	.uevent = svec_uevent,
-	.groups = svec_groups,
+	.name = "svec-fpga",
+	.release = svec_fpga_release,
+	.uevent = svec_fpga_uevent,
+	.groups = svec_fpga_groups,
 };
 
 int svec_fpga_init(struct svec_dev *svec_dev, unsigned int function_nr)
 {
 	struct svec_fpga *svec_fpga;
-	struct resource *r = &svec_dev->vdev->resource[function_nr];
+	struct vme_dev *vdev = to_vme_dev(svec_dev->dev.parent);
+	struct resource *r = &vdev->resource[function_nr];
 	int err;
 
 	svec_fpga = kzalloc(sizeof(*svec_fpga), GFP_KERNEL);
@@ -804,18 +805,18 @@ int svec_fpga_init(struct svec_dev *svec_dev, unsigned int function_nr)
 		goto err_valid;
 	}
 
-	svec_fpga->dev.parent = &svec_dev->vdev->dev;
-	svec_fpga->dev.driver = svec_dev->vdev->dev.driver;
+	svec_fpga->dev.parent = &svec_dev->dev;
+	svec_fpga->dev.driver = svec_dev->dev.driver;
 	svec_fpga->dev.type = &svec_fpga_type;
-	err = dev_set_name(&svec_fpga->dev, "svec-%s",
-			   dev_name(&svec_dev->vdev->dev));
+	err = dev_set_name(&svec_fpga->dev, "%s-fpga",
+			   dev_name(&svec_dev->dev));
 	if (err)
 		goto err_name;
 
 	err = device_register(&svec_fpga->dev);
 	if (err) {
-		dev_err(&svec_dev->vdev->dev, "Failed to register '%s'\n",
-			dev_name(&svec_dev->vdev->dev));
+		dev_err(&svec_dev->dev, "Failed to register '%s'\n",
+			dev_name(&svec_fpga->dev));
 		goto err_dev;
 	}
 
@@ -823,25 +824,25 @@ int svec_fpga_init(struct svec_dev *svec_dev, unsigned int function_nr)
 
 	err = svec_fpga_vic_init(svec_fpga);
 	if (err) {
-		dev_err(&svec_dev->vdev->dev,
+		dev_err(&svec_dev->dev,
 			"Failed to initialize VIC %d\n", err);
 		goto err_vic;
 	}
 	err = svec_fpga_devices_init(svec_fpga);
 	if (err) {
-		dev_err(&svec_dev->vdev->dev,
+		dev_err(&svec_dev->dev,
 			"Failed to initialize Devices %d\n", err);
 		goto err_devs;
 	}
 	err = svec_fmc_init(svec_fpga);
 	if (err) {
-		dev_err(&svec_dev->vdev->dev,
+		dev_err(&svec_dev->dev,
 			"Failed to initialize FMC %d\n", err);
 		goto err_fmc;
 	}
 	err = svec_fpga_app_init(svec_fpga);
 	if (err) {
-		dev_err(&svec_dev->vdev->dev,
+		dev_err(&svec_dev->dev,
 			"Failed to initialize APP %d\n", err);
 		goto err_app;
 	}

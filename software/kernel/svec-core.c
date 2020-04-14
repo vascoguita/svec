@@ -53,10 +53,10 @@ static int svec_fw_load(struct svec_dev *svec_dev, const char *name)
 {
 	int err;
 
-	dev_dbg(&svec_dev->vdev->dev, "Writing firmware '%s'\n", name);
+	dev_dbg(&svec_dev->dev, "Writing firmware '%s'\n", name);
 	err = svec_fpga_exit(svec_dev);
 	if (err) {
-		dev_err(&svec_dev->vdev->dev,
+		dev_err(&svec_dev->dev,
 			"Cannot remove FPGA device instances. Try to remove them manually and to reload this device instance\n");
 		return err;
 	}
@@ -84,7 +84,7 @@ static ssize_t svec_dbg_fw_write(struct file *file,
 	int err, ret;
 
 	if (VBRIDGE_DBG_FW_BUF_LEN < count) {
-		dev_err(&svec_dev->vdev->dev,
+		dev_err(&svec_dev->dev,
 			 "Firmware name too long max %u\n",
 			VBRIDGE_DBG_FW_BUF_LEN);
 
@@ -101,7 +101,7 @@ static ssize_t svec_dbg_fw_write(struct file *file,
 
 	err = svec_fw_load(svec_dev, buf_l);
 	if (err)
-		dev_err(&svec_dev->vdev->dev,
+		dev_err(&svec_dev->dev,
 			"FPGA Configuration failure %d\n", err);
 
 	/*
@@ -109,11 +109,11 @@ static ssize_t svec_dbg_fw_write(struct file *file,
 	 * the SVEC device that we used to re-flash the FPGA disappeard and so
 	 * this driver instance must disapear as well.
 	 */
-	dev_warn(&svec_dev->vdev->dev, "VME Slave removed\n");
-	dev_warn(&svec_dev->vdev->dev, "Remove this device driver instance\n");
-	ret = device_schedule_callback(&svec_dev->vdev->dev, remove_callback);
+	dev_warn(&svec_dev->dev, "VME Slave removed\n");
+	dev_warn(&svec_dev->dev, "Remove this device driver instance\n");
+	ret = device_schedule_callback(svec_dev->dev.parent, remove_callback);
 	if (ret) {
-		dev_err(&svec_dev->vdev->dev,
+		dev_err(&svec_dev->dev,
 			"Can't remove device driver instance %d\n", ret);
 		return ret;
 	}
@@ -181,7 +181,7 @@ static const struct file_operations svec_dbg_meta_ops = {
 
 static int svec_dbg_init(struct svec_dev *svec_dev)
 {
-	struct device *dev = &svec_dev->vdev->dev;
+	struct device *dev = &svec_dev->dev;
 
 	svec_dev->dbg_dir = debugfs_create_dir(dev_name(dev), NULL);
 	if (IS_ERR_OR_NULL(svec_dev->dbg_dir)) {
@@ -229,7 +229,8 @@ static void svec_dbg_exit(struct svec_dev *svec_dev)
 static int svec_fpga_reset(struct fpga_manager *mgr)
 {
 	struct svec_dev *svec = mgr->priv;
-	void *loader_addr = svec->vdev->map_cr.kernel_va + SVEC_BASE_LOADER;
+	struct vme_dev *vdev = to_vme_dev(svec->dev.parent);
+	void *loader_addr = vdev->map_cr.kernel_va + SVEC_BASE_LOADER;
 	int i;
 
 	for (i = 0; i < 8; i++) {
@@ -252,7 +253,8 @@ static int svec_fpga_reset(struct fpga_manager *mgr)
 static int svec_fpga_loader_is_active(struct fpga_manager *mgr)
 {
 	struct svec_dev *svec = mgr->priv;
-	void *loader_addr = svec->vdev->map_cr.kernel_va + SVEC_BASE_LOADER;
+	struct vme_dev *vdev = to_vme_dev(svec->dev.parent);
+	void *loader_addr = vdev->map_cr.kernel_va + SVEC_BASE_LOADER;
 	char buf[5];
 	uint32_t idc;
 
@@ -282,7 +284,8 @@ static int svec_fpga_write_word(struct fpga_manager *mgr,
 				unsigned int is_last)
 {
 	struct svec_dev *svec = mgr->priv;
-	void *loader_addr = svec->vdev->map_cr.kernel_va + SVEC_BASE_LOADER;
+	struct vme_dev *vdev = to_vme_dev(svec->dev.parent);
+	void *loader_addr = vdev->map_cr.kernel_va + SVEC_BASE_LOADER;
 	uint32_t xldr_fifo_r0;	/* Bitstream data input control register */
 	uint32_t xldr_fifo_r1;	/* Bitstream data input register */
 	int rv, try = 10000;
@@ -315,7 +318,8 @@ static int svec_fpga_write_word(struct fpga_manager *mgr,
 static int svec_fpga_write_start(struct fpga_manager *mgr)
 {
 	struct svec_dev *svec = mgr->priv;
-	void *loader_addr = svec->vdev->map_cr.kernel_va + SVEC_BASE_LOADER;
+	struct vme_dev *vdev = to_vme_dev(svec->dev.parent);
+	void *loader_addr = vdev->map_cr.kernel_va + SVEC_BASE_LOADER;
 	int err, succ;
 
 	/* reset the FPGA */
@@ -355,7 +359,8 @@ static int svec_fpga_write_stop(struct fpga_manager *mgr,
 				struct fpga_image_info *info)
 {
 	struct svec_dev *svec = mgr->priv;
-	void *loader_addr = svec->vdev->map_cr.kernel_va + SVEC_BASE_LOADER;
+	struct vme_dev *vdev = to_vme_dev(svec->dev.parent);
+	void *loader_addr = vdev->map_cr.kernel_va + SVEC_BASE_LOADER;
 	u64 timeout;
 	int rval = 0, err;
 
@@ -500,7 +505,7 @@ static const struct fpga_manager_ops svec_fpga_ops = {
 
 static int svec_vme_init(struct svec_dev *svec)
 {
-	struct vme_dev *vdev = svec->vdev;
+	struct vme_dev *vdev = to_vme_dev(svec->dev.parent);
 	int err;
 
 	err = vme_disable_device(vdev);
@@ -514,6 +519,22 @@ static int svec_vme_init(struct svec_dev *svec)
 
 	return vme_enable_device(vdev);
 }
+
+static void svec_dev_release(struct device *dev)
+{
+
+}
+
+static int svec_dev_uevent(struct device *dev, struct kobj_uevent_env *env)
+{
+	return 0;
+}
+
+static const struct device_type svec_type = {
+	.name = "svec",
+	.release = svec_dev_release,
+	.uevent = svec_dev_uevent,
+};
 
 /**
  * It initialize a new SVEC instance
@@ -534,15 +555,27 @@ static int svec_probe(struct device *dev, unsigned int ndev)
 		goto err;
 	}
 
+	dev_set_drvdata(dev, svec);
 	spin_lock_init(&svec->lock);
 	mutex_init(&svec->mtx);
-	svec->vdev = vdev;
-	dev_set_drvdata(dev, svec);
+	svec->dev.parent = &vdev->dev;
+	svec->dev.type = &svec_type;
+	svec->dev.driver = vdev->dev.driver;
+	err = dev_set_name(&svec->dev, "svec-%s",
+			   dev_name(svec->dev.parent));
+	if (err)
+		goto err_name;
+	err = device_register(&svec->dev);
+	if (err) {
+		dev_err(dev, "Failed to register '%s'\n",
+			dev_name(&svec->dev));
+		goto err_dev;
+	}
 
 	svec_vme_init(svec);
 
 	svec->fpga_status = FPGA_MGR_STATE_UNKNOWN;
-	svec->mgr = fpga_mgr_create(dev, dev_name(dev),
+	svec->mgr = fpga_mgr_create(&svec->dev, dev_name(&svec->dev),
 				    &svec_fpga_ops, svec);
 	if (!svec->mgr) {
 		err = -EPERM;
@@ -565,6 +598,9 @@ static int svec_probe(struct device *dev, unsigned int ndev)
 err_fpga_reg:
 	fpga_mgr_free(svec->mgr);
 err_fpga_new:
+	device_unregister(&svec->dev);
+err_dev:
+err_name:
 	dev_set_drvdata(dev, NULL);
 	kfree(svec);
 err:
@@ -585,16 +621,18 @@ static int svec_remove(struct device *dev, unsigned int ndev)
 	svec_dbg_exit(svec);
 	fpga_mgr_unregister(svec->mgr);
 	fpga_mgr_free(svec->mgr);
-	dev_set_drvdata(dev, NULL);
 
 	if ((svec->flags & SVEC_DEV_FLAGS_REPROGRAMMED) == 0) {
 		/*
 		 * If FPGA is REPROGRAMMED then there is
 		 * no device to disable
 		 */
-		vme_disable_device(svec->vdev);
+		vme_disable_device(to_vme_dev(svec->dev.parent));
 	}
+	device_unregister(&svec->dev);
 	kfree(svec);
+
+	dev_set_drvdata(dev, NULL);
 
 	return 0;
 }

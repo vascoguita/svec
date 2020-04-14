@@ -93,7 +93,7 @@ int compat_svec_fw_load(struct svec_dev *svec_dev, const char *name)
 	struct fpga_manager *mgr;
 	int err;
 
-	mgr = fpga_mgr_get(&svec_dev->vdev->dev);
+	mgr = fpga_mgr_get(&svec_dev->dev);
 	if (IS_ERR(mgr))
 		return -ENODEV;
 
