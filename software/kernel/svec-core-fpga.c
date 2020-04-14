@@ -9,6 +9,7 @@
 #include <linux/fpga/fpga-mgr.h>
 #include <linux/types.h>
 #include <linux/platform_data/i2c-ocores.h>
+#include <linux/platform_data/spi-ocores.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 #include <linux/delay.h>
@@ -260,7 +261,7 @@ static struct ocores_i2c_platform_data svec_fpga_fmc_i2c_pdata = {
 	.num_devices = 0,
 	.devices = NULL,
 };
-#if 0
+
 static struct resource svec_fpga_spi_res[] = {
 	{
 		.name = "spi-ocores-mem",
@@ -299,7 +300,6 @@ static struct spi_ocores_platform_data svec_fpga_spi_pdata = {
 	.devices = svec_fpga_spi_devices_info,
 };
 
-#endif
 static const struct mfd_cell svec_fpga_mfd_devs[] = {
 	[SVEC_FPGA_MFD_FMC_I2C] = {
 		.name = "i2c-ohwr",
@@ -308,7 +308,6 @@ static const struct mfd_cell svec_fpga_mfd_devs[] = {
 		.num_resources = ARRAY_SIZE(svec_fpga_fmc_i2c_res),
 		.resources = svec_fpga_fmc_i2c_res,
 	},
-#if 0
 	[SVEC_FPGA_MFD_SPI] = {
 		.name = "spi-ocores",
 		.platform_data = &svec_fpga_spi_pdata,
@@ -316,7 +315,6 @@ static const struct mfd_cell svec_fpga_mfd_devs[] = {
 		.num_resources = ARRAY_SIZE(svec_fpga_spi_res),
 		.resources = svec_fpga_spi_res,
 	},
-#endif
 };
 
 static inline size_t __fpga_mfd_devs_size(void)
