@@ -520,6 +520,19 @@ static int svec_vme_init(struct svec_dev *svec)
 	return vme_enable_device(vdev);
 }
 
+static int svec_vme_exit(struct svec_dev *svec)
+{
+	struct vme_dev *vdev = to_vme_dev(svec->dev.parent);
+	int err;
+
+	err = vme_disable_device(vdev);
+	if (err)
+		return err;
+	svec_csr_write(0x0, vdev->map_cr.kernel_va,
+		       SVEC_USER_CSR_INT_VECTOR);
+	return vme_enable_device(vdev);
+}
+
 static void svec_dev_release(struct device *dev)
 {
 
@@ -621,6 +634,7 @@ static int svec_remove(struct device *dev, unsigned int ndev)
 	svec_dbg_exit(svec);
 	fpga_mgr_unregister(svec->mgr);
 	fpga_mgr_free(svec->mgr);
+	svec_vme_exit(svec);
 
 	if ((svec->flags & SVEC_DEV_FLAGS_REPROGRAMMED) == 0) {
 		/*
