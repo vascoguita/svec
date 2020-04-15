@@ -1241,7 +1241,7 @@ begin  -- architecture top
     ddr4_wb_out <= (adr => (others => 'X'), cyc => '0', stb => '0', sel => x"0", we => '0',
       dat => (others => 'X'));
     csr_ddr4_data_in <= x"0000_0000";
-    csr_ddr4_data_rack <= csr_ddr4_data_wr;
+    csr_ddr4_data_rack <= csr_ddr4_data_rd;
     csr_ddr4_data_wack <= csr_ddr4_data_wr;
   end generate gen_without_ddr4;
 
@@ -1414,7 +1414,7 @@ begin  -- architecture top
     ddr5_wb_out <= (adr => (others => 'X'), cyc => '0', stb => '0', sel => x"0", we => '0',
       dat => (others => 'X'));
     csr_ddr5_data_in <= x"0000_0000";
-    csr_ddr5_data_rack <= csr_ddr5_data_wr;
+    csr_ddr5_data_rack <= csr_ddr5_data_rd;
     csr_ddr5_data_wack <= csr_ddr5_data_wr;
   end generate gen_without_ddr5;
 
