@@ -2,8 +2,13 @@
 Change Log
 ==========
 
-Unreleased
-==========
+[1.4.10] 2020-05-12
+==================
+Added
+-----
+- [hdl] metadata source-id automatic assignment
+- [hdl] add option to consider AM in VME slave decoder
+
 Fixed
 -----
 - [hdl] fix typos when ddr is not configured. This froze the board when
