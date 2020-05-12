@@ -2,6 +2,26 @@
 Change Log
 ==========
 
+[1.4.10] 2020-05-12
+==================
+Added
+-----
+- [hdl] metadata source-id automatic assignment
+- [hdl] add option to consider AM in VME slave decoder
+
+Fixed
+-----
+- [hdl] fix typos when ddr is not configured. This froze the board when
+  reading a ddr data register.
+
+Changed
+-------
+- [sw] Linux device hierarchy seen in sysfs. It is incompatible but
+  tools, today do not rely in this. So we take the freedom to change
+  it without a major release.
+- [sw] on device removal the IRQ vector number in the CR/CSR space is set
+  to 0x0
+
 [1.4.9] 2020-03-10
 ==================
 Fixed
@@ -31,7 +51,7 @@ Fixed
 [1.4.6] 2019-12-16
 ==================
 Changed
------
+-------
 - [sw] better integration in coht, rename environment variable to FPGA_MGR
 
 [1.4.5] 2019-12-16
@@ -55,7 +75,7 @@ Added
 [1.4.2] 2019-10-17
 ==================
 Changed
------
+-------
 - [sw] show application metadata in debugfs
 
 [1.4.1] 2019-10-15

@@ -145,6 +145,7 @@ memory-map:
         name: wrc_regs
         address: 0x1000
         description: white-rabbit core registers
+        comment: In particular, the vuart is at 0x1500
         size: 0x1000
         interface: wb-32-be
         x-hdl:

@@ -28,6 +28,8 @@ clean-spec-core-fpga.h:
 
 install: modules_install
 clean: clean-spec-core-fpga.h
+	$(MAKE) -C $(LINUX) M=$(shell pwd) $@
+
 modules help coccicheck modules_install: svec-core-fpga.h
 	$(MAKE) -C $(LINUX) M=$(shell pwd) \
 		VERSION=$(VERSION) \

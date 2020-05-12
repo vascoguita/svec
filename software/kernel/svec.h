@@ -126,7 +126,7 @@ static inline struct svec_fpga *to_svec_fpga(struct device *_dev)
  * @mem: ioremapped memory
  */
 struct svec_dev {
-	struct vme_dev *vdev;
+	struct device dev;
 	char name[8];
 	unsigned long flags;
 	struct svec_meta_id meta;
@@ -149,6 +149,11 @@ struct svec_dev {
 	struct dentry *dbg_meta;
 	struct svec_fpga *svec_fpga;
 };
+
+static inline struct svec_dev *to_svec_dev(struct device *_dev)
+{
+	return container_of(_dev, struct svec_dev, dev);
+}
 
 extern int svec_fpga_init(struct svec_dev *svec_dev, unsigned int function_nr);
 extern int svec_fpga_exit(struct svec_dev *svec_dev);

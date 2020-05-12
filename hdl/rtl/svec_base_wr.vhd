@@ -36,12 +36,15 @@ use work.wr_svec_pkg.all;
 use work.buildinfo_pkg.all;
 use work.wr_fabric_pkg.all;
 use work.streamers_pkg.all;
+use work.sourceid_svec_base_pkg;
 
 library unisim;
 use unisim.vcomponents.all;
 
 entity svec_base_wr is
   generic (
+    --  For the VME64x interface: if true, also consider AM in the decoder.
+    g_DECODE_AM     : boolean := TRUE;
     --  If true, instantiate a VIC/ONEWIRE/SPI/WR/DDRAM+DMA.
     g_WITH_VIC      : boolean := True;
     g_WITH_ONEWIRE  : boolean := True;
@@ -481,7 +484,7 @@ begin  -- architecture top
   cmp_vme_core : entity work.xvme64x_core
     generic map (
       g_CLOCK_PERIOD    => 16,
-      g_DECODE_AM       => TRUE,
+      g_DECODE_AM       => g_DECODE_AM,
       g_USER_CSR_EXT    => FALSE,
       g_WB_GRANULARITY  => BYTE,
       g_WB_MODE         => PIPELINED,
@@ -649,13 +652,22 @@ begin  -- architecture top
           metadata_data <= x"53564543";
         when x"2" =>
           -- Version
-          metadata_data <= x"01040000";
+          metadata_data <= x"0104000a";
         when x"3" =>
           -- BOM
           metadata_data <= x"fffe0000";
-        when x"4" | x"5" | x"6" | x"7" =>
+        when x"4" =>
           -- source id
-          metadata_data <= x"00000000";
+          metadata_data <= sourceid_svec_base_pkg.sourceid(127 downto 96);
+        when x"5" =>
+          -- source id
+          metadata_data <= sourceid_svec_base_pkg.sourceid(95 downto 64);
+        when x"6" =>
+          -- source id
+          metadata_data <= sourceid_svec_base_pkg.sourceid(63 downto 32);
+        when x"7" =>
+          -- source id
+          metadata_data <= sourceid_svec_base_pkg.sourceid(31 downto 0);
         when x"8" =>
           -- capability mask
           metadata_data <= x"00000000";
@@ -1241,7 +1253,7 @@ begin  -- architecture top
     ddr4_wb_out <= (adr => (others => 'X'), cyc => '0', stb => '0', sel => x"0", we => '0',
       dat => (others => 'X'));
     csr_ddr4_data_in <= x"0000_0000";
-    csr_ddr4_data_rack <= csr_ddr4_data_wr;
+    csr_ddr4_data_rack <= csr_ddr4_data_rd;
     csr_ddr4_data_wack <= csr_ddr4_data_wr;
   end generate gen_without_ddr4;
 
@@ -1414,7 +1426,7 @@ begin  -- architecture top
     ddr5_wb_out <= (adr => (others => 'X'), cyc => '0', stb => '0', sel => x"0", we => '0',
       dat => (others => 'X'));
     csr_ddr5_data_in <= x"0000_0000";
-    csr_ddr5_data_rack <= csr_ddr5_data_wr;
+    csr_ddr5_data_rack <= csr_ddr5_data_rd;
     csr_ddr5_data_wack <= csr_ddr5_data_wr;
   end generate gen_without_ddr5;
 
