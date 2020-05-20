@@ -2,8 +2,14 @@
 Change Log
 ==========
 
+[1.4.11] 2020-05-20
+===================
+Added
+-----
+- [hdl] export DDMTD clock output
+
 [1.4.10] 2020-05-12
-==================
+===================
 Added
 -----
 - [hdl] metadata source-id automatic assignment
@@ -46,7 +52,8 @@ Fixed
 -----
 - [hdl] DDR constraints
 - [hdl] DDR controller generic values are now properly capitalised
-- [sw] Update svec-flasher to work with new type of flash memory used in newer SVEC boards
+- [sw] Update svec-flasher to work with new type of flash memory used in
+  newer SVEC boards
 
 [1.4.6] 2019-12-16
 ==================

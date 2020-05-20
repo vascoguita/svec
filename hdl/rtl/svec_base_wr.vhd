@@ -271,6 +271,9 @@ entity svec_base_wr is
     clk_ref_125m_o    : out std_logic;
     rst_ref_125m_n_o  : out std_logic;
 
+    -- 125 MHz DDMTD clock output
+    clk_dmtd_125m_o : out std_logic;
+
     --  Interrupts
     irq_user_i : in std_logic_vector(g_NUM_USER_IRQ + 5 downto 6) := (others => '0');
 
@@ -468,6 +471,8 @@ architecture top of svec_base_wr is
   signal sfp_sda_out : std_logic;
   signal sfp_scl_in  : std_logic;
   signal sfp_scl_out : std_logic;
+
+  signal clk_dmtd_125m : std_logic;
 
   attribute keep                 : string;
   attribute keep of clk_sys_62m5 : signal is "TRUE";
@@ -840,6 +845,7 @@ begin  -- architecture top
         clk_sys_62m5_o      => clk_sys_62m5,
         clk_ref_125m_o      => clk_ref_125m,
         clk_pll_aux_o       => clk_pll_aux,
+        clk_dmtd_125m_o     => clk_dmtd_125m,
         rst_sys_62m5_n_o    => rst_sys_62m5_n,
         rst_ref_125m_n_o    => rst_ref_125m_n,
         rst_pll_aux_n_o     => rst_pll_aux_n,
@@ -1423,8 +1429,8 @@ begin  -- architecture top
     ddr5_wr_fifo_empty_o <= '0';
 
     csr_ddr5_addr <= x"0000_0000";
-    ddr5_wb_out <= (adr => (others => 'X'), cyc => '0', stb => '0', sel => x"0", we => '0',
-      dat => (others => 'X'));
+  ddr5_wb_out <= (adr => (others => 'X'), cyc => '0', stb => '0', sel => x"0", we => '0',
+     dat => (others => 'X'));
     csr_ddr5_data_in <= x"0000_0000";
     csr_ddr5_data_rack <= csr_ddr5_data_rd;
     csr_ddr5_data_wack <= csr_ddr5_data_wr;
@@ -1432,5 +1438,7 @@ begin  -- architecture top
 
   ddr5_wb_o.err <= '0';
   ddr5_wb_o.rty <= '0';
+
+  clk_dmtd_125m_o <= clk_dmtd_125m;
 
 end architecture top;
