@@ -365,7 +365,7 @@ architecture top of svec_base_wr is
   signal csr_ddr4_data_wack :    std_logic;
   signal csr_ddr4_data_rack :    std_logic;
 
-  -- 
+  --
   signal ddr4_read_ip  : std_logic;
   signal ddr4_write_ip : std_logic;
 
@@ -404,7 +404,7 @@ architecture top of svec_base_wr is
   signal vme_ga            : std_logic_vector(5 downto 0);
   signal vme_berr_n        : std_logic;
   signal vme_irq_n         : std_logic_vector(7 downto 1);
-  
+
   --  The wishbone bus to the carrier part.
   signal carrier_wb_out : t_wishbone_slave_out;
   signal carrier_wb_in  : t_wishbone_slave_in;
@@ -593,7 +593,7 @@ begin  -- architecture top
       csr_ddr4_addr_i      => csr_ddr4_addr,
       csr_ddr4_addr_o      => csr_ddr4_addr_out,
       csr_ddr4_addr_wr_o   => csr_ddr4_addr_wr,
-  
+
       -- data to read or to write in ddr4
       csr_ddr4_data_i      => csr_ddr4_data_in,
       csr_ddr4_data_o      => csr_ddr4_data_out,
@@ -613,7 +613,7 @@ begin  -- architecture top
       csr_ddr5_data_rd_o   => csr_ddr5_data_rd,
       csr_ddr5_data_wack_i => csr_ddr5_data_wack,
       csr_ddr5_data_rack_i => csr_ddr5_data_rack,
-  
+
       -- Thermometer and unique id
       therm_id_i          => therm_id_in,
       therm_id_o          => therm_id_out,
