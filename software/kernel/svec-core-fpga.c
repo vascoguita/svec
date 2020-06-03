@@ -708,9 +708,10 @@ static int svec_fpga_app_init(struct svec_fpga *svec_fpga)
 						 app_name, PLATFORM_DEVID_AUTO,
 						 res, res_n,
 						 NULL, 0);
-	err = IS_ERR(pdev);
-	if (err)
+	if (IS_ERR(pdev)) {
+		err = PTR_ERR(pdev);
 		goto err_free;
+	}
 
 	svec_fpga->app_pdev = pdev;
 
