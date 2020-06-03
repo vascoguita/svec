@@ -699,6 +699,10 @@ static int svec_fpga_app_init(struct svec_fpga *svec_fpga)
 				     app_name, SVEC_FPGA_APP_NAME_MAX);
 	if (err)
 		goto err_free;
+
+	dev_info(&svec_fpga->dev,
+		 "Application \"%s\" found at offset: 0x%08lx (res: %pr)\n",
+		 app_name, app_offset, &res[0]);
 	svec_fpga_app_restart(svec_fpga);
 	pdev = platform_device_register_resndata(&svec_fpga->dev,
 						 app_name, PLATFORM_DEVID_AUTO,
