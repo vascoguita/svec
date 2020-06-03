@@ -646,7 +646,8 @@ static int svec_fpga_app_init(struct svec_fpga *svec_fpga)
 #define SVEC_FPGA_APP_NAME_MAX 47
 #define SVEC_FPGA_APP_IRQ_BASE 6
 #define SVEC_FPGA_APP_RES_N (32 - SVEC_FPGA_APP_IRQ_BASE + 1)
-	struct vme_dev *vdev = to_vme_dev(svec_fpga->dev.parent);
+	struct svec_dev *svec_dev = to_svec_dev(svec_fpga->dev.parent);
+	struct vme_dev *vdev = to_vme_dev(svec_dev->dev.parent);
 	unsigned int res_n = SVEC_FPGA_APP_RES_N;
 	struct resource *res;
 	struct platform_device *pdev;
@@ -699,14 +700,19 @@ static int svec_fpga_app_init(struct svec_fpga *svec_fpga)
 				     app_name, SVEC_FPGA_APP_NAME_MAX);
 	if (err)
 		goto err_free;
+
+	dev_info(&svec_fpga->dev,
+		 "Application \"%s\" found at offset: 0x%08lx (res: %pr)\n",
+		 app_name, app_offset, &res[0]);
 	svec_fpga_app_restart(svec_fpga);
 	pdev = platform_device_register_resndata(&svec_fpga->dev,
 						 app_name, PLATFORM_DEVID_AUTO,
 						 res, res_n,
 						 NULL, 0);
-	err = IS_ERR(pdev);
-	if (err)
+	if (IS_ERR(pdev)) {
+		err = PTR_ERR(pdev);
 		goto err_free;
+	}
 
 	svec_fpga->app_pdev = pdev;
 
