@@ -697,9 +697,9 @@ static void svec_fpga_app_init_res_irq(struct svec_fpga *svec_fpga,
 
 #define SVEC_FPGA_APP_NAME_MAX 47
 #define SVEC_FPGA_APP_IRQ_BASE 6
-#define SVEC_FPGA_APP_RES_IRQ_START 2
+#define SVEC_FPGA_APP_RES_IRQ_START 1
 #define SVEC_FPGA_APP_RES_IRQ_N (32 - SVEC_FPGA_APP_IRQ_BASE)
-#define SVEC_FPGA_APP_RES_N (SVEC_FPGA_APP_RES_IRQ_N + 1 + 1) /* IRQs MEM DMA */
+#define SVEC_FPGA_APP_RES_N (SVEC_FPGA_APP_RES_IRQ_N + 1) /* IRQs MEM DMA */
 #define SVEC_FPGA_APP_RES_MEM 0
 static int svec_fpga_app_init(struct svec_fpga *svec_fpga)
 {
