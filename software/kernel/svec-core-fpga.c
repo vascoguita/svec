@@ -675,16 +675,37 @@ static int svec_fpga_app_init_res_mem(struct svec_fpga *svec_fpga,
 	return 0;
 }
 
+static void svec_fpga_app_init_res_irq(struct svec_fpga *svec_fpga,
+				       unsigned int first_hwirq,
+				       struct resource *res,
+				       unsigned int res_n)
+{
+	struct irq_domain *vic_domain;
+	int i, hwirq;
+
+	if (!svec_fpga->vic_pdev)
+		return;
+
+	vic_domain = svec_fpga_irq_find_host(&svec_fpga->vic_pdev->dev);
+	for (i = 0, hwirq = first_hwirq; i < res_n; ++i, ++hwirq) {
+		res[i].name = "app-irq";
+		res[i].flags = IORESOURCE_IRQ;
+		res[i].start = irq_find_mapping(vic_domain, hwirq);
+	}
+}
+
+
 #define SVEC_FPGA_APP_NAME_MAX 47
 #define SVEC_FPGA_APP_IRQ_BASE 6
-#define SVEC_FPGA_APP_RES_N (32 - SVEC_FPGA_APP_IRQ_BASE + 1)
+#define SVEC_FPGA_APP_RES_IRQ_START 2
+#define SVEC_FPGA_APP_RES_IRQ_N (32 - SVEC_FPGA_APP_IRQ_BASE)
+#define SVEC_FPGA_APP_RES_N (SVEC_FPGA_APP_RES_IRQ_N + 1 + 1) /* IRQs MEM DMA */
 #define SVEC_FPGA_APP_RES_MEM 0
 static int svec_fpga_app_init(struct svec_fpga *svec_fpga)
 {
 	unsigned int res_n = SVEC_FPGA_APP_RES_N;
 	struct resource *res;
 	struct platform_device *pdev;
-	struct irq_domain *vic_domain;
 	char app_name[SVEC_FPGA_APP_NAME_MAX];
 	unsigned long app_offset;
 	int err = 0;
@@ -705,25 +726,10 @@ static int svec_fpga_app_init(struct svec_fpga *svec_fpga)
 
 	svec_fpga_metadata_get(&svec_fpga->meta_app,
 			       svec_fpga->fpga + app_offset);
-	if (svec_fpga->vic_pdev)
-		vic_domain = irq_find_host((void *)&svec_fpga->vic_pdev->dev);
-	else
-		vic_domain = NULL;
-
-	if (vic_domain) {
-		int i, hwirq;
-
-		for (i = 1, hwirq = SVEC_FPGA_APP_IRQ_BASE;
-		     i < SVEC_FPGA_APP_RES_N;
-		     ++i, ++hwirq) {
-			res[i].name = "app-irq",
-			res[i].flags = IORESOURCE_IRQ,
-			res[i].start = irq_find_mapping(vic_domain, hwirq);
-			res[i].end = res[1].start;
-		}
-	} else {
-		res_n = 1;
-	}
+	svec_fpga_app_init_res_irq(svec_fpga,
+				   SVEC_FPGA_APP_IRQ_BASE,
+				   &res[SVEC_FPGA_APP_RES_IRQ_START],
+				   SVEC_FPGA_APP_RES_IRQ_N);
 
 	err = svec_fpga_app_id_build(svec_fpga, app_offset,
 				     app_name, SVEC_FPGA_APP_NAME_MAX);
