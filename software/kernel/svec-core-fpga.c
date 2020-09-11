@@ -194,6 +194,21 @@ static struct resource svec_fpga_vic_res[] = {
 	},
 };
 
+struct irq_domain *svec_fpga_irq_find_host(struct device *dev)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+	struct irq_fwspec fwspec = {
+		.fwnode = dev->fwnode,
+		.param_count = 2,
+		.param[0] = ((unsigned long)dev >> 32) & 0xffffffff,
+		.param[1] = ((unsigned long)dev) & 0xffffffff,
+	};
+	return irq_find_matching_fwspec(&fwspec, DOMAIN_BUS_ANY);
+#else
+	return (irq_find_host((void *)dev));
+#endif
+}
+
 static int svec_fpga_vic_init(struct svec_fpga *svec_fpga)
 {
 	struct svec_dev *svec_dev = to_svec_dev(svec_fpga->dev.parent);
@@ -344,7 +359,7 @@ static int svec_fpga_devices_init(struct svec_fpga *svec_fpga)
 	       sizeof(fpga_mfd_devs[n_mfd]));
 	n_mfd++;
 
-	vic_domain = irq_find_host((void *)&svec_fpga->vic_pdev->dev);
+	vic_domain = svec_fpga_irq_find_host((void *)&svec_fpga->vic_pdev->dev);
 	if (!vic_domain) {
 		/* Remove IRQ resource from all devices */
 		fpga_mfd_devs[0].num_resources = 1;  /* FMC I2C */
