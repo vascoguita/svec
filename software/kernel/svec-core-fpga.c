@@ -807,6 +807,9 @@ int svec_fpga_init(struct svec_dev *svec_dev, unsigned int function_nr)
 	struct resource *r = &vdev->resource[function_nr];
 	int err;
 
+	if (r->flags != IORESOURCE_MEM)
+		return -EINVAL;
+
 	svec_fpga = kzalloc(sizeof(*svec_fpga), GFP_KERNEL);
 	if (!svec_fpga)
 		return -ENOMEM;
