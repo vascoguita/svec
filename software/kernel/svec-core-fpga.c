@@ -641,41 +641,55 @@ static int svec_fpga_app_id_build(struct svec_fpga *svec_fpga,
 	return 0;
 }
 
-static int svec_fpga_app_init(struct svec_fpga *svec_fpga)
+static int svec_fpga_app_init_res_mem(struct svec_fpga *svec_fpga,
+				      unsigned int app_offset,
+				      struct resource *res)
 {
+	struct svec_dev *svec_dev = to_svec_dev(svec_fpga->dev.parent);
+	struct vme_dev *vdev = to_vme_dev(svec_dev->dev.parent);
+	int fn = svec_fpga->function_nr;
+
+	if (!app_offset)
+		return -ENODEV;
+
+	res->name  = "app-mem";
+	res->flags = IORESOURCE_MEM;
+	res->start = vme_resource_start(vdev, fn) + app_offset;
+	res->end = vme_resource_end(vdev, fn);
+
+	return 0;
+}
+
 #define SVEC_FPGA_APP_NAME_MAX 47
 #define SVEC_FPGA_APP_IRQ_BASE 6
 #define SVEC_FPGA_APP_RES_N (32 - SVEC_FPGA_APP_IRQ_BASE + 1)
-	struct svec_dev *svec_dev = to_svec_dev(svec_fpga->dev.parent);
-	struct vme_dev *vdev = to_vme_dev(svec_dev->dev.parent);
+#define SVEC_FPGA_APP_RES_MEM 0
+static int svec_fpga_app_init(struct svec_fpga *svec_fpga)
+{
 	unsigned int res_n = SVEC_FPGA_APP_RES_N;
 	struct resource *res;
 	struct platform_device *pdev;
 	struct irq_domain *vic_domain;
 	char app_name[SVEC_FPGA_APP_NAME_MAX];
 	unsigned long app_offset;
-	int err = 0, fn = svec_fpga->function_nr;
+	int err = 0;
 
+	app_offset = svec_fpga_csr_app_offset(svec_fpga);
 	res = kcalloc(SVEC_FPGA_APP_RES_N, sizeof(*res), GFP_KERNEL);
 	if (!res)
 		return -ENOMEM;
 
-	res[0].name  = "app-mem";
-	res[0].flags = IORESOURCE_MEM;
-
-	app_offset = svec_fpga_csr_app_offset(svec_fpga);
-	if (!app_offset) {
+        err = svec_fpga_app_init_res_mem(svec_fpga, app_offset,
+					 &res[SVEC_FPGA_APP_RES_MEM]);
+	if (err) {
 		dev_warn(&svec_fpga->dev, "Application not found\n");
 		err = 0;
 		goto err_free;
 	}
 
+
 	svec_fpga_metadata_get(&svec_fpga->meta_app,
 			       svec_fpga->fpga + app_offset);
-
-	res[0].start = vme_resource_start(vdev, fn) + app_offset;
-	res[0].end = vme_resource_end(vdev, fn);
-
 	if (svec_fpga->vic_pdev)
 		vic_domain = irq_find_host((void *)&svec_fpga->vic_pdev->dev);
 	else
