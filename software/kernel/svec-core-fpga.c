@@ -26,6 +26,10 @@ enum svec_fpga_csr_offsets {
 	SVEC_FPGA_CSR_FMC_PRESENT = SVEC_BASE_REGS_CSR + 0x08,
 	SVEC_FPGA_CSR_DDR_STATUS = SVEC_BASE_REGS_CSR + 0x10,
 	SVEC_FPGA_CSR_PCB_REV = SVEC_BASE_REGS_CSR + 0x14,
+	SVEC_FPGA_CSR_DDR4_ADDR = SVEC_BASE_REGS_CSR + 0x18,
+	SVEC_FPGA_CSR_DDR4_DATA = SVEC_BASE_REGS_CSR + 0x1C,
+	SVEC_FPGA_CSR_DDR5_ADDR = SVEC_BASE_REGS_CSR + 0x20,
+	SVEC_FPGA_CSR_DDR5_DATA = SVEC_BASE_REGS_CSR + 0x24,
 };
 
 enum svec_fpga_therm_offsets {
@@ -68,6 +72,22 @@ static const struct debugfs_reg32 svec_fpga_debugfs_reg32[] = {
 	{
 		.name = "PCB revision",
 		.offset = SVEC_FPGA_CSR_PCB_REV,
+	},
+	{
+		.name = "DDR4 ADDR",
+		.offset = SVEC_FPGA_CSR_DDR4_ADDR,
+	},
+	{
+		.name = "DDR4 DATA",
+		.offset = SVEC_FPGA_CSR_DDR4_DATA,
+	},
+	{
+		.name = "DDR5 ADDR",
+		.offset = SVEC_FPGA_CSR_DDR5_ADDR,
+	},
+	{
+		.name = "DDR5 DATA",
+		.offset = SVEC_FPGA_CSR_DDR5_DATA,
 	},
 };
 
