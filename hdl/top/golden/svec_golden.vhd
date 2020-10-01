@@ -154,7 +154,7 @@ begin
       g_with_onewire => True,
       g_with_spi => True,
       g_with_wr => False,
-      g_with_ddr4 => False,
+      g_with_ddr4 => True,
       g_with_ddr5 => False,
       g_app_offset => x"0000_0000",
       g_num_user_irq => 0,
