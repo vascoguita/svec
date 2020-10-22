@@ -345,14 +345,12 @@ static int svec_fpga_devices_init(struct svec_fpga *svec_fpga)
 	       sizeof(fpga_mfd_devs[n_mfd]));
 
 	n_mfd++;
-		
 	if(svec_dev->meta.cap & SVEC_META_CAP_SPI) {
 		memcpy(&fpga_mfd_devs[n_mfd],
-			&svec_fpga_mfd_devs[SVEC_FPGA_MFD_SPI],		
+			&svec_fpga_mfd_devs[SVEC_FPGA_MFD_SPI],
 			sizeof(fpga_mfd_devs[n_mfd]));
 		n_mfd++;
 	}
-	
 
 	vic_domain = irq_find_host((void *)&svec_fpga->vic_pdev->dev);
 	if (!vic_domain) {
@@ -360,7 +358,7 @@ static int svec_fpga_devices_init(struct svec_fpga *svec_fpga)
 		fpga_mfd_devs[0].num_resources = 1;  /* FMC I2C */
 		fpga_mfd_devs[1].num_resources = 1;  /* SPI */
 	}
-	
+
 	err = mfd_add_devices(&svec_fpga->dev, PLATFORM_DEVID_AUTO,
 			      fpga_mfd_devs, n_mfd,
 			      &vdev->resource[svec_fpga->function_nr],
