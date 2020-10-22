@@ -253,10 +253,12 @@ static struct resource svec_fpga_fmc_i2c_res[] = {
 	},
 };
 
+#define SVEC_FPGA_WB_CLK_HZ 62500000
+#define SVEC_FPGA_WB_CLK_KHZ (SVEC_FPGA_WB_CLK_HZ / 1000)
 static struct ocores_i2c_platform_data svec_fpga_fmc_i2c_pdata = {
 	.reg_shift = 2, /* 32bit aligned */
 	.reg_io_width = 4,
-	.clock_khz = 62500,
+	.clock_khz = SVEC_FPGA_WB_CLK_KHZ,
 	.big_endian = 1,
 	.num_devices = 0,
 	.devices = NULL,
@@ -281,21 +283,21 @@ struct flash_platform_data svec_flash_pdata = {
 	.name = "svec-flash",
 	.parts = NULL,
 	.nr_parts = 0,
-	.type = "m25p32",
+	.type = "m25p128",
 };
 
 static struct spi_board_info svec_fpga_spi_devices_info[] = {
 	{
-		.modalias = "m25p32",
-		.max_speed_hz = 75000000,
+		.modalias = "m25p128",
+		.max_speed_hz = SVEC_FPGA_WB_CLK_HZ / 4,
 		.chip_select = 0,
 		.platform_data = &svec_flash_pdata,
 	}
 };
 
 static struct spi_ocores_platform_data svec_fpga_spi_pdata = {
-	.big_endian = 0,
-	.clock_hz = 65200000,
+	.big_endian = 1,
+	.clock_hz = SVEC_FPGA_WB_CLK_HZ,
 	.num_devices = ARRAY_SIZE(svec_fpga_spi_devices_info),
 	.devices = svec_fpga_spi_devices_info,
 };
@@ -330,6 +332,7 @@ static int svec_fpga_devices_init(struct svec_fpga *svec_fpga)
 	struct irq_domain *vic_domain;
 	unsigned int n_mfd = 0;
 	int err;
+	struct svec_dev *svec_dev = dev_get_drvdata(svec_fpga->dev.parent);
 
 	fpga_mfd_devs = devm_kzalloc(&svec_fpga->dev,
 				     __fpga_mfd_devs_size(),
@@ -340,7 +343,16 @@ static int svec_fpga_devices_init(struct svec_fpga *svec_fpga)
 	memcpy(&fpga_mfd_devs[n_mfd],
 	       &svec_fpga_mfd_devs[SVEC_FPGA_MFD_FMC_I2C],
 	       sizeof(fpga_mfd_devs[n_mfd]));
+
 	n_mfd++;
+		
+	if(svec_dev->meta.cap & SVEC_META_CAP_SPI) {
+		memcpy(&fpga_mfd_devs[n_mfd],
+			&svec_fpga_mfd_devs[SVEC_FPGA_MFD_SPI],		
+			sizeof(fpga_mfd_devs[n_mfd]));
+		n_mfd++;
+	}
+	
 
 	vic_domain = irq_find_host((void *)&svec_fpga->vic_pdev->dev);
 	if (!vic_domain) {
@@ -348,6 +360,7 @@ static int svec_fpga_devices_init(struct svec_fpga *svec_fpga)
 		fpga_mfd_devs[0].num_resources = 1;  /* FMC I2C */
 		fpga_mfd_devs[1].num_resources = 1;  /* SPI */
 	}
+	
 	err = mfd_add_devices(&svec_fpga->dev, PLATFORM_DEVID_AUTO,
 			      fpga_mfd_devs, n_mfd,
 			      &vdev->resource[svec_fpga->function_nr],
