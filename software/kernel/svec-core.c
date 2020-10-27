@@ -30,7 +30,7 @@
 #include <linux/uaccess.h>
 #include <linux/vmalloc.h>
 #include <linux/fpga/fpga-mgr.h>
-#include <vmebus.h>
+#include "vmebus.h"
 
 #include "svec.h"
 #include "svec-compat.h"
@@ -527,6 +527,9 @@ static int svec_probe(struct device *dev, unsigned int ndev)
 	struct vme_dev *vdev = to_vme_dev(dev);
 	struct svec_dev *svec;
 	int err;
+
+	if (WARN(dev == NULL, "Invalid VME Device\n"))
+		return -1;
 
 	svec = kzalloc(sizeof(struct svec_dev), GFP_KERNEL);
 	if (!svec) {
