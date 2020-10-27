@@ -30,7 +30,7 @@
 #include <linux/uaccess.h>
 #include <linux/vmalloc.h>
 #include <linux/fpga/fpga-mgr.h>
-#include "vmebus.h"
+#include <vmebus.h>
 
 #include "svec.h"
 #include "svec-compat.h"
