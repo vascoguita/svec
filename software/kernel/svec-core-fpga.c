@@ -13,6 +13,8 @@
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 #include <linux/delay.h>
+#include <linux/sizes.h>
+#include <linux/mtd/partitions.h>
 #include "svec.h"
 #include "svec-core-fpga.h"
 
@@ -315,10 +317,29 @@ static struct resource svec_fpga_spi_res[] = {
 	},
 };
 
+static struct mtd_partition svec_flash_parts[] = {
+	[0] = {
+		.name = "SFPGA",
+		.offset = 0,
+		.size = SZ_1M,
+	},
+	[1] = {
+		.name = "AFPGA",
+		.offset = 0x100000,
+		.size = 5 * SZ_1M,
+	},
+	[2] = {
+		.name = "AFPGA_DATA",
+		.offset = MTDPART_OFS_APPEND,
+		.size = MTDPART_SIZ_FULL,
+	},
+
+};
+
 struct flash_platform_data svec_flash_pdata = {
 	.name = "svec-flash",
-	.parts = NULL,
-	.nr_parts = 0,
+	.parts = svec_flash_parts,
+	.nr_parts = ARRAY_SIZE(svec_flash_parts),
 	.type = "m25p128",
 };
 
