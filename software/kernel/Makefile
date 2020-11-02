@@ -11,6 +11,7 @@ VMEBRIDGE_ABS ?= $(abspath $(VMEBRIDGE))
 FPGA_MGR_ABS ?= $(abspath $(FPGA_MGR))
 FMC_ABS ?= $(abspath $(FMC))
 I2C_ABS ?= $(abspath $(I2C))
+SPI_ABS ?= $(abspath $(SPI))
 
 VERSION = $(shell git describe --dirty --long --tags)
 
@@ -38,4 +39,5 @@ modules help coccicheck modules_install: svec-core-fpga.h
 		CONFIG_FPGA_MGR_BACKPORT=$(CONFIG_FPGA_MGR_BACKPORT) \
 		FMC_ABS=$(FMC_ABS) \
 		I2C_ABS=$(I2C_ABS) \
+		SPI_ABS=$(SPI_ABS) \
 		$@

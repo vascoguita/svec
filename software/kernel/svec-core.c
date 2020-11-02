@@ -562,6 +562,9 @@ static int svec_probe(struct device *dev, unsigned int ndev)
 	struct svec_dev *svec;
 	int err;
 
+	if (WARN(dev == NULL, "Invalid VME Device\n"))
+		return -1;
+
 	svec = kzalloc(sizeof(struct svec_dev), GFP_KERNEL);
 	if (!svec) {
 		err = -ENOMEM;

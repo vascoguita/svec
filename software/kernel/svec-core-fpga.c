@@ -9,9 +9,12 @@
 #include <linux/fpga/fpga-mgr.h>
 #include <linux/types.h>
 #include <linux/platform_data/i2c-ocores.h>
+#include <linux/platform_data/spi-ocores.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 #include <linux/delay.h>
+#include <linux/sizes.h>
+#include <linux/mtd/partitions.h>
 #include "svec.h"
 #include "svec-core-fpga.h"
 
@@ -24,8 +27,13 @@ enum svec_fpga_csr_offsets {
 	SVEC_FPGA_CSR_APP_OFF = SVEC_BASE_REGS_CSR + 0x00,
 	SVEC_FPGA_CSR_RESETS = SVEC_BASE_REGS_CSR + 0x04,
 	SVEC_FPGA_CSR_FMC_PRESENT = SVEC_BASE_REGS_CSR + 0x08,
+	SVEC_FPGA_CSR_UNUSED = SVEC_BASE_REGS_CSR + 0x0C,
 	SVEC_FPGA_CSR_DDR_STATUS = SVEC_BASE_REGS_CSR + 0x10,
 	SVEC_FPGA_CSR_PCB_REV = SVEC_BASE_REGS_CSR + 0x14,
+	SVEC_FPGA_CSR_DDR4_ADDR = SVEC_BASE_REGS_CSR + 0x18,
+	SVEC_FPGA_CSR_DDR4_DATA = SVEC_BASE_REGS_CSR + 0x1C,
+	SVEC_FPGA_CSR_DDR5_ADDR = SVEC_BASE_REGS_CSR + 0x20,
+	SVEC_FPGA_CSR_DDR5_DATA = SVEC_BASE_REGS_CSR + 0x24,
 };
 
 enum svec_fpga_therm_offsets {
@@ -68,6 +76,22 @@ static const struct debugfs_reg32 svec_fpga_debugfs_reg32[] = {
 	{
 		.name = "PCB revision",
 		.offset = SVEC_FPGA_CSR_PCB_REV,
+	},
+	{
+		.name = "DDR4 ADDR",
+		.offset = SVEC_FPGA_CSR_DDR4_ADDR,
+	},
+	{
+		.name = "DDR4 DATA",
+		.offset = SVEC_FPGA_CSR_DDR4_DATA,
+	},
+	{
+		.name = "DDR5 ADDR",
+		.offset = SVEC_FPGA_CSR_DDR5_ADDR,
+	},
+	{
+		.name = "DDR5 DATA",
+		.offset = SVEC_FPGA_CSR_DDR5_DATA,
 	},
 };
 
@@ -194,6 +218,21 @@ static struct resource svec_fpga_vic_res[] = {
 	},
 };
 
+struct irq_domain *svec_fpga_irq_find_host(struct device *dev)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+	struct irq_fwspec fwspec = {
+		.fwnode = dev->fwnode,
+		.param_count = 2,
+		.param[0] = ((unsigned long)dev >> 32) & 0xffffffff,
+		.param[1] = ((unsigned long)dev) & 0xffffffff,
+	};
+	return irq_find_matching_fwspec(&fwspec, DOMAIN_BUS_ANY);
+#else
+	return (irq_find_host((void *)dev));
+#endif
+}
+
 static int svec_fpga_vic_init(struct svec_fpga *svec_fpga)
 {
 	struct svec_dev *svec_dev = to_svec_dev(svec_fpga->dev.parent);
@@ -252,15 +291,17 @@ static struct resource svec_fpga_fmc_i2c_res[] = {
 	},
 };
 
+#define SVEC_FPGA_WB_CLK_HZ 62500000
+#define SVEC_FPGA_WB_CLK_KHZ (SVEC_FPGA_WB_CLK_HZ / 1000)
 static struct ocores_i2c_platform_data svec_fpga_fmc_i2c_pdata = {
 	.reg_shift = 2, /* 32bit aligned */
 	.reg_io_width = 4,
-	.clock_khz = 62500,
+	.clock_khz = SVEC_FPGA_WB_CLK_KHZ,
 	.big_endian = 1,
 	.num_devices = 0,
 	.devices = NULL,
 };
-#if 0
+
 static struct resource svec_fpga_spi_res[] = {
 	{
 		.name = "spi-ocores-mem",
@@ -276,30 +317,48 @@ static struct resource svec_fpga_spi_res[] = {
 	},
 };
 
+static struct mtd_partition svec_flash_parts[] = {
+	[0] = {
+		.name = "SFPGA",
+		.offset = 0,
+		.size = SZ_1M,
+	},
+	[1] = {
+		.name = "AFPGA",
+		.offset = 0x100000,
+		.size = 5 * SZ_1M,
+	},
+	[2] = {
+		.name = "AFPGA_DATA",
+		.offset = MTDPART_OFS_APPEND,
+		.size = MTDPART_SIZ_FULL,
+	},
+
+};
+
 struct flash_platform_data svec_flash_pdata = {
 	.name = "svec-flash",
-	.parts = NULL,
-	.nr_parts = 0,
-	.type = "m25p32",
+	.parts = svec_flash_parts,
+	.nr_parts = ARRAY_SIZE(svec_flash_parts),
+	.type = "m25p128",
 };
 
 static struct spi_board_info svec_fpga_spi_devices_info[] = {
 	{
-		.modalias = "m25p32",
-		.max_speed_hz = 75000000,
+		.modalias = "m25p128",
+		.max_speed_hz = SVEC_FPGA_WB_CLK_HZ / 4,
 		.chip_select = 0,
 		.platform_data = &svec_flash_pdata,
 	}
 };
 
 static struct spi_ocores_platform_data svec_fpga_spi_pdata = {
-	.big_endian = 0,
-	.clock_hz = 65200000,
+	.big_endian = 1,
+	.clock_hz = SVEC_FPGA_WB_CLK_HZ,
 	.num_devices = ARRAY_SIZE(svec_fpga_spi_devices_info),
 	.devices = svec_fpga_spi_devices_info,
 };
 
-#endif
 static const struct mfd_cell svec_fpga_mfd_devs[] = {
 	[SVEC_FPGA_MFD_FMC_I2C] = {
 		.name = "i2c-ohwr",
@@ -308,7 +367,6 @@ static const struct mfd_cell svec_fpga_mfd_devs[] = {
 		.num_resources = ARRAY_SIZE(svec_fpga_fmc_i2c_res),
 		.resources = svec_fpga_fmc_i2c_res,
 	},
-#if 0
 	[SVEC_FPGA_MFD_SPI] = {
 		.name = "spi-ocores",
 		.platform_data = &svec_fpga_spi_pdata,
@@ -316,7 +374,6 @@ static const struct mfd_cell svec_fpga_mfd_devs[] = {
 		.num_resources = ARRAY_SIZE(svec_fpga_spi_res),
 		.resources = svec_fpga_spi_res,
 	},
-#endif
 };
 
 static inline size_t __fpga_mfd_devs_size(void)
@@ -332,6 +389,7 @@ static int svec_fpga_devices_init(struct svec_fpga *svec_fpga)
 	struct irq_domain *vic_domain;
 	unsigned int n_mfd = 0;
 	int err;
+	struct svec_dev *svec_dev = dev_get_drvdata(svec_fpga->dev.parent);
 
 	fpga_mfd_devs = devm_kzalloc(&svec_fpga->dev,
 				     __fpga_mfd_devs_size(),
@@ -342,14 +400,22 @@ static int svec_fpga_devices_init(struct svec_fpga *svec_fpga)
 	memcpy(&fpga_mfd_devs[n_mfd],
 	       &svec_fpga_mfd_devs[SVEC_FPGA_MFD_FMC_I2C],
 	       sizeof(fpga_mfd_devs[n_mfd]));
-	n_mfd++;
 
-	vic_domain = irq_find_host((void *)&svec_fpga->vic_pdev->dev);
+	n_mfd++;
+	if(svec_dev->meta.cap & SVEC_META_CAP_SPI) {
+		memcpy(&fpga_mfd_devs[n_mfd],
+			&svec_fpga_mfd_devs[SVEC_FPGA_MFD_SPI],
+			sizeof(fpga_mfd_devs[n_mfd]));
+		n_mfd++;
+	}
+
+	vic_domain = svec_fpga_irq_find_host((void *)&svec_fpga->vic_pdev->dev);
 	if (!vic_domain) {
 		/* Remove IRQ resource from all devices */
 		fpga_mfd_devs[0].num_resources = 1;  /* FMC I2C */
 		fpga_mfd_devs[1].num_resources = 1;  /* SPI */
 	}
+
 	err = mfd_add_devices(&svec_fpga->dev, PLATFORM_DEVID_AUTO,
 			      fpga_mfd_devs, n_mfd,
 			      &vdev->resource[svec_fpga->function_nr],
@@ -641,60 +707,80 @@ static int svec_fpga_app_id_build(struct svec_fpga *svec_fpga,
 	return 0;
 }
 
-static int svec_fpga_app_init(struct svec_fpga *svec_fpga)
+static int svec_fpga_app_init_res_mem(struct svec_fpga *svec_fpga,
+				      unsigned int app_offset,
+				      struct resource *res)
 {
-#define SVEC_FPGA_APP_NAME_MAX 47
-#define SVEC_FPGA_APP_IRQ_BASE 6
-#define SVEC_FPGA_APP_RES_N (32 - SVEC_FPGA_APP_IRQ_BASE + 1)
 	struct svec_dev *svec_dev = to_svec_dev(svec_fpga->dev.parent);
 	struct vme_dev *vdev = to_vme_dev(svec_dev->dev.parent);
+	int fn = svec_fpga->function_nr;
+
+	if (!app_offset)
+		return -ENODEV;
+
+	res->name  = "app-mem";
+	res->flags = IORESOURCE_MEM;
+	res->start = vme_resource_start(vdev, fn) + app_offset;
+	res->end = vme_resource_end(vdev, fn);
+
+	return 0;
+}
+
+static void svec_fpga_app_init_res_irq(struct svec_fpga *svec_fpga,
+				       unsigned int first_hwirq,
+				       struct resource *res,
+				       unsigned int res_n)
+{
+	struct irq_domain *vic_domain;
+	int i, hwirq;
+
+	if (!svec_fpga->vic_pdev)
+		return;
+
+	vic_domain = svec_fpga_irq_find_host(&svec_fpga->vic_pdev->dev);
+	for (i = 0, hwirq = first_hwirq; i < res_n; ++i, ++hwirq) {
+		res[i].name = "app-irq";
+		res[i].flags = IORESOURCE_IRQ;
+		res[i].start = irq_find_mapping(vic_domain, hwirq);
+	}
+}
+
+
+#define SVEC_FPGA_APP_NAME_MAX 47
+#define SVEC_FPGA_APP_IRQ_BASE 6
+#define SVEC_FPGA_APP_RES_IRQ_START 1
+#define SVEC_FPGA_APP_RES_IRQ_N (32 - SVEC_FPGA_APP_IRQ_BASE)
+#define SVEC_FPGA_APP_RES_N (SVEC_FPGA_APP_RES_IRQ_N + 1) /* IRQs MEM DMA */
+#define SVEC_FPGA_APP_RES_MEM 0
+static int svec_fpga_app_init(struct svec_fpga *svec_fpga)
+{
 	unsigned int res_n = SVEC_FPGA_APP_RES_N;
 	struct resource *res;
 	struct platform_device *pdev;
-	struct irq_domain *vic_domain;
 	char app_name[SVEC_FPGA_APP_NAME_MAX];
 	unsigned long app_offset;
-	int err = 0, fn = svec_fpga->function_nr;
+	int err = 0;
 
+	app_offset = svec_fpga_csr_app_offset(svec_fpga);
 	res = kcalloc(SVEC_FPGA_APP_RES_N, sizeof(*res), GFP_KERNEL);
 	if (!res)
 		return -ENOMEM;
 
-	res[0].name  = "app-mem";
-	res[0].flags = IORESOURCE_MEM;
-
-	app_offset = svec_fpga_csr_app_offset(svec_fpga);
-	if (!app_offset) {
+        err = svec_fpga_app_init_res_mem(svec_fpga, app_offset,
+					 &res[SVEC_FPGA_APP_RES_MEM]);
+	if (err) {
 		dev_warn(&svec_fpga->dev, "Application not found\n");
 		err = 0;
 		goto err_free;
 	}
 
+
 	svec_fpga_metadata_get(&svec_fpga->meta_app,
 			       svec_fpga->fpga + app_offset);
-
-	res[0].start = vme_resource_start(vdev, fn) + app_offset;
-	res[0].end = vme_resource_end(vdev, fn);
-
-	if (svec_fpga->vic_pdev)
-		vic_domain = irq_find_host((void *)&svec_fpga->vic_pdev->dev);
-	else
-		vic_domain = NULL;
-
-	if (vic_domain) {
-		int i, hwirq;
-
-		for (i = 1, hwirq = SVEC_FPGA_APP_IRQ_BASE;
-		     i < SVEC_FPGA_APP_RES_N;
-		     ++i, ++hwirq) {
-			res[i].name = "app-irq",
-			res[i].flags = IORESOURCE_IRQ,
-			res[i].start = irq_find_mapping(vic_domain, hwirq);
-			res[i].end = res[1].start;
-		}
-	} else {
-		res_n = 1;
-	}
+	svec_fpga_app_init_res_irq(svec_fpga,
+				   SVEC_FPGA_APP_IRQ_BASE,
+				   &res[SVEC_FPGA_APP_RES_IRQ_START],
+				   SVEC_FPGA_APP_RES_IRQ_N);
 
 	err = svec_fpga_app_id_build(svec_fpga, app_offset,
 				     app_name, SVEC_FPGA_APP_NAME_MAX);
@@ -792,6 +878,9 @@ int svec_fpga_init(struct svec_dev *svec_dev, unsigned int function_nr)
 	struct vme_dev *vdev = to_vme_dev(svec_dev->dev.parent);
 	struct resource *r = &vdev->resource[function_nr];
 	int err;
+
+	if (r->flags != IORESOURCE_MEM)
+		return -EINVAL;
 
 	svec_fpga = kzalloc(sizeof(*svec_fpga), GFP_KERNEL);
 	if (!svec_fpga)
