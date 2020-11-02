@@ -2,6 +2,17 @@
 Change Log
 ==========
 
+1.5.0 - 2020-11-02
+===================
+Added
+-----
+- sw: add SPI flash partitions
+- hdl: enable DDR4
+
+Changed
+-------
+- sw: internal driver improvements
+
 1.4.12 - 2020-06-03
 ===================
 Added
