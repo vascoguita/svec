@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-[1.4.12] 2020-06-03
+1.4.12 - 2020-06-03
 ===================
 Added
 -----
@@ -13,13 +13,13 @@ Fixed
 -----
 - [sw] impossibility of loading application because of wrong address space
 
-[1.4.11] 2020-05-20
+1.4.11 - 2020-05-20
 ===================
 Added
 -----
 - [hdl] export DDMTD clock output
 
-[1.4.10] 2020-05-12
+1.4.10 - 2020-05-12
 ===================
 Added
 -----
@@ -39,21 +39,21 @@ Changed
 - [sw] on device removal the IRQ vector number in the CR/CSR space is set
   to 0x0
 
-[1.4.9] 2020-03-10
+1.4.9 - 2020-03-10
 ==================
 Fixed
 -----
 - [sw] reduce allocation on stack
 - [sw] automatically remove device after FPGA reprogram (otherwise unusable)
 
-[1.4.8] 2020-02-12
+1.4.8 - 2020-02-12
 ==================
 Fixed
 -----
 - [sw] fix kernel crash when programming new bitstream
 
 
-[1.4.7] 2020-01-15
+1.4.7 - 2020-01-15
 ==================
 Added
 -----
@@ -66,43 +66,43 @@ Fixed
 - [sw] Update svec-flasher to work with new type of flash memory used in
   newer SVEC boards
 
-[1.4.6] 2019-12-16
+1.4.6 - 2019-12-16
 ==================
 Changed
 -------
 - [sw] better integration in coht, rename environment variable to FPGA_MGR
 
-[1.4.5] 2019-12-16
+1.4.5 - 2019-12-16
 ==================
 Fixed
 -----
 - [sw] suggested fixed reported by checkpatch and coccicheck
 
-[1.4.4] 2019-12-13
+1.4.4 - 2019-12-13
 ==================
 Fixed
 -----
 - [sw] soft dependency from i2c_ohwr to i2c-ocores
 
-[1.4.3] 2019-10-17
+1.4.3 - 2019-10-17
 ==================
 Added
 -----
 - [doc] sphinx documentation
 
-[1.4.2] 2019-10-17
+1.4.2 - 2019-10-17
 ==================
 Changed
 -------
 - [sw] show application metadata in debugfs
 
-[1.4.1] 2019-10-15
+1.4.1 - 2019-10-15
 ==================
 Fixed
 -----
 - [sw] fix building system failure
 
-[1.4.0] 2019-09-11
+1.4.0 - 2019-09-11
 ==================
 Added
 -----
