@@ -2,6 +2,14 @@
 Change Log
 ==========
 
+1.5.1 - 2020-11-24
+==================
+Fixed
+-----
+- sw: NULL pointer at load time when using the SPI controller
+- sw: remove old unload procedure that causes BUG_ON to be triggered
+  without valid reasons
+
 1.5.0 - 2020-11-02
 ===================
 Added
