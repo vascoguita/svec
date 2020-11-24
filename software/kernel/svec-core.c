@@ -95,10 +95,6 @@ static ssize_t svec_dbg_fw_write(struct file *file,
 	if (err)
 		return -EFAULT;
 
-	spin_lock(&svec_dev->lock);
-	svec_dev->flags |= SVEC_DEV_FLAGS_REPROGRAMMED;
-	spin_unlock(&svec_dev->lock);
-
 	err = svec_fw_load(svec_dev, buf_l);
 	if (err)
 		dev_err(&svec_dev->dev,
@@ -638,14 +634,6 @@ static int svec_remove(struct device *dev, unsigned int ndev)
 	fpga_mgr_unregister(svec->mgr);
 	fpga_mgr_free(svec->mgr);
 	svec_vme_exit(svec);
-
-	if ((svec->flags & SVEC_DEV_FLAGS_REPROGRAMMED) == 0) {
-		/*
-		 * If FPGA is REPROGRAMMED then there is
-		 * no device to disable
-		 */
-		vme_disable_device(to_vme_dev(svec->dev.parent));
-	}
 	device_unregister(&svec->dev);
 	kfree(svec);
 

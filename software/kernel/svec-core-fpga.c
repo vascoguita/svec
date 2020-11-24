@@ -970,7 +970,6 @@ int svec_fpga_exit(struct svec_dev *svec_dev)
 		return 0;
 
 	/* this function must run before re-flashing */
-	BUG_ON(svec_dev->flags & SVEC_DEV_FLAGS_REPROGRAMMED);
 	svec_fpga_app_exit(svec_fpga);
 	svec_fmc_exit(svec_fpga);
 	svec_fpga_devices_exit(svec_fpga);
