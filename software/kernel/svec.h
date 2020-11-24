@@ -106,7 +106,6 @@ static inline struct svec_fpga *to_svec_fpga(struct device *_dev)
 }
 
 
-#define SVEC_DEV_FLAGS_REPROGRAMMED BIT(0)
 /**
  * struct svec_dev - SVEC instance
  * It describes a SVEC device instance.
