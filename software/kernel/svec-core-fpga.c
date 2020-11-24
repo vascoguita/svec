@@ -318,17 +318,15 @@ static struct resource svec_fpga_spi_res[] = {
 };
 
 static struct mtd_partition svec_flash_parts[] = {
-	[0] = {
+	{
 		.name = "SFPGA",
 		.offset = 0,
 		.size = SZ_1M,
-	},
-	[1] = {
+	}, {
 		.name = "AFPGA",
 		.offset = 0x100000,
 		.size = 5 * SZ_1M,
-	},
-	[2] = {
+	}, {
 		.name = "AFPGA_DATA",
 		.offset = MTDPART_OFS_APPEND,
 		.size = MTDPART_SIZ_FULL,
@@ -385,11 +383,11 @@ static inline size_t __fpga_mfd_devs_size(void)
 static int svec_fpga_devices_init(struct svec_fpga *svec_fpga)
 {
 	struct vme_dev *vdev = to_vme_dev(svec_fpga->dev.parent->parent);
+	struct svec_dev *svec_dev = dev_get_drvdata(&vdev->dev);
 	struct mfd_cell *fpga_mfd_devs;
 	struct irq_domain *vic_domain;
 	unsigned int n_mfd = 0;
 	int err;
-	struct svec_dev *svec_dev = dev_get_drvdata(svec_fpga->dev.parent);
 
 	fpga_mfd_devs = devm_kzalloc(&svec_fpga->dev,
 				     __fpga_mfd_devs_size(),
@@ -972,7 +970,6 @@ int svec_fpga_exit(struct svec_dev *svec_dev)
 		return 0;
 
 	/* this function must run before re-flashing */
-	BUG_ON(svec_dev->flags & SVEC_DEV_FLAGS_REPROGRAMMED);
 	svec_fpga_app_exit(svec_fpga);
 	svec_fmc_exit(svec_fpga);
 	svec_fpga_devices_exit(svec_fpga);
