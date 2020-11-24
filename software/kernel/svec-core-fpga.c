@@ -383,11 +383,11 @@ static inline size_t __fpga_mfd_devs_size(void)
 static int svec_fpga_devices_init(struct svec_fpga *svec_fpga)
 {
 	struct vme_dev *vdev = to_vme_dev(svec_fpga->dev.parent->parent);
+	struct svec_dev *svec_dev = dev_get_drvdata(&vdev->dev);
 	struct mfd_cell *fpga_mfd_devs;
 	struct irq_domain *vic_domain;
 	unsigned int n_mfd = 0;
 	int err;
-	struct svec_dev *svec_dev = dev_get_drvdata(svec_fpga->dev.parent);
 
 	fpga_mfd_devs = devm_kzalloc(&svec_fpga->dev,
 				     __fpga_mfd_devs_size(),
