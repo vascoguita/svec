@@ -42,14 +42,6 @@ enum svec_fpga_therm_offsets {
 	SVEC_FPGA_THERM_TEMP = SVEC_BASE_REGS_THERM_ID + 0x8,
 };
 
-enum svec_fpga_meta_cap_mask {
-	SVEC_META_CAP_VIC = BIT(0),
-	SVEC_META_CAP_THERM = BIT(1),
-	SVEC_META_CAP_SPI = BIT(2),
-	SVEC_META_CAP_WR = BIT(3),
-	SVEC_META_CAP_BLD = BIT(4),
-};
-
 static void svec_fpga_metadata_get(struct svec_meta_id *meta,
 				   void __iomem *fpga)
 {
