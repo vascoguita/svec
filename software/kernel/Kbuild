@@ -19,6 +19,7 @@ ccflags-$(CONFIG_FPGA_MGR_BACKPORT) += -DCONFIG_FPGA_MGR_BACKPORT
 ccflags-y += -I$(FMC_ABS)/include
 ccflags-y += -I$(I2C_ABS)/include
 ccflags-y += -I$(SPI_ABS)/include
+ccflags-y += -I$(src)/../include
 
 # priority to I2C headers from our sources
 LINUXINCLUDE := -I$(FMC_ABS)/include -I$(FMC_ABS)/include/linux -I$(I2C_ABS)/include -I$(I2C_ABS)/include/linux  -I$(SPI_ABS)/include -I$(SPI_ABS)/include/linux $(LINUXINCLUDE)

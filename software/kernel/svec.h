@@ -11,13 +11,11 @@
 #include <linux/fmc.h>
 #include <linux/spinlock.h>
 #include <vmebus.h>
+#include <uapi/linux/svec.h>
 
 #include "svec-core-fpga.h"
 
-#define PCI_VENDOR_ID_CERN      (0x10DC)
-
 #define SVEC_BASE_LOADER	0x70000
-#define SVEC_FMC_SLOTS		2
 
 /* On FPGA components */
 #define SVEC_GOLDEN_ADDR	0x10000
@@ -59,30 +57,6 @@ enum {
 	SVEC_META_CAP = SVEC_META_BASE + FPGA_META_CAP,
 	SVEC_META_UUID = SVEC_META_BASE + FPGA_META_UUID,
 };
-
-#define SVEC_META_VENDOR_ID PCI_VENDOR_ID_CERN
-#define SVEC_META_DEVICE_ID 0x53564543
-#define SVEC_META_BOM_BE 0xFFFE0000
-#define SVEC_META_BOM_END_MASK 0xFFFF0000
-#define SVEC_META_BOM_VER_MASK 0x0000FFFF
-#define SVEC_META_VERSION_MASK 0xFFFF0000
-#define SVEC_META_VERSION_1_4 0x01040000
-
-/**
- * struct svec_meta_id Metadata
- */
-struct svec_meta_id {
-	uint32_t vendor;
-	uint32_t device;
-	uint32_t version;
-	uint32_t bom;
-	uint32_t src[4];
-	uint32_t cap;
-	uint32_t uuid[4];
-};
-
-#define SVEC_FUNC_NR 1
-#define SVEC_FMC_SLOTS 2
 
 struct svec_fpga {
 	struct device dev;
