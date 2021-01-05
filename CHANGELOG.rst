@@ -2,6 +2,16 @@
 Change Log
 ==========
 
+1.5.2 - 2020-11-24
+==================
+Added
+-----
+- sw: tool to inspect SVEC bitstream ROM
+
+Fixed
+-----
+- hdl: svec-base version
+
 1.5.1 - 2020-11-24
 ==================
 Fixed
