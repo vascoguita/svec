@@ -1,7 +1,7 @@
 memory-map:
   name: svec_base_regs
   bus: wb-32-be
-  size: 0x2000
+  size: 0x4000
   children:
     - submap:
         name: metadata
@@ -75,17 +75,6 @@ memory-map:
             type: wire
             write-strobe: True
        - reg:
-          name: ddr4_data
-          description: data to read or to write in ddr4
-          access: rw
-          width: 32
-          x-hdl:
-            type: wire
-            read-strobe: True
-            write-strobe: True
-            read-ack: True
-            write-ack: True
-       - reg:
           name: ddr5_addr
           description: address of data to read or to write
           access: rw
@@ -93,17 +82,6 @@ memory-map:
           x-hdl:
             type: wire
             write-strobe: True
-       - reg:
-          name: ddr5_data
-          description: data to read or to write in ddr5
-          access: rw
-          width: 32
-          x-hdl:
-            type: wire
-            read-strobe: True
-            write-strobe: True
-            read-ack: True
-            write-ack: True
     - submap:
         name: therm_id
         description: Thermometer and unique id
@@ -139,6 +117,7 @@ memory-map:
     - submap:
         name: buildinfo
         description: a ROM containing build information
+        address: 0x200
         size: 0x100
         interface: sram
     - submap:
@@ -146,6 +125,22 @@ memory-map:
         address: 0x1000
         description: white-rabbit core registers
         comment: In particular, the vuart is at 0x1500
+        size: 0x800
+        interface: wb-32-be
+        x-hdl:
+          busgroup: True
+    - submap:
+        name: ddr4_data
+        description: DMA page for ddr4
+        address: 0x2000
+        size: 0x1000
+        interface: wb-32-be
+        x-hdl:
+          busgroup: True
+    - submap:
+        name: ddr5_data
+        description: DMA page for ddr5
+        address: 0x3000
         size: 0x1000
         interface: wb-32-be
         x-hdl:

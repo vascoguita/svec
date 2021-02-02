@@ -359,19 +359,10 @@ architecture top of svec_base_wr is
   signal csr_ddr4_addr        :    std_logic_vector(31 downto 0);
 
   -- data to read or to write in ddr4
-  signal csr_ddr4_data_in   :    std_logic_vector(31 downto 0);
-  signal csr_ddr4_data_out  :    std_logic_vector(31 downto 0);
-  signal csr_ddr4_data_wr   :    std_logic;
-  signal csr_ddr4_data_rd   :    std_logic;
-  signal csr_ddr4_data_wack :    std_logic;
-  signal csr_ddr4_data_rack :    std_logic;
-
-  --
-  signal ddr4_read_ip  : std_logic;
-  signal ddr4_write_ip : std_logic;
-
-  signal ddr4_wb_out     : t_wishbone_master_out;
-  signal ddr4_wb_in      : t_wishbone_master_in;
+  signal ddr4_data_in   :    t_wishbone_master_in;
+  signal ddr4_data_out  :    t_wishbone_master_out;
+  signal ddr4_data_stb_d :    std_logic;
+  signal ddr4_data_stb :    std_logic;
 
   --  Address for ddr5.
   signal csr_ddr5_addr_out    :    std_logic_vector(31 downto 0);
@@ -379,19 +370,10 @@ architecture top of svec_base_wr is
   signal csr_ddr5_addr        :    std_logic_vector(31 downto 0);
 
   -- data to read or to write in ddr5
-  signal csr_ddr5_data_in   :    std_logic_vector(31 downto 0);
-  signal csr_ddr5_data_out  :    std_logic_vector(31 downto 0);
-  signal csr_ddr5_data_wr   :    std_logic;
-  signal csr_ddr5_data_rd   :    std_logic;
-  signal csr_ddr5_data_wack :    std_logic;
-  signal csr_ddr5_data_rack :    std_logic;
-
-  --
-  signal ddr5_read_ip  : std_logic;
-  signal ddr5_write_ip : std_logic;
-
-  signal ddr5_wb_out     : t_wishbone_master_out;
-  signal ddr5_wb_in      : t_wishbone_master_in;
+  signal ddr5_data_in   :    t_wishbone_master_in;
+  signal ddr5_data_out  :    t_wishbone_master_out;
+  signal ddr5_data_stb_d :    std_logic;
+  signal ddr5_data_stb :    std_logic;
 
   signal vme_wb_out     : t_wishbone_master_out;
   signal vme_wb_in      : t_wishbone_master_in;
@@ -545,7 +527,7 @@ begin  -- architecture top
   --  Mini-crossbar from vme to carrier and application bus.
   inst_split: entity work.xwb_split
     generic map (
-      g_mask => x"ffff_e000"
+      g_mask => x"ffff_c000"
     )
     port map (
       clk_sys_i => clk_sys_62m5,
@@ -558,13 +540,13 @@ begin  -- architecture top
       master_o (1) => app_wb_o
     );
 
-  inst_carrier: entity work.svec_base_regs
+  inst_svec_base_regs: entity work.svec_base_regs
     port map (
       rst_n_i    => rst_sys_62m5_n,
       clk_i      => clk_sys_62m5,
       wb_cyc_i   => carrier_wb_in.cyc,
       wb_stb_i   => carrier_wb_in.stb,
-      wb_adr_i   => carrier_wb_in.adr (12 downto 2),  -- Bytes address from vme64x core
+      wb_adr_i   => carrier_wb_in.adr (13 downto 2),  -- Bytes address from vme64x core
       wb_sel_i   => carrier_wb_in.sel,
       wb_we_i    => carrier_wb_in.we,
       wb_dat_i   => carrier_wb_in.dat,
@@ -595,25 +577,9 @@ begin  -- architecture top
       csr_ddr4_addr_o      => csr_ddr4_addr_out,
       csr_ddr4_addr_wr_o   => csr_ddr4_addr_wr,
 
-      -- data to read or to write in ddr4
-      csr_ddr4_data_i      => csr_ddr4_data_in,
-      csr_ddr4_data_o      => csr_ddr4_data_out,
-      csr_ddr4_data_wr_o   => csr_ddr4_data_wr,
-      csr_ddr4_data_rd_o   => csr_ddr4_data_rd,
-      csr_ddr4_data_wack_i => csr_ddr4_data_wack,
-      csr_ddr4_data_rack_i => csr_ddr4_data_rack,
-
       csr_ddr5_addr_i      => csr_ddr5_addr,
       csr_ddr5_addr_o      => csr_ddr5_addr_out,
       csr_ddr5_addr_wr_o   => csr_ddr5_addr_wr,
-
-      -- data to read or to write in ddr5
-      csr_ddr5_data_i      => csr_ddr5_data_in,
-      csr_ddr5_data_o      => csr_ddr5_data_out,
-      csr_ddr5_data_wr_o   => csr_ddr5_data_wr,
-      csr_ddr5_data_rd_o   => csr_ddr5_data_rd,
-      csr_ddr5_data_wack_i => csr_ddr5_data_wack,
-      csr_ddr5_data_rack_i => csr_ddr5_data_rack,
 
       -- Thermometer and unique id
       therm_id_i          => therm_id_in,
@@ -638,7 +604,15 @@ begin  -- architecture top
 
       -- white-rabbit core
       wrc_regs_i          => wrc_in,
-      wrc_regs_o          => wrc_out
+      wrc_regs_o          => wrc_out,
+
+      -- data to read or to write in ddr4
+      ddr4_data_i      => ddr4_data_in,
+      ddr4_data_o      => ddr4_data_out,
+
+      -- data to read or to write in ddr5
+      ddr5_data_i      => ddr5_data_in,
+      ddr5_data_o      => ddr5_data_out
     );
 
   fmc_presence (0) <= not fmc0_prsnt_m2c_n_i;
@@ -658,7 +632,7 @@ begin  -- architecture top
           metadata_data <= x"53564543";
         when x"2" =>
           -- Version
-          metadata_data <= x"01050002";
+          metadata_data <= x"02000001";
         when x"3" =>
           -- BOM
           metadata_data <= x"fffe0000";
@@ -1163,15 +1137,15 @@ begin  -- architecture top
 
         wb1_rst_n_i => rst_gbl_n,
         wb1_clk_i   => clk_sys_62m5,
-        wb1_sel_i   => ddr4_wb_out.sel,
-        wb1_cyc_i   => ddr4_wb_out.cyc,
-        wb1_stb_i   => ddr4_wb_out.stb,
-        wb1_we_i    => ddr4_wb_out.we,
-        wb1_addr_i  => ddr4_wb_out.adr,
-        wb1_data_i  => ddr4_wb_out.dat,
-        wb1_data_o  => ddr4_wb_in.dat,
-        wb1_ack_o   => ddr4_wb_in.ack,
-        wb1_stall_o => ddr4_wb_in.stall,
+        wb1_sel_i   => ddr4_data_out.sel,
+        wb1_cyc_i   => ddr4_data_out.cyc,
+        wb1_stb_i   => ddr4_data_stb,
+        wb1_we_i    => ddr4_data_out.we,
+        wb1_addr_i  => csr_ddr4_addr,
+        wb1_data_i  => ddr4_data_out.dat,
+        wb1_data_o  => ddr4_data_in.dat,
+        wb1_ack_o   => ddr4_data_in.ack,
+        wb1_stall_o => ddr4_data_in.stall,
 
         p1_cmd_empty_o   => open,
         p1_cmd_full_o    => open,
@@ -1190,8 +1164,8 @@ begin  -- architecture top
     ddr4_calib_done <= ddr4_status(0);
 
     -- unused Wishbone signals
-    ddr4_wb_in.err <= '0';
-    ddr4_wb_in.rty <= '0';
+    ddr4_data_in.err <= '0';
+    ddr4_data_in.rty <= '0';
 
     p_ddr4_addr: process (clk_sys_62m5)
     begin
@@ -1200,39 +1174,19 @@ begin  -- architecture top
           csr_ddr4_addr <= x"0000_0000";
         elsif csr_ddr4_addr_wr = '1' then
           csr_ddr4_addr <= csr_ddr4_addr_out;
-        elsif ddr4_wb_in.ack = '1' then
+        elsif ddr4_data_in.ack = '1' then
           csr_ddr4_addr <= std_logic_vector(unsigned(csr_ddr4_addr) + 4);
         end if;
+
+        ddr4_data_stb_d <= ddr4_data_out.stb;
       end if;
     end process;
 
-    p_ddr4_ack: process (clk_sys_62m5)
-    begin
-      if rising_edge(clk_sys_62m5) then
-        if rst_sys_62m5_n = '0' then
-          ddr4_read_ip <= '0';
-          ddr4_write_ip <= '0';
-        else
-          ddr4_read_ip <= csr_ddr4_data_rd or (ddr4_read_ip and not ddr4_wb_in.ack);
-          ddr4_write_ip <= csr_ddr4_data_wr or (ddr4_write_ip and not ddr4_wb_in.ack);
-        end if;
-      end if;
-    end process;
-
-    ddr4_wb_out <= (adr => csr_ddr4_addr,
-                    cyc => csr_ddr4_data_rd or csr_ddr4_data_wr or ddr4_read_ip or ddr4_write_ip,
-                    stb => csr_ddr4_data_rd or csr_ddr4_data_wr,
-                    sel => x"f",
-                    we => csr_ddr4_data_wr,
-                    dat => csr_ddr4_data_out);
-    csr_ddr4_data_in <= ddr4_wb_in.dat;
-    csr_ddr4_data_rack <= ddr4_read_ip and ddr4_wb_in.ack;
-    csr_ddr4_data_wack <= ddr4_write_ip and ddr4_wb_in.ack;
+    ddr4_data_stb <= ddr4_data_out.stb and not ddr4_data_stb_d;
  end generate gen_with_ddr4;
 
   gen_without_ddr4 : if not g_WITH_DDR4 generate
     ddr4_calib_done      <= '0';
-    ddr4_wb_in           <= c_DUMMY_WB_MASTER_IN;
     ddr4_a_o             <= (others => '0');
     ddr4_ba_o            <= (others => '0');
     ddr4_dq_b            <= (others => 'Z');
@@ -1257,11 +1211,9 @@ begin  -- architecture top
     ddr4_wr_fifo_empty_o <= '0';
 
     csr_ddr4_addr <= x"0000_0000";
-    ddr4_wb_out <= (adr => (others => 'X'), cyc => '0', stb => '0', sel => x"0", we => '0',
+    ddr4_data_out <= (adr => (others => 'X'), cyc => '0', stb => '0', sel => x"0", we => '0',
       dat => (others => 'X'));
-    csr_ddr4_data_in <= x"0000_0000";
-    csr_ddr4_data_rack <= csr_ddr4_data_rd;
-    csr_ddr4_data_wack <= csr_ddr4_data_wr;
+    ddr4_data_in <= (dat => x"ffff_ffff", ack => '1', err => '0', rty => '0', stall => '0');
   end generate gen_without_ddr4;
 
   ddr4_wb_o.err <= '0';
@@ -1336,15 +1288,15 @@ begin  -- architecture top
 
         wb1_rst_n_i => rst_gbl_n,
         wb1_clk_i   => clk_sys_62m5,
-        wb1_sel_i   => ddr5_wb_out.sel,
-        wb1_cyc_i   => ddr5_wb_out.cyc,
-        wb1_stb_i   => ddr5_wb_out.stb,
-        wb1_we_i    => ddr5_wb_out.we,
-        wb1_addr_i  => ddr5_wb_out.adr,
-        wb1_data_i  => ddr5_wb_out.dat,
-        wb1_data_o  => ddr5_wb_in.dat,
-        wb1_ack_o   => ddr5_wb_in.ack,
-        wb1_stall_o => ddr5_wb_in.stall,
+        wb1_sel_i   => ddr5_data_out.sel,
+        wb1_cyc_i   => ddr5_data_out.cyc,
+        wb1_stb_i   => ddr5_data_stb,
+        wb1_we_i    => ddr5_data_out.we,
+        wb1_addr_i  => csr_ddr5_addr,
+        wb1_data_i  => ddr5_data_out.dat,
+        wb1_data_o  => ddr5_data_in.dat,
+        wb1_ack_o   => ddr5_data_in.ack,
+        wb1_stall_o => ddr5_data_in.stall,
 
         p1_cmd_empty_o   => open,
         p1_cmd_full_o    => open,
@@ -1363,8 +1315,8 @@ begin  -- architecture top
     ddr5_calib_done <= ddr5_status(0);
 
     -- unused Wishbone signals
-    ddr5_wb_in.err <= '0';
-    ddr5_wb_in.rty <= '0';
+    ddr5_data_in.err <= '0';
+    ddr5_data_in.rty <= '0';
 
     p_ddr5_addr: process (clk_sys_62m5)
     begin
@@ -1373,39 +1325,19 @@ begin  -- architecture top
           csr_ddr5_addr <= x"0000_0000";
         elsif csr_ddr5_addr_wr = '1' then
           csr_ddr5_addr <= csr_ddr5_addr_out;
-        elsif ddr5_wb_in.ack = '1' then
+        elsif ddr5_data_in.ack = '1' then
           csr_ddr5_addr <= std_logic_vector(unsigned(csr_ddr5_addr) + 4);
         end if;
+
+        ddr5_data_stb_d <= ddr5_data_out.stb;
       end if;
     end process;
 
-    p_ddr5_ack: process (clk_sys_62m5)
-    begin
-      if rising_edge(clk_sys_62m5) then
-        if rst_sys_62m5_n = '0' then
-          ddr5_read_ip <= '0';
-          ddr5_write_ip <= '0';
-        else
-          ddr5_read_ip <= csr_ddr5_data_rd or (ddr5_read_ip and not ddr5_wb_in.ack);
-          ddr5_write_ip <= csr_ddr5_data_wr or (ddr5_write_ip and not ddr5_wb_in.ack);
-        end if;
-      end if;
-    end process;
-
-    ddr5_wb_out <= (adr => csr_ddr5_addr,
-                    cyc => csr_ddr5_data_rd or csr_ddr5_data_wr or ddr5_read_ip or ddr5_write_ip,
-                    stb => csr_ddr5_data_rd or csr_ddr5_data_wr,
-                    sel => x"f",
-                    we => csr_ddr5_data_wr,
-                    dat => csr_ddr5_data_out);
-    csr_ddr5_data_in <= ddr5_wb_in.dat;
-    csr_ddr5_data_rack <= ddr5_read_ip and ddr5_wb_in.ack;
-    csr_ddr5_data_wack <= ddr5_write_ip and ddr5_wb_in.ack;
+    ddr5_data_stb <= ddr5_data_out.stb and not ddr5_data_stb_d;
  end generate gen_with_ddr5;
 
   gen_without_ddr5 : if not g_WITH_DDR5 generate
     ddr5_calib_done      <= '0';
-    ddr5_wb_in           <= c_DUMMY_WB_MASTER_IN;
     ddr5_a_o             <= (others => '0');
     ddr5_ba_o            <= (others => '0');
     ddr5_dq_b            <= (others => 'Z');
@@ -1430,11 +1362,9 @@ begin  -- architecture top
     ddr5_wr_fifo_empty_o <= '0';
 
     csr_ddr5_addr <= x"0000_0000";
-  ddr5_wb_out <= (adr => (others => 'X'), cyc => '0', stb => '0', sel => x"0", we => '0',
-     dat => (others => 'X'));
-    csr_ddr5_data_in <= x"0000_0000";
-    csr_ddr5_data_rack <= csr_ddr5_data_rd;
-    csr_ddr5_data_wack <= csr_ddr5_data_wr;
+    ddr5_data_out <= (adr => (others => 'X'), cyc => '0', stb => '0', sel => x"0", we => '0',
+                    dat => (others => 'X'));
+    ddr5_data_in <= (dat => x"ffff_ffff", ack => '1', err => '0', rty => '0', stall => '0');
   end generate gen_without_ddr5;
 
   ddr5_wb_o.err <= '0';
