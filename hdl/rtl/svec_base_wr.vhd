@@ -37,6 +37,7 @@ use work.buildinfo_pkg.all;
 use work.wr_fabric_pkg.all;
 use work.streamers_pkg.all;
 use work.sourceid_svec_base_pkg;
+use work.sourceid_svec_base_pkg.all;  --  workaround for planAhead.
 
 library unisim;
 use unisim.vcomponents.all;
