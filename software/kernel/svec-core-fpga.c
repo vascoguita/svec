@@ -18,6 +18,11 @@
 #include "svec.h"
 #include "svec-core-fpga.h"
 
+static int version_ignore = 0;
+module_param(version_ignore, int, 0644);
+MODULE_PARM_DESC(version_ignore,
+		 "Ignore the version declared in the FPGA and force the driver to load all components (default 0)");
+
 enum svec_fpga_irq_lines {
 	SVEC_FPGA_IRQ_FMC_I2C = 0,
 	SVEC_FPGA_IRQ_SPI,
@@ -830,11 +835,14 @@ static bool svec_fpga_is_valid(struct svec_dev *svec_dev,
 		return false;
 	}
 
-	if ((meta->version & SVEC_META_VERSION_MASK) != SVEC_META_VERSION_1_4) {
+	if (!version_ignore &&
+	    (meta->version & SVEC_META_VERSION_MASK) != SVEC_META_VERSION_COMPAT) {
 		dev_err(&svec_dev->dev,
-			"Unknow version: %08x\n", meta->version);
+			"Unknow version: %08x, expected: %08x\n",
+			meta->version, SVEC_META_VERSION_COMPAT);
 		return false;
 	}
+
 
 	return true;
 }
