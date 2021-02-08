@@ -2,6 +2,17 @@
 Change Log
 ==========
 
+2.0.1 - 2021-02-08
+==================
+Added
+-----
+- sw: dynamically set the compatibility version between software and FPGA
+- sw: added the possibility to ignore the version check
+
+Changed
+-------
+- hdl: the DMA interface changed to support BLT and MBLT acquisitions
+
 1.5.2 - 2020-11-24
 ==================
 Added
