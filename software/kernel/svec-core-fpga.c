@@ -810,6 +810,17 @@ static void svec_fpga_app_exit(struct svec_fpga *svec_fpga)
 	}
 }
 
+static bool svec_fpga_is_valid_version(uint32_t expected, uint32_t found)
+{
+	if (version_ignore)
+		return true;
+	if (SVEC_VERSION_MAJ(found) != SVEC_VERSION_MAJ(expected))
+		return false;
+	if (SVEC_VERSION_MIN(found) < SVEC_VERSION_MIN(expected))
+		return false;
+	return true;
+}
+
 static bool svec_fpga_is_valid(struct svec_dev *svec_dev,
 			       struct svec_meta_id *meta)
 {
@@ -835,14 +846,12 @@ static bool svec_fpga_is_valid(struct svec_dev *svec_dev,
 		return false;
 	}
 
-	if (!version_ignore &&
-	    (meta->version & SVEC_META_VERSION_MASK) != SVEC_META_VERSION_COMPAT) {
+	if (!svec_fpga_is_valid_version(SVEC_VERSION_DRV, meta->version)) {
 		dev_err(&svec_dev->dev,
-			"Unknow version: %08x, expected: %08x\n",
-			meta->version, SVEC_META_VERSION_COMPAT);
+			"Invalid version: %08x, expected: %08x\n",
+			meta->version, SVEC_VERSION_DRV);
 		return false;
 	}
-
 
 	return true;
 }
