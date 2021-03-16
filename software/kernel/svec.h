@@ -123,6 +123,11 @@ struct svec_dev {
 	struct svec_fpga *svec_fpga;
 };
 
+#define SVEC_VERSION_DRV SVEC_VERSION_BLD
+#define SVEC_VERSION_MAJ(_VER) ((_VER >> 24) & 0xFF)
+#define SVEC_VERSION_MIN(_VER) ((_VER >> 16) & 0xFF)
+#define SVEC_VERSION_PATCH(_VER) (_VER & 0xFFFF)
+
 static inline struct svec_dev *to_svec_dev(struct device *_dev)
 {
 	return container_of(_dev, struct svec_dev, dev);
