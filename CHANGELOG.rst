@@ -2,6 +2,12 @@
 Change Log
 ==========
 
+2.0.2 - 2021-03-16
+==================
+Changed
+-------
+- sw: better version validation implementation
+
 2.0.1 - 2021-02-08
 ==================
 Added
