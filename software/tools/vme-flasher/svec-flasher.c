@@ -237,6 +237,7 @@ int flash_program(uint32_t addr, const uint8_t * data, int size, uint32_t flash_
 	int ret = 0;
 	int sector_size;
 	int *sector_map;
+	int sector_map_size;
 
 	if (flash_id == ID_M25P128)
 		sector_size = FLASH_SECTOR_SIZE_M25P128;
@@ -245,12 +246,13 @@ int flash_program(uint32_t addr, const uint8_t * data, int size, uint32_t flash_
 	else
 		return -ENODEV;
 
-	sector_map = (int *)malloc(sizeof(int) * FLASH_SIZE / sector_size);
+	sector_map_size = sizeof(int) * FLASH_SIZE / sector_size;
+	sector_map = (int *)malloc(sector_map_size);
 
 	if (sector_map == NULL)
 		return -ENOMEM;
 
-	memset(sector_map, 0, sizeof(sector_map));
+	memset(sector_map, 0, sector_map_size);
 
 	const uint8_t *p = data;
 
