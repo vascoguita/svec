@@ -252,14 +252,17 @@ static int svec_fpga_loader_is_active(struct fpga_manager *mgr)
 	struct vme_dev *vdev = to_vme_dev(svec->dev.parent);
 	void *loader_addr = vdev->map_cr.kernel_va + SVEC_BASE_LOADER;
 	char buf[5];
-	uint32_t idc;
+	uint32_t idc, csr;
 
-
+	csr = ioread32be(loader_addr + XLDR_REG_CSR);
 	idc = ioread32be(loader_addr + XLDR_REG_IDR);
+
 	idc = htonl(idc);
 
 	memset(buf, 0, 5);
 	strncpy(buf, (char *)&idc, 4);
+	dev_dbg(&mgr->dev, "SVEC Loader: {ID: \"%s\"(0x%08x), Version: %d (0x%08x)}",
+			buf, idc, XLDR_CSR_VERSION_R(csr), csr);
 
 	return (strncmp(buf, "SVEC", 4) == 0);
 }
