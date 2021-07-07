@@ -428,8 +428,10 @@ static size_t svec_fpga_write_buf(struct fpga_manager *mgr,
 					   svec->bitstream_last_word,
 					   svec->bitstream_last_word_size,
 					   0);
-		if (err && !(err == -EINVAL && i == 0))
+		if (err && !(err == -EINVAL && i == 0)) {
+			dev_err(&mgr->dev, "failed at word %d/%ld (%d)\n", i, size, err);
 			goto out;
+		}
 
 		/*
 		 * EINVAL is "fine" here because the first time we give a
