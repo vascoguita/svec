@@ -217,14 +217,8 @@ static struct resource svec_fpga_vic_res[] = {
 
 struct irq_domain *svec_fpga_irq_find_host(struct device *dev)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
-	struct irq_fwspec fwspec = {
-		.fwnode = dev->fwnode,
-		.param_count = 2,
-		.param[0] = ((unsigned long)dev >> 32) & 0xffffffff,
-		.param[1] = ((unsigned long)dev) & 0xffffffff,
-	};
-	return irq_find_matching_fwspec(&fwspec, DOMAIN_BUS_ANY);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+	return irq_find_matching_fwnode(dev->fwnode, DOMAIN_BUS_ANY);
 #else
 	return (irq_find_host((void *)dev));
 #endif

@@ -58,6 +58,11 @@
 #define XLDR_CSR_CLKDIV_SHIFT                 8
 #define XLDR_CSR_CLKDIV_W(value)              WBGEN2_GEN_WRITE(value, 8, 6)
 #define XLDR_CSR_CLKDIV_R(reg)                WBGEN2_GEN_READ(reg, 8, 6)
+/* definitions for field: Bootloader version */
+#define XLDR_CSR_VERSION_MASK                 WBGEN2_GEN_MASK(14, 8)
+#define XLDR_CSR_VERSION_SHIFT                14
+#define XLDR_CSR_VERSION_R(reg)               WBGEN2_GEN_READ(reg, 14, 8)
+
 
 /* definitions for register: Bootloader Trigger Register */
 

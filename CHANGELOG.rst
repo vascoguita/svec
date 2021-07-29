@@ -2,6 +2,12 @@
 Change Log
 ==========
 
+2.0.4 - 2021-07-29
+==================
+Fixed
+-----
+- sw: improve compatibility with newer ( > 3.10) Linux kernel version
+
 2.0.3 - 2021-03-22
 ==================
 Fixed
