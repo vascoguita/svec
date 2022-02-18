@@ -14,5 +14,6 @@ try:
     exec(open("../../../" + "/general-cores/tools/gen_sourceid.py").read(),
          None, {'project': 'svec_base'})
 except Exception as e:
-    print("Error: cannot generate source id file")
+    import os
+    print("Error: cannot generate source id file (pwd={})".format(os.getcwd()))
     raise
