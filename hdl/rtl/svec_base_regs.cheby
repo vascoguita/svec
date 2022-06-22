@@ -6,6 +6,7 @@ memory-map:
   name: svec_base_regs
   bus: wb-32-be
   size: 0x4000
+  description: SVEC base registers
   children:
     - submap:
         name: metadata
