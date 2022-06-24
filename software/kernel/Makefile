@@ -9,7 +9,7 @@ TOP_DIR ?= $(shell pwd)/../..
 HDL_DIR ?= $(TOP_DIR)/hdl
 
 KVERSION ?= $(shell uname -r)
-LINUX ?= /lib/modules/$(KVERSION)/build
+KERNELSRC ?= /lib/modules/$(KVERSION)/build
 
 VMEBRIDGE_ABS ?= $(abspath $(VMEBRIDGE))
 FPGA_MGR_ABS ?= $(abspath $(FPGA_MGR))
@@ -34,10 +34,10 @@ clean-spec-core-fpga.h:
 install: modules_install
 
 clean: clean-spec-core-fpga.h
-	$(MAKE) -C $(LINUX) M=$(shell pwd) $@
+	$(MAKE) -C $(KERNELSRC) M=$(shell pwd) $@
 
 modules help coccicheck modules_install: svec-core-fpga.h
-	$(MAKE) -C $(LINUX) M=$(shell pwd) \
+	$(MAKE) -C $(KERNELSRC) M=$(shell pwd) \
 		VERSION=$(VERSION) \
 		VMEBRIDGE_ABS=$(VMEBRIDGE_ABS) \
 		FPGA_MGR_ABS=$(FPGA_MGR_ABS) \
