@@ -32,6 +32,7 @@ clean-spec-core-fpga.h:
 	rm -f spec-core-fpga.h
 
 install: modules_install
+
 clean: clean-spec-core-fpga.h
 	$(MAKE) -C $(LINUX) M=$(shell pwd) $@
 
