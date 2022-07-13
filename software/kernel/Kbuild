@@ -41,7 +41,7 @@ KBUILD_EXTRA_SYMBOLS += $(FMC_ABS)/drivers/fmc/Module.symvers
 KBUILD_EXTRA_SYMBOLS += $(VMEBRIDGE_ABS)/driver/Module.symvers
 KBUILD_EXTRA_SYMBOLS += $(FPGA_MGR_ABS)/drivers/fpga/Module.symvers
 KBUILD_EXTRA_SYMBOLS += $(FMC_ABS)/drivers/fmc/Module.symvers
-KBUILD_EXTRA_SYMBOLS += $(I2C_BUS)/drivers/i2c/busses/Module.symvers
+KBUILD_EXTRA_SYMBOLS += $(I2C_ABS)/drivers/i2c/busses/Module.symvers
 
 obj-m := svec-fmc-carrier.o
 
