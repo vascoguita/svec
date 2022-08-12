@@ -90,7 +90,7 @@ static ssize_t svec_fpga_firmware_store(struct device *dev,
 	dev_warn(&svec_dev->dev, "VME Slave removed\n");
 	dev_warn(&svec_dev->dev, "Remove this device driver instance\n");
 
-	if (device_remove_file_self(svec_dev->dev.parent, attr)) {
+	if (device_remove_file_self(&svec_dev->dev, attr)) {
 		vme_unregister_device(to_vme_dev(svec_dev->dev.parent));
 	}
 	else {
