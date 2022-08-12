@@ -21,6 +21,8 @@ VERSION = $(shell git describe --dirty --long --tags)
 
 CHEBY ?= cheby
 
+CONFIG_FPGA_MGR_BACKPORT ?= n
+
 all: modules
 
 .PHONY: all modules clean help install modules_install coccicheck svec-core-fpga.h
