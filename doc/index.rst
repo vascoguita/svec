@@ -1,5 +1,5 @@
 ================================
-Welcome to SPEC's documentation!
+Welcome to SVEC's documentation!
 ================================
 
 The FMC VME Carrier is an FMC carrier in VME64x format that can hold two
