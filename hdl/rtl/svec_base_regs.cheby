@@ -65,6 +65,7 @@ memory-map:
           children:
            - field:
               name: rev
+              description: The PCB revision number
               range: 4-0
        - reg:
           name: ddr4_addr
