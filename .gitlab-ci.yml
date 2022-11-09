@@ -22,7 +22,7 @@ documentation:
 
 .script_fetch_kernel_dep: &script_fetch_kernel_dep
   - git clone --depth 1 https://gitlab.cern.ch/cohtdrivers/coht.git ~/git/coht
-  - export VMEBUS=~/git/coht/vmebridge-ng
+  - export VMEBRIDGE=~/git/coht/vmebridge-ng
   - git clone --depth 1 https://gitlab.cern.ch/fvaga/fpga-manager.git ~/git/fpga-mgr
   - export FPGA_MGR=~/git/fpga-mgr
   - git clone -b v1.1.5 --depth 1 https://ohwr.org/project/fmc-sw.git ~/git/fmc
