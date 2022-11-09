@@ -69,33 +69,15 @@ static int svec_fw_load(struct svec_dev *svec_dev, const char *name)
 	return err;
 }
 
-static void remove_callback(struct device *dev)
+static ssize_t svec_fpga_firmware_store(struct device *dev,
+				 struct device_attribute *attr,
+				 const char *buf,
+				 size_t count)
 {
-	vme_unregister_device(to_vme_dev(dev));
-}
+	struct svec_dev *svec_dev = to_svec_dev(dev);
+	int err;
 
-#define VBRIDGE_DBG_FW_BUF_LEN 128
-static ssize_t svec_dbg_fw_write(struct file *file,
-				 const char __user *buf,
-				 size_t count, loff_t *ppos)
-{
-	struct svec_dev *svec_dev = file->private_data;
-	char buf_l[VBRIDGE_DBG_FW_BUF_LEN];
-	int err, ret;
-
-	if (VBRIDGE_DBG_FW_BUF_LEN < count) {
-		dev_err(&svec_dev->dev,
-			 "Firmware name too long max %u\n",
-			VBRIDGE_DBG_FW_BUF_LEN);
-
-		return -EINVAL;
-	}
-	memset(buf_l, 0, VBRIDGE_DBG_FW_BUF_LEN);
-	err = copy_from_user(buf_l, buf, count);
-	if (err)
-		return -EFAULT;
-
-	err = svec_fw_load(svec_dev, buf_l);
+	err = svec_fw_load(svec_dev, buf);
 	if (err)
 		dev_err(&svec_dev->dev,
 			"FPGA Configuration failure %d\n", err);
@@ -107,21 +89,26 @@ static ssize_t svec_dbg_fw_write(struct file *file,
 	 */
 	dev_warn(&svec_dev->dev, "VME Slave removed\n");
 	dev_warn(&svec_dev->dev, "Remove this device driver instance\n");
-	ret = device_schedule_callback(svec_dev->dev.parent, remove_callback);
-	if (ret) {
+
+	if (device_remove_file_self(&svec_dev->dev, attr)) {
+		vme_unregister_device(to_vme_dev(svec_dev->dev.parent));
+	}
+	else {
 		dev_err(&svec_dev->dev,
-			"Can't remove device driver instance %d\n", ret);
-		return ret;
+			"Can't remove device driver instance.\n");
 	}
 
 	return err ? err : count;
 }
 
-static const struct file_operations svec_dbg_fw_ops = {
-	.owner = THIS_MODULE,
-	.open  = simple_open,
-	.write = svec_dbg_fw_write,
+static DEVICE_ATTR_WO(svec_fpga_firmware);
+
+static struct attribute *svec_sys_dev_attrs[] = {
+	&dev_attr_svec_fpga_firmware.attr,
+	NULL
 };
+
+ATTRIBUTE_GROUPS(svec_sys_dev);
 
 static void seq_printf_meta(struct seq_file *s, const char *indent,
 			    struct svec_meta_id *meta)
@@ -184,16 +171,6 @@ static int svec_dbg_init(struct svec_dev *svec_dev)
 		dev_err(dev, "Cannot create debugfs directory (%ld)\n",
 			PTR_ERR(svec_dev->dbg_dir));
 		return PTR_ERR(svec_dev->dbg_dir);
-	}
-
-	svec_dev->dbg_fw = debugfs_create_file(SVEC_DBG_FW_NAME, 0200,
-					       svec_dev->dbg_dir,
-					       svec_dev,
-					       &svec_dbg_fw_ops);
-	if (IS_ERR_OR_NULL(svec_dev->dbg_fw)) {
-		dev_err(dev, "Cannot create debugfs file \"%s\" (%ld)\n",
-			SVEC_DBG_FW_NAME, PTR_ERR(svec_dev->dbg_fw));
-		return PTR_ERR(svec_dev->dbg_fw);
 	}
 
 	svec_dev->dbg_meta = debugfs_create_file(SVEC_DBG_META_NAME, 0200,
@@ -546,6 +523,7 @@ static int svec_dev_uevent(struct device *dev, struct kobj_uevent_env *env)
 
 static const struct device_type svec_type = {
 	.name = "svec",
+	.groups = svec_sys_dev_groups,
 	.release = svec_dev_release,
 	.uevent = svec_dev_uevent,
 };

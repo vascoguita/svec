@@ -3,20 +3,23 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
 *.o
+*.a
+*.so
 *.ko
-*.mod.c
-.*.o.cmd
-.*.ko.cmd
-*.mod.d
+*.mod*
+.*cmd
 *.o.d
-*.tmp
+*.tmp*
+*.swp
 .tmp_versions
 modules.order
 Module.symvers
 \#*
 *~
+GTAGS
 GPATH
 GRTAGS
-GTAGS
-.clangd
+Makefile.specific
 compile_commands.json
+.clangd
+cscope*

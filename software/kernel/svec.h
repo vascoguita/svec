@@ -117,7 +117,6 @@ struct svec_dev {
 
 	struct dentry *dbg_dir;
 #define SVEC_DBG_FW_NAME "fpga_firmware"
-	struct dentry *dbg_fw;
 #define SVEC_DBG_META_NAME "fpga_device_metadata"
 	struct dentry *dbg_meta;
 	struct svec_fpga *svec_fpga;

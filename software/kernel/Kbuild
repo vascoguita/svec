@@ -18,11 +18,11 @@ SVEC_VERSION_BLD := $(shell printf "0x%02x%02x0000" $(VER_MAJ) $(VER_MIN))
 ccflags-y += -DADDITIONAL_VERSIONS="$(SUBMODULE_VERSIONS)"
 ccflags-y += -DVERSION=\"$(VERSION)\"
 ccflags-y += -DSVEC_VERSION_BLD=$(SVEC_VERSION_BLD)
+ccflags-$(CONFIG_FPGA_MGR_BACKPORT) += -DCONFIG_FPGA_MGR_BACKPORT
 ccflags-y += -Wall -Werror
 
+ccflags-$(CONFIG_FPGA_MGR_BACKPORT) += -I$(FPGA_MGR_ABS)/include
 ccflags-y += -I$(VMEBRIDGE_ABS)/include
-ccflags-y += -I$(FPGA_MGR_ABS)/include
-ccflags-$(CONFIG_FPGA_MGR_BACKPORT) += -DCONFIG_FPGA_MGR_BACKPORT
 ccflags-y += -I$(FMC_ABS)/include
 ccflags-y += -I$(I2C_ABS)/include
 ccflags-y += -I$(SPI_ABS)/include
@@ -37,11 +37,10 @@ FPGA_MGR_BACKPORT_INCLUDE += -I$(FPGA_MGR_ABS)/include/linux
 LINUXINCLUDE := $(FPGA_MGR_BACKPORT_INCLUDE) $(LINUXINCLUDE)
 KBUILD_EXTRA_SYMBOLS += $(FPGA_MGR_ABS)/drivers/fpga/Module.symvers
 endif
-KBUILD_EXTRA_SYMBOLS += $(FMC_ABS)/drivers/fmc/Module.symvers
+
 KBUILD_EXTRA_SYMBOLS += $(VMEBRIDGE_ABS)/driver/Module.symvers
-KBUILD_EXTRA_SYMBOLS += $(FPGA_MGR_ABS)/drivers/fpga/Module.symvers
 KBUILD_EXTRA_SYMBOLS += $(FMC_ABS)/drivers/fmc/Module.symvers
-KBUILD_EXTRA_SYMBOLS += $(I2C_BUS)/drivers/i2c/busses/Module.symvers
+KBUILD_EXTRA_SYMBOLS += $(I2C_ABS)/drivers/i2c/busses/Module.symvers
 
 obj-m := svec-fmc-carrier.o
 
