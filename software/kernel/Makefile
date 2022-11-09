@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 CERN (home.cern)
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 -include Makefile.specific
 -include $(REPO_PARENT)/parent_common.mk
 
@@ -15,7 +19,7 @@ SPI_ABS ?= $(abspath $(SPI))
 
 VERSION = $(shell git describe --dirty --long --tags)
 
-CHEBY ?= /usr/bin/cheby
+CHEBY ?= cheby
 
 all: modules
 

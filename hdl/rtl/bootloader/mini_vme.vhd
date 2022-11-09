@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2022 CERN (home.cern)
+--
+-- SPDX-License-Identifier: CERN-OHL-W-2.0+
+
 -------------------------------------------------------------------------------
 -- Title      : Minimalistic VME64x Core
 -- Project    : Simple VME64x FMC Carrier (SVEC)
@@ -6,33 +10,13 @@
 -- Author     : Tomasz Wlostowski
 -- Company    : CERN
 -- Created    : 2012-01-20
--- Last update: 2014-01-13
+-- Last update: 2022-11-09
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
 -- Description: A stripped-down version of VME64x core. Supports only CR/CSR/D32
 -- accesses to a range of addresses specified in g_user_csr_start/end. Matching
 -- transactions are executed through a Wishbone master.
--------------------------------------------------------------------------------
---
--- Copyright (c) 2012 - 2013 CERN / BE-CO-HT
---
--- This source file is free software; you can redistribute it   
--- and/or modify it under the terms of the GNU Lesser General   
--- Public License as published by the Free Software Foundation; 
--- either version 2.1 of the License, or (at your option) any   
--- later version.                                               
---
--- This source is distributed in the hope that it will be       
--- useful, but WITHOUT ANY WARRANTY; without even the implied   
--- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
--- PURPOSE.  See the GNU Lesser General Public License for more 
--- details.                                                     
---
--- You should have received a copy of the GNU Lesser General    
--- Public License along with this source; if not, download it   
--- from http://www.gnu.org/licenses/lgpl-2.1.html
---
 -------------------------------------------------------------------------------
 
 

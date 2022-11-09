@@ -1,8 +1,7 @@
-/*
- * SPDX-License-Identifier: GPL-3.0-or-later
- * Copyright (C) 2021 CERN (www.cern.ch)
- * Author: Federico Vaga <federico.vaga@cern.ch>
- */
+// SPDX-FileCopyrightText: 2022 CERN (home.cern)
+//
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Author: Federico Vaga <federico.vaga@cern.ch>
 
 #include <stdlib.h>
 #include <stdio.h>

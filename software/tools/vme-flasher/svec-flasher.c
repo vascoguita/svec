@@ -1,12 +1,6 @@
-
-/*
- * Copyright (C) 2013 CERN (www.cern.ch)
- * Author: Tomasz Włostowski <tomasz.wlostowski@cern.ch>
- *
- * Released according to the GNU GPL, version 2 or any later version.
- *
- * svec-flasher: a trivial VME-SPI flasher application.
- */
+// SPDX-FileCopyrightText: 2022 CERN (home.cern)
+//
+// SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include <stdio.h>
 #include <stdio.h>

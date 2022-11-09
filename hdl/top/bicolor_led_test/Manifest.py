@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 CERN (home.cern)
+#
+# SPDX-License-Identifier: CERN-OHL-W-2.0
+
 files = ["bicolor_led_ctrl_pkg.vhd",
          "bicolor_led_ctrl.vhd",
          "wb_addr_decoder.vhd",

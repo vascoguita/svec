@@ -1,21 +1,16 @@
+//SPDX-FileCopyrightText: 2022 CERN (home.cern)
+//
+// SPDX-License-Identifier: LGPL-2.1-or-later
+
 /**
  * \file vmebus.h
  * \brief PCI-VME public API
  * \author Sebastien Dugue
  * \date 04/02/2009
  *
- *  This API presents in fact 2 APIs with some common definitions. One for
+ * This API presents in fact 2 APIs with some common definitions. One for
  * drivers and one for user applications. User applications cannot use the
  * driver specific parts enclosed in \#ifdef __KERNEL__ sections.
- *
- * Copyright (c) 2009 \em Sebastien \em Dugue
- *
- * \par License:
- *      This program is free software; you can redistribute  it and/or
- *      modify it under  the terms of  the GNU General  Public License as
- *      published by the Free Software Foundation;  either version 2 of the
- *      License, or (at your option) any later version.
- *
  */
 
 #ifndef _VME_H
