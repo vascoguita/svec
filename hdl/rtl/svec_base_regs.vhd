@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2022 CERN (home.cern)
+--
+-- SPDX-License-Identifier: CERN-OHL-W-2.0+
+
 -- Do not edit.  Generated on Fri Jan 29 13:36:51 2021 by tgingold
 -- With Cheby 1.4.dev0 and these options:
 --  --gen-hdl=svec_base_regs.vhd -i svec_base_regs.cheby

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 CERN (home.cern)
+//
+// SPDX-License-Identifier: LGPL-2.1-or-later
+
 /**
  * \file libvmebus.h
  * \brief VME Bus access user library interface
@@ -5,15 +9,6 @@
  * \date 04/02/2009
  *
  * This library gives userspace applications access to the VME bus
- *
- * Copyright (c) 2009 \em Sébastien \em Dugué
- *
- * \par License:
- *      This program is free software; you can redistribute  it and/or
- *      modify it under  the terms of  the GNU General  Public License as
- *      published by the Free Software Foundation;  either version 2 of the
- *      License, or (at your option) any later version.
- *
  */
 
 #ifndef _LIBVMEBUS_H_INCLUDE_

@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2022 CERN (home.cern)
+--
+-- SPDX-License-Identifier: CERN-OHL-W-2.0+
+
 -------------------------------------------------------------------------------
 -- Title      : SVEC FPGA Bootloader main package
 -- Project    : Simple VME64x FMC Carrier (SVEC)
@@ -6,32 +10,12 @@
 -- Author     : Tomasz Wlostowski
 -- Company    : CERN
 -- Created    : 2011-01-24
--- Last update: 2014-01-13
+-- Last update: 2022-11-09
 -- Platform   : FPGA-generic
 -- Standard   : VHDL'93
 -------------------------------------------------------------------------------
 -- Description: Contains definitions of the bootloader's parameters (base
 -- addresses and timing).
--------------------------------------------------------------------------------
---
--- Copyright (c) 2013 CERN / BE-CO-HT
---
--- This source file is free software; you can redistribute it   
--- and/or modify it under the terms of the GNU Lesser General   
--- Public License as published by the Free Software Foundation; 
--- either version 2.1 of the License, or (at your option) any   
--- later version.                                               
---
--- This source is distributed in the hope that it will be       
--- useful, but WITHOUT ANY WARRANTY; without even the implied   
--- warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
--- PURPOSE.  See the GNU Lesser General Public License for more 
--- details.                                                     
---
--- You should have received a copy of the GNU Lesser General    
--- Public License along with this source; if not, download it   
--- from http://www.gnu.org/licenses/lgpl-2.1.html
---
 -------------------------------------------------------------------------------
 
 

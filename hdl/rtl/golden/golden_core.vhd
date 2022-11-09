@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2022 CERN (home.cern)
+--
+-- SPDX-License-Identifier: CERN-OHL-W-2.0+
+
 library ieee;
 use ieee.STD_LOGIC_1164.all;
 use ieee.numeric_std.all;

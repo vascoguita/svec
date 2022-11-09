@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 CERN (home.cern)
+#
+# SPDX-License-Identifier: CERN-OHL-W-2.0
+
 # User should define the variable svec_base_ucf
 
 files = [ "svec_base_common.ucf" ]

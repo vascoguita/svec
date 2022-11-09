@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 CERN (home.cern)
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 -include Makefile.specific
 -include $(REPO_PARENT)/parent_common.mk
 
