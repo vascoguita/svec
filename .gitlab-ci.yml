@@ -8,13 +8,6 @@ include:
     file:
       - 'edl-gitlab-ci.yml'
 
-cppcheck:
-  stage: analyse
-  image:
-    name: gitlab-registry.cern.ch/coht/common-containers/static-analysis:latest
-  script:
-    - make -C software cppcheck
-
 documentation:
   stage: build
   image:
