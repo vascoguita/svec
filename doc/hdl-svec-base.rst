@@ -108,6 +108,11 @@ These are the fixed fields in the current (|version|) release.
   0x00000030  128         Vendor UUID         0x00000000
   ==========  ==========  ==================  ============
 
+Memory Map
+----------
+
+.. include:: svec_base_regs.rst
+
 .. _`SVEC project`: https://ohwr.org/project/svec
 .. _`FPGA device identification`: https://www.ohwr.org/project/fpga-dev-id/
 .. _`general cores`: https://www.ohwr.org/projects/general-cores
