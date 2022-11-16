@@ -4,14 +4,16 @@
 
 CHEBY ?= cheby
 CHEBY_FILES := svec_base_regs.cheby
+CHEBY_FILES += svec_xloader_regs.cheby
 CHEBY_DOC_FILES := $(CHEBY_FILES:.cheby=.rst)
 
 all: cheby_doc
 
-vpath %.cheby ../hdl/rtl
+vpath %.cheby ../hdl/rtl ../hdl/rtl/bootloader
+
 cheby_doc: $(CHEBY_DOC_FILES)
 $(CHEBY_DOC_FILES): %.rst: %.cheby
-	$(CHEBY) -i $< --gen-doc --doc rest > $@
+	$(CHEBY) -i $< --gen-doc --doc rest --rest-headers '#~^' | sed -e "1,3d"  > $@
 
 clean:
 	@rm -f $(CHEBY_DOC_FILES)

@@ -5,3 +5,5 @@ _build
 *.man
 *.html
 *.pdf
+svec_xloader_regs.rst
+svec_base_regs.rst

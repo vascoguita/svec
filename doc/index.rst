@@ -12,6 +12,8 @@ The `SVEC project`_ is hosted on the `Open HardWare Repository`_
    :maxdepth: 2
    :caption: Contents:
 
+   hw-spi-flash
+   hdl-bootloader
    hdl-svec-base
    sw-driver
 
