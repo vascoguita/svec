@@ -15,7 +15,6 @@ develop SPEC based designs.
 
 The ``SPEC base`` is compliant with the `FPGA device identification`_ rules.
 
-
 Components
 ----------
 
@@ -23,16 +22,16 @@ The following table summarizes the ``SVEC base`` components  and after that
 you have a brief description of each of them.  We do not expect to add or
 remove components in the future so this should be an exhaustive list.
 
-     ===================  ============  ==========  =============
-     Component            Start         End         Cap. Mask Bit
-     CSR                  0x00000040    0x0000005F  (Mandatory)
-     Therm. & ID          0x00000070    0x0000007F  1
-     Gen-Core I2C Ocore   0x00000080    0x0000009F  (Mandatory)
-     Gen-Core SPI         0x000000A0    0x000000BF  2
-     Gen-Core VIC         0x00000100    0x000001FF  0
-     Build info           0x00000200    0x000002FF  4
-     White-Rabbit         0x00001000    0x00001FFF  3
-     ===================  ============  ==========  =============
+     ===================  =============
+     Component            Cap. Mask Bit
+     CSR                  (Mandatory)
+     Therm. & ID          1
+     Gen-Core I2C Ocore   (Mandatory)
+     Gen-Core SPI         2
+     Gen-Core VIC         0
+     Build info           4
+     White-Rabbit         3
+     ===================  =============
 
 .. note::
    The *Capability Mask Bit* (Cap. Mask Bit) refers to the bit in the
@@ -112,6 +111,27 @@ Memory Map
 ----------
 
 .. include:: svec_base_regs.rst
+
+SVEC Golden FPGA bitstream
+--------------------------
+
+The SVEC Application FPGA golden bitstream is a safe FPGA application
+instantiating only the `SVEC Base HDL Component`_. This enables all SVEC
+hardware features allowing users to perform basic actions:
+
+- reading the card temperature,
+- accessing the on-board SPI flash,
+- verify the presence of an FMC module,
+- accessing the FMC module's EEPROM,
+- get a working white-rabbit link.
+
+.. note:: You might find this bitstream pre-programmed on your card
+
+.. note:: The bitstream does not drive any of the FMC module user/clock pins to
+          protect from electrical damage resulting from mismatched I/O standards.
+
+.. note:: SVEC base memory map is instanciated at the beginning of the address
+          space. Hence, `Memory Map`_ is the same.
 
 .. _`SVEC project`: https://ohwr.org/project/svec
 .. _`FPGA device identification`: https://www.ohwr.org/project/fpga-dev-id/
