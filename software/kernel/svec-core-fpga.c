@@ -146,6 +146,7 @@ static int svec_fpga_dbg_init(struct svec_fpga *svec_fpga)
 						svec_dev->dbg_dir);
 	if (IS_ERR_OR_NULL(svec_fpga->dbg_dir)) {
 		err = PTR_ERR(svec_fpga->dbg_dir);
+		svec_fpga->dbg_dir = NULL;
 		dev_err(&svec_fpga->dev,
 			"Cannot create debugfs directory \"%s\" (%d)\n",
 			dev_name(&svec_fpga->dev), err);
@@ -159,6 +160,7 @@ static int svec_fpga_dbg_init(struct svec_fpga *svec_fpga)
 				&svec_fpga->dbg_csr_reg);
 	if (IS_ERR_OR_NULL(svec_fpga->dbg_csr)) {
 		err = PTR_ERR(svec_fpga->dbg_csr);
+		svec_fpga->dbg_csr = NULL;
 		dev_warn(&svec_fpga->dev,
 			"Cannot create debugfs file \"%s\" (%d)\n",
 			SVEC_DBG_CSR_NAME, err);
@@ -172,6 +174,7 @@ static int svec_fpga_dbg_init(struct svec_fpga *svec_fpga)
 						      &svec_fpga_dbg_bld_info_ops);
 	if (IS_ERR_OR_NULL(svec_fpga->dbg_bld_info)) {
 		err = PTR_ERR(svec_fpga->dbg_bld_info);
+		svec_fpga->dbg_bld_info = NULL;
 		dev_err(&svec_fpga->dev,
 			"Cannot create debugfs file \"%s\" (%d)\n",
 			SVEC_DBG_BLD_INFO_NAME, err);
@@ -181,6 +184,7 @@ static int svec_fpga_dbg_init(struct svec_fpga *svec_fpga)
 	return 0;
 err:
 	debugfs_remove_recursive(svec_fpga->dbg_dir);
+	svec_fpga->dbg_dir = NULL;
 	return err;
 }
 
