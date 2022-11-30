@@ -8,3 +8,9 @@
 [submodule "hdl/ip_cores/vme64x-core"]
 	path = hdl/ip_cores/vme64x-core
 	url = https://ohwr.org/project/vme64x-core.git
+[submodule "hdl/ip_cores/ddr3-sp6-core"]
+	path = hdl/ip_cores/ddr3-sp6-core
+	url = https://ohwr.org/project/ddr3-sp6-core.git
+[submodule "hdl/ip_cores/wr-cores"]
+	path = hdl/ip_cores/wr-cores
+	url = https://ohwr.org/project/wr-cores.git

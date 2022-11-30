@@ -10,6 +10,11 @@ action = "synthesis"
 if locals().get('fetchto', None) is None:
   fetchto = "../../ip_cores"
 
+# Ideally this should be done by hdlmake itself, to allow downstream Manifests to be able to use the
+# fetchto variable independent of where those Manifests reside in the filesystem.
+import os
+fetchto = os.path.abspath(fetchto)
+
 syn_device = "xc6slx150t"
 syn_grade = "-3"
 syn_package = "fgg900"
@@ -20,7 +25,7 @@ syn_top = "svec_golden_wr"
 board = "svec"
 ctrls = ["bank4_64b_32b"]
 
-svec_template_ucf = ['ddr4', 'wr', 'gpio', 'led']
+svec_base_ucf = ['ddr4', 'wr', 'gpio', 'led']
 
 files = [ "buildinfo_pkg.vhd" ]
 
