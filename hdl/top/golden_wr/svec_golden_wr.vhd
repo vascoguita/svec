@@ -208,7 +208,7 @@ architecture top of svec_golden_wr is
 
   signal pps_p : std_logic;
 begin
-  inst_svec_template: entity work.svec_template_wr
+  inst_svec_base: entity work.svec_base_wr
     generic map (
       g_with_vic => True,
       g_with_onewire => False,
@@ -327,7 +327,6 @@ begin
       ddr5_udqs_p_b => open,
       ddr5_we_n_o => open,
       pcbrev_i => pcbrev_i,
-  
       ddr4_clk_i => clk_sys_62m5,
       ddr4_rst_n_i => rst_sys_62m5_n,
       ddr4_wb_i.cyc => '0',
@@ -337,7 +336,6 @@ begin
       ddr4_wb_i.we => '0',
       ddr4_wb_i.dat => (63 downto 0 => '0'),
       ddr4_wb_o => open,
-  
       ddr5_clk_i => clk_sys_62m5,
       ddr5_rst_n_i => rst_sys_62m5_n,
       ddr5_wb_i.cyc => '0',
@@ -347,7 +345,6 @@ begin
       ddr5_wb_i.we => '0',
       ddr5_wb_i.dat => (63 downto 0 => '0'),
       ddr5_wb_o => open,
-  
       ddr4_wr_fifo_empty_o => open,
       ddr5_wr_fifo_empty_o => open,
       clk_sys_62m5_o => clk_sys_62m5,
@@ -355,7 +352,6 @@ begin
       clk_ref_125m_o => open,
       rst_ref_125m_n_o => open,
       irq_user_i => "",
-  
       wrf_src_o => open,
       wrf_src_i => open,
       wrf_snk_o => open,

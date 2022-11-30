@@ -25,7 +25,7 @@ syn_top = "svec_golden_wr"
 board = "svec"
 ctrls = ["bank4_64b_32b"]
 
-svec_template_ucf = ['ddr4', 'wr', 'gpio', 'led']
+svec_base_ucf = ['ddr4', 'wr', 'gpio', 'led']
 
 files = [ "buildinfo_pkg.vhd" ]
 
