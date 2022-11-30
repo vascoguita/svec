@@ -156,8 +156,13 @@ static int svec_fpga_dbg_init(struct svec_fpga *svec_fpga)
 	svec_fpga->dbg_csr_reg.regs = svec_fpga_debugfs_reg32;
 	svec_fpga->dbg_csr_reg.nregs = ARRAY_SIZE(svec_fpga_debugfs_reg32);
 	svec_fpga->dbg_csr_reg.base = svec_fpga->fpga;
+#if KERNEL_VERSION(5, 6, 0) <= LINUX_VERSION_CODE
 	debugfs_create_regset32(SVEC_DBG_CSR_NAME, 0200, svec_fpga->dbg_dir,
 				&svec_fpga->dbg_csr_reg);
+#else
+	svec_fpga->dbg_csr = debugfs_create_regset32(SVEC_DBG_CSR_NAME, 0200,
+						svec_fpga->dbg_dir,
+						&svec_fpga->dbg_csr_reg);
 	if (IS_ERR_OR_NULL(svec_fpga->dbg_csr)) {
 		err = PTR_ERR(svec_fpga->dbg_csr);
 		svec_fpga->dbg_csr = NULL;
@@ -166,6 +171,7 @@ static int svec_fpga_dbg_init(struct svec_fpga *svec_fpga)
 			SVEC_DBG_CSR_NAME, err);
 		goto err;
 	}
+#endif
 
 	svec_fpga->dbg_bld_info = debugfs_create_file(SVEC_DBG_BLD_INFO_NAME,
 						      0444,
