@@ -27,6 +27,9 @@ xilinx::project set "Register Duplication Map" "On"
 #xilinx::project set "Placer Extra Effort Map" "Normal"
 #xilinx::project set "Extra Effort (Highest PAR level only)" "Normal"
 
+# Needed because some timegroup constraints are too generic and do not exist in the golden
+xilinx::project set "Allow Unmatched Timing Group Constraints" TRUE
+
 xilinx::project save
 
 xilinx::project close
