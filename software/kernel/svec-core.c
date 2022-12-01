@@ -69,7 +69,7 @@ static int svec_fw_load(struct svec_dev *svec_dev, const char *name)
 	return err;
 }
 
-static ssize_t svec_fpga_firmware_store(struct device *dev,
+static ssize_t firmware_name_store(struct device *dev,
 				 struct device_attribute *attr,
 				 const char *buf,
 				 size_t count)
@@ -101,10 +101,10 @@ static ssize_t svec_fpga_firmware_store(struct device *dev,
 	return err ? err : count;
 }
 
-static DEVICE_ATTR_WO(svec_fpga_firmware);
+static DEVICE_ATTR_WO(firmware_name);
 
 static struct attribute *svec_sys_dev_attrs[] = {
-	&dev_attr_svec_fpga_firmware.attr,
+	&dev_attr_firmware_name.attr,
 	NULL
 };
 
