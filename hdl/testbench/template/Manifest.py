@@ -9,22 +9,30 @@ sim_top = "main"
 vcom_opt = "-93 -mixedsvvh"
 
 syn_device = "xc6slx150t"
-svec_template_ucf = []
 board = "svec"
-ctrls = ["bank4_64b_32b"]
+
+ctrls = ["bank4_64b_32b", "bank5_64b_32b"]
 
 # Allow the user to override fetchto using:
 #  hdlmake -p "fetchto='xxx'"
 if locals().get('fetchto', None) is None:
   fetchto = "../../ip_cores"
 
-include_dirs=[fetchto + "/vme64x-core/hdl/sim/vme64x_bfm", 
-              fetchto + "/general-cores/sim"]
+# Ideally this should be done by hdlmake itself, to allow downstream Manifests to be able to use the
+# fetchto variable independent of where those Manifests reside in the filesystem.
+import os
+fetchto = os.path.abspath(fetchto)
+
+include_dirs = [
+  "../include",
+  fetchto + "/vme64x-core/hdl/sim/vme64x_bfm",
+  fetchto + "/general-cores/sim",
+]
 
 files = [ "main.sv", "buildinfo_pkg.vhd" ]
 
 modules = {
-  "local" :  [ "../../rtl" ],
+  "local" :  [ "../../top/golden" ],
   "git" : [
       "https://ohwr.org/project/wr-cores.git",
       "https://ohwr.org/project/general-cores.git",
