@@ -14,4 +14,8 @@ syn_top = "svec_sfpga_top"
 syn_project = "svec_sfpga.xise"
 syn_tool = "ise"
 
-modules = { "local" : [ "../../top/sfpga_bootloader", "../../platform" ] }
+modules = {
+    "local" : [
+        "../../top/sfpga_bootloader",
+    ],
+}
