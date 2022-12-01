@@ -8,9 +8,9 @@
 -- https://ohwr.org/projects/svec
 --------------------------------------------------------------------------------
 --
--- unit name:   svec_golden_wr
+-- unit name:   svec_base_wr_example
 --
--- description: SVEC carrier golden.
+-- description: SVEC carrier example with White Rabbit.
 --
 
 library ieee;
@@ -20,7 +20,7 @@ use ieee.numeric_std.all;
 use work.gencores_pkg.all;
 use work.wishbone_pkg.all;
 
-entity svec_golden_wr is
+entity svec_base_wr_example is
   generic (
     --  WR PTP firmware.
     g_DPRAM_INITF   : string := "../../../../wr-cores/bin/wrpc/wrc_phy8.bram";
@@ -189,9 +189,9 @@ entity svec_golden_wr is
     fp_gpio34_a2b_o : out std_logic
     
   );
-end entity svec_golden_wr;
+end entity svec_base_wr_example;
 
-architecture top of svec_golden_wr is
+architecture top of svec_base_wr_example is
   signal clk_sys_62m5  : std_logic;
   signal rst_sys_62m5_n  : std_logic;
 

@@ -18,9 +18,9 @@ fetchto = os.path.abspath(fetchto)
 syn_device = "xc6slx150t"
 syn_grade = "-3"
 syn_package = "fgg900"
-syn_project = "svec_golden_wr.xise"
+syn_project = "svec_base_wr_example.xise"
 syn_tool = "ise"
-syn_top = "svec_golden_wr"
+syn_top = "svec_base_wr_example"
 
 board = "svec"
 ctrls = ["bank4_64b_32b"]
@@ -31,7 +31,7 @@ files = [ "buildinfo_pkg.vhd" ]
 
 modules = {
   "local" : [
-      "../../top/golden_wr",
+      "../../top/wr_example",
       "../../syn/common",
   ],
   "git" : [
