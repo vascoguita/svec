@@ -154,6 +154,13 @@ sub-devices and the following *sysfs* attributes.
 ``svec-vme-<vme-slot>/reset_app`` [R/W]
   It puts in *reset* (1) or *unreset* (0) the user application.
 
+``svec-vme-<vme-slot>/firmware_name`` [W]
+  It configure the FPGA with a bitstream which name is provided as input.
+  Remember that firmwares are installed in ``/lib/firmware`` and alternatively
+  you can provide your own path by setting it in
+  ``/sys/module/firmware_class/parameters/path``.
+
+
 .. _`FPGA manager`: https://www.kernel.org/doc/html/latest/driver-api/fpga/index.html
 
 Attributes From *debugfs*
@@ -167,12 +174,6 @@ focus only on those.
   It dumps the FPGA device metadata information for the
   :ref:`SVEC base<svec_hdl_svec_base>` and, when it exists, the user
   application one.
-
-``vme-<vme-slot>/fpga_firmware`` [W]
-  It configure the FPGA with a bitstream which name is provided as input.
-  Remember that firmwares are installed in ``/lib/firmware`` and alternatively
-  you can provide your own path by setting it in
-  ``/sys/module/firmware_class/parameters/path``.
 
 ``vme-<vme-slot>/svec-vme-<vme-slot>/csr_regs`` [R]
   It dumps the Control/Status register for
