@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 CERN (home.cern)
+//
+// SPDX-License-Identifier: CERN-OHL-W-2.0+
+
 package svec_base_regs_Consts;
   localparam SVEC_BASE_REGS_SIZE = 16384;
   localparam ADDR_SVEC_BASE_REGS_METADATA = 'h0;

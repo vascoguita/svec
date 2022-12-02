@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 CERN (home.cern)
+#
+# SPDX-License-Identifier: CERN-OHL-W-2.0+
+
 # get project file from 1st command-line argument
 set project_file [lindex $argv 0]
 
