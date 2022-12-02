@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 CERN (home.cern)
+#
+# SPDX-License-Identifier: CERN-OHL-W-2.0+
+
 # DDR0 (bank 4)
 NET "ddr4_rzq_b"     LOC = L7;
 NET "ddr4_we_n_o"    LOC = F4;
