@@ -2,16 +2,8 @@
 #
 # SPDX-License-Identifier: CERN-OHL-W-2.0
 
-action = "simulation"
 target = "xilinx"
-sim_tool = "modelsim"
-sim_top = "main"
-vcom_opt = "-93 -mixedsvvh"
-
-syn_device = "xc6slx150t"
-board = "svec"
-
-ctrls = ["bank4_64b_32b", "bank5_64b_32b"]
+action = "synthesis"
 
 # Allow the user to override fetchto using:
 #  hdlmake -p "fetchto='xxx'"
@@ -23,16 +15,25 @@ if locals().get('fetchto', None) is None:
 import os
 fetchto = os.path.abspath(fetchto)
 
-include_dirs = [
-  "../include",
-  fetchto + "/vme64x-core/hdl/sim/vme64x_bfm",
-  fetchto + "/general-cores/sim",
-]
+syn_device = "xc6slx150t"
+syn_grade = "-3"
+syn_package = "fgg900"
+syn_project = "svec_base_wr_example.xise"
+syn_tool = "ise"
+syn_top = "svec_base_wr_example"
 
-files = [ "main.sv", "buildinfo_pkg.vhd" ]
+board = "svec"
+ctrls = ["bank4_64b_32b"]
+
+svec_base_ucf = ['ddr4', 'wr', 'gpio', 'led']
+
+files = [ "buildinfo_pkg.vhd" ]
 
 modules = {
-  "local" :  [ "../../top/golden" ],
+  "local" : [
+      "../../top/wr_example",
+      "../../syn/common",
+  ],
   "git" : [
       "https://ohwr.org/project/wr-cores.git",
       "https://ohwr.org/project/general-cores.git",
@@ -43,6 +44,8 @@ modules = {
 
 # Do not fail during hdlmake fetch
 try:
-    exec(open(fetchto + "/general-cores/tools/gen_buildinfo.py").read())
+  exec(open(fetchto + "/general-cores/tools/gen_buildinfo.py").read())
 except:
-    pass
+  pass
+
+syn_post_project_cmd = "$(TCL_INTERPRETER) syn_extra_steps.tcl $(PROJECT_FILE)"

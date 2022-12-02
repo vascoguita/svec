@@ -174,21 +174,6 @@ architecture rtl of svec_sfpga_top is
       spi_miso_i      : in  std_logic);
   end component;
 
-  component chipscope_ila
-    port (
-      CONTROL : inout std_logic_vector(35 downto 0);
-      CLK     : in    std_logic;
-      TRIG0   : in    std_logic_vector(31 downto 0);
-      TRIG1   : in    std_logic_vector(31 downto 0);
-      TRIG2   : in    std_logic_vector(31 downto 0);
-      TRIG3   : in    std_logic_vector(31 downto 0));
-  end component;
-
-  component chipscope_icon
-    port (
-      CONTROL0 : inout std_logic_vector (35 downto 0));
-  end component;
-
   signal VME_DATA_o_int                    : std_logic_vector(31 downto 0);
   signal vme_dtack_oe_int, VME_DTACK_n_int : std_logic;
   signal vme_data_dir_int                  : std_logic;
@@ -203,12 +188,6 @@ architecture rtl of svec_sfpga_top is
 
   signal boot_en                    : std_logic := '1';
   signal boot_trig_p1, boot_exit_p1 : std_logic;
-  signal CONTROL                    : std_logic_vector(35 downto 0);
-  signal CLK                        : std_logic;
-  signal TRIG0                      : std_logic_vector(31 downto 0);
-  signal TRIG1                      : std_logic_vector(31 downto 0);
-  signal TRIG2                      : std_logic_vector(31 downto 0);
-  signal TRIG3                      : std_logic_vector(31 downto 0);
 
   signal boot_config_int                 : std_logic;
   signal erase_afpga_n, erase_afpga_n_d0 : std_logic;
@@ -269,44 +248,6 @@ begin
       rst_vme_n_a_i   => VME_RST_n_i,
       rst_local_n_a_i => rst_n_i,
       rst_n_o         => rst_n_sys);
-
--------------------------------------------------------------------------------
--- Chipscope instantiation (for VME bus monitoring, I sincerely hate VMetro)
--------------------------------------------------------------------------------
-
-  chipscope_ila_1 : chipscope_ila
-    port map (
-      CONTROL => CONTROL,
-      CLK     => clk_sys,
-      TRIG0   => TRIG0,
-      TRIG1   => TRIG1,
-      TRIG2   => TRIG2,
-      TRIG3   => TRIG3);
-
-  chipscope_icon_1 : chipscope_icon
-    port map (
-      CONTROL0 => CONTROL);
-
-  TRIG0(31 downto 1) <= VME_ADDR_b;
-  TRIG1(31 downto 0) <= VME_DATA_b;
-  TRIG2(5 downto 0)  <= VME_AM_i;
-  trig2(7 downto 6)  <= VME_DS_n_i;
-  trig2(13 downto 8) <= VME_GA_i;
-  trig2(14)          <= VME_DTACK_n_o;
-  trig2(15)          <= VME_DTACK_oe_o;
-  trig2(16)          <= VME_LWORD_n_b;
-  trig2(17)          <= VME_WRITE_n_i;
-  trig2(18)          <= VME_AS_n_i;
-  trig2(19)          <= VME_DATA_DIR_o;
-  trig2(20)          <= VME_DATA_OE_N_o;
-  trig2(21)          <= VME_addr_DIR_o;
-  trig2(22)          <= VME_addr_OE_N_o;
-  trig2(23)          <= rst_n_i;
-  trig2(24)          <= '1';
-  trig2(25)          <= VME_RST_n_i;
-  trig2(26)          <= passive;
-  trig2(27)          <= vme_idle;
-  trig2(28)          <= rst_n_sys;
 
   U_MiniVME : xmini_vme
     generic map (
@@ -447,5 +388,3 @@ begin
 
   
 end rtl;
-
-

@@ -384,7 +384,6 @@ begin  -- behavioral
   wb_out.err   <= '0';
   wb_out.rty   <= '0';
   wb_out.stall <= '0';
-  wb_out.int   <= '0';
   regs_out     <= regs_out_local or regs_out_flash;
 
   U_WB_SLAVE : svec_xloader_wb
