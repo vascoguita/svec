@@ -6,6 +6,20 @@
 Change Log
 ==========
 
+3.0.0 - 2022-12-05
+==================
+Added
+-----
+- ci: better automation
+- sw: support for Linux 5.10
+
+Changed
+-------
+- sw|API change: the API to flash a bitstream moved from debugfs to sysfs. The
+  Linux kernel community removed API we used. The same behavior was achievable
+  only using sysfs.
+- bld: improved Makefiles
+
 2.0.4 - 2021-07-29
 ==================
 Fixed
