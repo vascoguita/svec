@@ -6,6 +6,34 @@
 Change Log
 ==========
 
+3.0.0 - 2022-12-05
+==================
+Added
+-----
+- ci: better automation
+- sw: support for Linux 5.10
+
+Removed
+-------
+- hdl: unused and obsolete top-levels and simulations
+- hdl: Xilinx chipscope for SFPGA (files were actually for AFPGA)
+
+Changed
+-------
+- hdl: 'golden_wr' top-level renamed to 'wr_example'
+- hdl: 'template' testbench now used for simulating the golden top-level
+- sw|API change: the API to flash a bitstream moved from debugfs to sysfs. The
+  Linux kernel community removed API we used. The same behavior was achievable
+  only using sysfs.
+- bld: improved Makefiles
+
+Fixed
+-----
+- hdl: building of all top-levels
+- hdl: missing ddr and wr-cores dependencies
+- hdl: corrected and re-enabled timing constraints
+- hdl: location of general-cores in rtl Manifest
+
 2.0.4 - 2021-07-29
 ==================
 Fixed

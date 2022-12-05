@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2022 CERN
+#
+# SPDX-License-Identifier: CC-BY-SA-4.0+
+
+sphinx
+sphinx_rtd_theme

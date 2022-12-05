@@ -24,7 +24,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'SVEC'
-copyright = '2019, Federico Vaga <federico.vaga@cern.ch>'
+copyright = '2019, CERN (home.cern)'
 author = 'Federico Vaga <federico.vaga@cern.ch>'
 
 # -- General configuration ---------------------------------------------------
