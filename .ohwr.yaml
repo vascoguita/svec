@@ -1,0 +1,73 @@
+---
+# SPDX-FileCopyrightText: 2023 CERN (home.cern)
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# The version of the .ohwr.yaml template.
+version: '1.0.0'
+
+project:
+
+  # The name of your project.
+  name: 'Simple VME FMC Carrier (SVEC)'
+
+  # The description of your project. There are 2 options:
+  #   * Enter an inline Markdown description (like in the example below).
+  #   * Enter the URL of the Markdown file containing the description
+  #     (e.g. 'https://raw.githubusercontent.com/user/project/master/.ohwr/description.md').
+  description: |
+    The FMC VME Carrier is an FMC carrier in VME64x format that can hold two FMC cards and an SFP connector. The FMC
+    mezzanine slots use low-pin count (LPC) connectors. This board is optimised for cost and will be usable with most
+    of the FMC cards designed within the OHR project (e.g. ADC cards, Fine Delay).
+
+    Other FMC projects and the FMC standard are described in [FMC Projects](https://www.ohwr.org/project/fmc-projects).
+
+  # The website of your project.
+  # Use the web page of your git repository if your project doesn't have dedicated website
+  # (e.g. 'https://github.com/user/project').
+  website: 'https://ohwr.org/project/svec'
+
+  # The licenses of your project. Use SPDX identifiers - https://spdx.org/licenses/.
+  licenses:
+    - 'CC-BY-SA-4.0'
+    - 'CERN-OHL-W-2.0'
+    - 'GPL-2.0-or-later'
+    - 'LGPL-2.1-or-later'
+
+  # (optional) Image of your project (e.g. a photo of the latest prototype).
+  image: 'https://ohwr.org/project/svec/uploads/0eeb5b430351eca8a4e76a5af3892c2c/svectop_l.png'
+
+  # (optional) Link to the documentation of your project.
+  documentation: 'https://ohwr.org/project/svec/wikis'
+
+  # (optional) Link to the issue/bug tracker of your project.
+  issues: 'https://ohwr.org/project/svec/issues'
+
+  # (optional) Link to the latest release of your project.
+  latest_release: 'https://ohwr.org/project/svec/tags/v3.0.0'
+
+  # (optional) Link to the forum where your community has conversations, asks questions and posts answers.
+  forum: 'https://forums.ohwr.org/c/svec'
+
+  # (optional) Link to the news page of your project.
+  news: 'https://ohwr.org/project/svec/wikis/home#status'
+
+  # (optional) Addtional links.
+  links:
+    - name: '📎 SVEC V1 production board block diagram'
+      url: 'https://ohwr.org/project/svec/uploads/e234fa371e49b0d8f0311cdd236df19c/Block.png'
+    - name: '📎 VME64-SVEC - BO-FVM-SVEC0, Janz Tec AG, Germany'
+      url: 'https://www.janztec.com/wp-content/uploads/2020/03/datasheet_vme64-svec.pdf'
+    - name: '📎 Hardware manual (Janz Tec)'
+      url: 'https://ohwr.org/project/svec/uploads/7aedb3c2fea71ef926fbbe73ab4e99ee/manual_svec_hardware.pdf'
+
+  # (optional) Categories to which your project belongs.
+  # (e.g. 'FMC Carriers').
+  categories:
+    - 'FMC Carriers'
+
+  # (optional) Tags that characterize your project.
+  # (e.g. 'ethernet').
+  tags:
+    - 'VME'
+    - 'FMC'
