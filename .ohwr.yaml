@@ -34,8 +34,9 @@ project:
     - 'GPL-2.0-or-later'
     - 'LGPL-2.1-or-later'
 
-  # (optional) Image of your project (e.g. a photo of the latest prototype).
-  image: 'https://ohwr.org/project/svec/uploads/0eeb5b430351eca8a4e76a5af3892c2c/svectop_l.png'
+  # (optional) Images of your project (e.g. a photo of the latest prototype).
+  images:
+    - 'https://ohwr.org/project/svec/uploads/0eeb5b430351eca8a4e76a5af3892c2c/svectop_l.png'
 
   # (optional) Link to the documentation of your project.
   documentation: 'https://ohwr.org/project/svec/wikis'
