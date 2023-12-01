@@ -51,7 +51,7 @@ project:
   forum: 'https://forums.ohwr.org/c/svec'
 
   # (optional) News feed of your project.
-  news: 'https://raw.githubusercontent.com/wiki/vascoguita/spec/News.md'
+  news: 'https://raw.githubusercontent.com/wiki/vascoguita/svec/News.md'
 
   # (optional) Addtional links.
   links:
