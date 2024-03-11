@@ -77,8 +77,3 @@ project:
   categories:
     - 'FMC Carriers'
 
-  # (optional) Tags that characterize your project.
-  # (e.g. 'ethernet').
-  tags:
-    - 'VME'
-    - 'FMC'
