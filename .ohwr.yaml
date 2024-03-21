@@ -71,9 +71,3 @@ project:
       url: 'https://www.janztec.com/wp-content/uploads/2020/03/datasheet_vme64-svec.pdf'
     - name: 'Hardware manual (Janz Tec)'
       url: 'https://ohwr.org/project/svec/uploads/7aedb3c2fea71ef926fbbe73ab4e99ee/manual_svec_hardware.pdf'
-
-  # (optional) Categories to which your project belongs.
-  # (e.g. 'FMC Carriers').
-  categories:
-    - 'FMC Carriers'
-
