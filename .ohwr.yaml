@@ -46,17 +46,7 @@ project:
   forum: 'https://forums.ohwr.org/c/svec'
 
   # (optional) News feed of your project.
-  news:
-    - title: 'Will design a V4-0 version with DDR3 SIM memory (higher bandwidth) and resolving certain obsolescence issues'
-      date: 2019-06-13
-    - title: '240 V3-0 boards ordered by CERN, delivered on 17-12-2018'
-      date: 2018-05-17
-    - title: '240 V3-0 boards ordered by CERN'
-      date: 2018-05-17
-    - title: 'Release 3.0 of the SVEC bootloader is available'
-      date: 2014-11-26
-    - title: 'V3-0 released. Changes can be seen in Roadmap'
-      date: 2014-10-20
+  newsfeed: 'https://raw.githubusercontent.com/wiki/vascoguita/svec/News.md'
 
   # (optional) Addtional links.
   links:
