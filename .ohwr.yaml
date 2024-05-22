@@ -13,7 +13,7 @@ licenses:
   - 'GPL-2.0-or-later'
   - 'LGPL-2.1-or-later'
 images:
-  - 'https://ohwr.org/project/svec/uploads/0eeb5b430351eca8a4e76a5af3892c2c/svectop_l.png'
+  - 'https://ohwr.org/project/white-rabbit/uploads/0eeb5b430351eca8a4e76a5af3892c2c/svectop_l.png'
 documentation: 'https://ohwr.org/project/svec/wikis'
 issues: 'https://ohwr.org/project/svec/issues'
 latest_release: 'https://ohwr.org/project/svec/tags/v3.0.0'
